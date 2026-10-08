@@ -24,6 +24,7 @@ import { Badge } from '../components/Badge';
 import { ConfidenceRing } from '../components/ConfidenceRing';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { identifyPlant, PlantIdentificationResult } from '../services/plantApi';
+import { persistImage } from '../services/mediaService';
 import { useGarden } from '../context/GardenContext';
 import { usePlanLimits, FREE_IDENTIFICATION_LIMIT } from '../hooks/usePlanLimits';
 import { SkeletonBox } from '../components/SkeletonLoader';
@@ -297,7 +298,7 @@ export const ScannerScreen: React.FC = () => {
     setIsIdentifying(false);
   };
 
-  const handleSaveAllToGarden = () => {
+  const handleSaveAllToGarden = async () => {
     const batch = pendingBatch.length > 0 ? pendingBatch : identificationResult ? [identificationResult] : [];
     if (batch.length === 0) return;
 
@@ -317,6 +318,11 @@ export const ScannerScreen: React.FC = () => {
     try {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch {}
+
+    // La cámara devuelve una ruta temporal en cache: la copiamos al
+    // directorio de documentos para que la foto sobreviva al cierre de la app.
+    const persistedUri = await persistImage(photoUri, 'plants');
+
     addPlants(
       batch.map((result) => ({
         name: result.name,
@@ -324,7 +330,7 @@ export const ScannerScreen: React.FC = () => {
         wateringFrequencyDays: result.wateringFrequencyDays,
         light: result.light,
         avatarEmoji: result.avatarEmoji,
-        imageUri: photoUri || undefined,
+        imageUri: persistedUri,
       }))
     );
     setPendingBatch([]);

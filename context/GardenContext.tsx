@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useMemo, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useState, ReactNode } from 'react';
 import { Ionicons } from '@expo/vector-icons';
+import { loadJSON, saveJSON, STORAGE_KEYS } from '../services/storage';
 
 export type CareTaskType = 'riego' | 'fertilizante' | 'poda' | 'trasplante';
 
@@ -66,12 +67,12 @@ const DEFAULT_ROOMS: Room[] = [
 ];
 
 const INITIAL_STATS: StatsState = {
-  currentStreak: 4,
-  longestStreak: 9,
-  totalWaterings: 27,
+  currentStreak: 0,
+  longestStreak: 0,
+  totalWaterings: 0,
   totalIdentifications: 0,
   totalDiagnoses: 0,
-  tasksCompleted: 12,
+  tasksCompleted: 0,
   identificationsToday: 0,
   lastWaterDate: null,
   lastIdentificationDate: null,
@@ -161,6 +162,8 @@ interface GardenContextType {
   plants: GardenPlant[];
   rooms: Room[];
   stats: GardenStats;
+  /** `true` cuando el estado persistido ya se cargó desde disco. */
+  isHydrated: boolean;
   waterPlantToday: (id: string) => void;
   addPlant: (plant: NewPlantInput, roomId?: string) => string;
   addPlants: (plants: NewPlantInput[], roomId?: string) => number;
@@ -179,6 +182,13 @@ interface GardenContextType {
 
 const GardenContext = createContext<GardenContextType | undefined>(undefined);
 
+/** Forma persistida del jardín. Cambiar aquí implica migrar (storage.ts). */
+interface PersistedGarden {
+  plants: GardenPlant[];
+  rooms: Room[];
+  stats: StatsState;
+}
+
 const buildCareTasks = (wateringFrequencyDays: number, stamp: number): CareTask[] => [
   {
     id: `task-${stamp}-1`,
@@ -191,9 +201,37 @@ const buildCareTasks = (wateringFrequencyDays: number, stamp: number): CareTask[
 ];
 
 export function GardenProvider({ children }: { children: ReactNode }) {
-  const [plants, setPlants] = useState<GardenPlant[]>(INITIAL_PLANTS);
+  const [plants, setPlants] = useState<GardenPlant[]>([]);
   const [rooms, setRooms] = useState<Room[]>(DEFAULT_ROOMS);
   const [statsState, setStatsState] = useState<StatsState>(INITIAL_STATS);
+  const [isHydrated, setIsHydrated] = useState<boolean>(false);
+
+  // Hidratación: lee el jardín persistido una sola vez al iniciar.
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const stored = await loadJSON<PersistedGarden | null>(STORAGE_KEYS.garden, null);
+      if (!active) return;
+      if (stored) {
+        setPlants(Array.isArray(stored.plants) ? stored.plants : []);
+        setRooms(stored.rooms && stored.rooms.length > 0 ? stored.rooms : DEFAULT_ROOMS);
+        setStatsState({ ...INITIAL_STATS, ...(stored.stats ?? {}) });
+      } else if (__DEV__) {
+        // Solo en desarrollo sembramos el jardín con datos de ejemplo.
+        setPlants(INITIAL_PLANTS);
+      }
+      setIsHydrated(true);
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // Persistencia: guarda en disco tras cada cambio, pero nunca antes de hidratar.
+  useEffect(() => {
+    if (!isHydrated) return;
+    void saveJSON<PersistedGarden>(STORAGE_KEYS.garden, { plants, rooms, stats: statsState });
+  }, [isHydrated, plants, rooms, statsState]);
 
   const waterPlantToday = (id: string) => {
     setPlants((prev) =>
@@ -316,11 +354,14 @@ export function GardenProvider({ children }: { children: ReactNode }) {
   };
 
   const resetDefaultPlants = () => {
+    // Solo en desarrollo: restaurar el catálogo de ejemplo. En producción no
+    // debe reaparecer información ficticia en el jardín del usuario.
+    if (!__DEV__) return;
     setPlants(INITIAL_PLANTS);
   };
 
   const resetStats = () => {
-    setStatsState({ ...INITIAL_STATS, currentStreak: 1, longestStreak: 1, totalWaterings: 1 });
+    setStatsState(INITIAL_STATS);
   };
 
   const clearGarden = () => {
@@ -347,6 +388,7 @@ export function GardenProvider({ children }: { children: ReactNode }) {
         plants,
         rooms,
         stats,
+        isHydrated,
         waterPlantToday,
         addPlant,
         addPlants,

@@ -1,14 +1,15 @@
 /**
- * Plantae Growth Diary Service (MOCK)
+ * Plantae Growth Diary Service
  *
  * Línea de tiempo de crecimiento por planta con fotos, medidas y comparador
- * antes/después. Almacena en memoria (mock) y está listo para persistir en
- * Firestore (colección `growthEntries`) o en Firebase Storage las fotos.
+ * antes/después. Persiste en AsyncStorage (caché local, offline-first).
  *
- * CONEXIÓN REAL:
- *  - Sube cada foto a Firebase Storage y guarda la downloadURL.
- *  - Guarda el documento en Firestore: users/{uid}/plants/{plantId}/growth/{entryId}.
+ * En Fase 4, cada entrada se sincronizará con Firestore
+ * (users/{uid}/plants/{plantId}/growth/{entryId}) y las fotos con Firebase
+ * Storage; AsyncStorage queda como caché.
  */
+
+import { loadJSON, saveJSON, STORAGE_KEYS } from './storage';
 
 export interface GrowthEntry {
   id: string;
@@ -55,12 +56,12 @@ const daysAgo = (n: number): string => {
 };
 
 /**
- * Genera (de forma determinista) la línea de tiempo mock de una planta.
- * El primer registro es el más antiguo y el último el más reciente.
+ * Genera una línea de tiempo determinista SOLO para desarrollo (`__DEV__`).
+ * Nunca se persiste ni se usa en producción, para no mostrar datos falsos.
  */
-function generateTimeline(plantId: string): GrowthEntry[] {
+function generateDevTimeline(plantId: string): GrowthEntry[] {
   const seed = Array.from(plantId).reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
-  const count = 4 + (seed % 3); // 4 a 6 entradas
+  const count = 4 + (seed % 3);
   const entries: GrowthEntry[] = [];
   let height = 12 + (seed % 9);
   let leaves = 4 + (seed % 4);
@@ -71,7 +72,7 @@ function generateTimeline(plantId: string): GrowthEntry[] {
     leaves += 1 + ((seed + i) % 2);
 
     entries.push({
-      id: `${plantId}-entry-${i}`,
+      id: `${plantId}-dev-${i}`,
       plantId,
       date: daysAgo(ageDays),
       photoUri: PHOTOS[(seed + i) % PHOTOS.length],
@@ -85,30 +86,84 @@ function generateTimeline(plantId: string): GrowthEntry[] {
 }
 
 const store = new Map<string, GrowthEntry[]>();
+let hydrated = false;
+let hydrationPromise: Promise<void> | null = null;
 
+function flatten(): GrowthEntry[] {
+  const all: GrowthEntry[] = [];
+  store.forEach((entries) => all.push(...entries));
+  return all;
+}
+
+function persist(): void {
+  // Fire-and-forget: la UI no debe esperar a disco.
+  void saveJSON(STORAGE_KEYS.growthDiary, flatten());
+}
+
+/** Carga el diario desde disco una sola vez. Idempotente y seguro de llamar varias veces. */
+export function hydrateGrowthDiary(): Promise<void> {
+  if (hydrated) return Promise.resolve();
+  if (hydrationPromise) return hydrationPromise;
+
+  hydrationPromise = (async () => {
+    const entries = await loadJSON<GrowthEntry[]>(STORAGE_KEYS.growthDiary, []);
+    store.clear();
+    for (const entry of entries) {
+      const current = store.get(entry.plantId) ?? [];
+      current.push(entry);
+      store.set(entry.plantId, current);
+    }
+    hydrated = true;
+  })();
+
+  return hydrationPromise;
+}
+
+export function isGrowthDiaryHydrated(): boolean {
+  return hydrated;
+}
+
+/** Más reciente primero para la línea de tiempo. */
 export function getGrowthEntries(plantId: string): GrowthEntry[] {
-  if (!store.has(plantId)) {
-    store.set(plantId, generateTimeline(plantId));
+  const entries = store.get(plantId);
+  if (!entries || entries.length === 0) {
+    // Solo en desarrollo mostramos una línea de tiempo de ejemplo (no persistida).
+    if (__DEV__) return generateDevTimeline(plantId);
+    return [];
   }
-  // Más reciente primero para la línea de tiempo
-  return [...store.get(plantId)!].sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-  );
+  return [...entries].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 }
 
 export function addGrowthEntry(
   plantId: string,
   entry: Omit<GrowthEntry, 'id' | 'plantId'>
 ): GrowthEntry {
-  const current = store.get(plantId) ?? generateTimeline(plantId);
+  const current = store.get(plantId) ?? [];
   const created: GrowthEntry = {
     ...entry,
     id: `${plantId}-entry-${Date.now()}`,
     plantId,
   };
-  const next = [...current, created];
-  store.set(plantId, next);
+  store.set(plantId, [...current, created]);
+  persist();
   return created;
+}
+
+export function deleteGrowthEntry(plantId: string, entryId: string): void {
+  const current = store.get(plantId) ?? [];
+  const next = current.filter((entry) => entry.id !== entryId);
+  if (next.length === 0) {
+    store.delete(plantId);
+  } else {
+    store.set(plantId, next);
+  }
+  persist();
+}
+
+/** Borra el diario en memoria y en disco (usado por "Eliminar datos"). */
+export function clearGrowthDiary(): void {
+  store.clear();
+  persist();
 }
 
 export function getGrowthComparison(plantId: string): GrowthComparison {

@@ -597,17 +597,19 @@ export const GardenScreen: React.FC = () => {
                       Organizar zonas
                     </Text>
                   </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={resetDefaultPlants}
-                    hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-                    accessibilityRole="button"
-                    accessibilityLabel="Restablecer las plantas de ejemplo del jardín"
-                    style={{ minHeight: 44, justifyContent: 'center' }}
-                  >
-                    <Text style={[typography.footnote, { color: colors.textTertiary, fontWeight: '600' }]}>
-                      Restablecer
-                    </Text>
-                  </TouchableOpacity>
+                  {__DEV__ ? (
+                    <TouchableOpacity
+                      onPress={resetDefaultPlants}
+                      hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                      accessibilityRole="button"
+                      accessibilityLabel="Restablecer las plantas de ejemplo del jardín (solo desarrollo)"
+                      style={{ minHeight: 44, justifyContent: 'center' }}
+                    >
+                      <Text style={[typography.footnote, { color: colors.textTertiary, fontWeight: '600' }]}>
+                        Restablecer
+                      </Text>
+                    </TouchableOpacity>
+                  ) : null}
                 </View>
               </View>
             )}

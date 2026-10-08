@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { loadJSON, saveJSON, STORAGE_KEYS } from '../services/storage';
 import {
   BillingPlanId,
   BillingResult,
@@ -13,6 +14,8 @@ interface PremiumContextType {
   isTrial: boolean;
   activePlanId: BillingPlanId | null;
   expiresAt: string | null;
+  /** `true` cuando el estado Premium persistido ya se cargó desde disco. */
+  isHydrated: boolean;
   /** Hay una operación de compra/restauración en curso */
   purchaseLoading: boolean;
   price: string;
@@ -25,13 +28,57 @@ interface PremiumContextType {
 
 const PremiumContext = createContext<PremiumContextType | undefined>(undefined);
 
+/** Caché del último estado de suscripción conocido. Fase 3 lo alimentará desde RevenueCat. */
+interface PersistedPremium {
+  isPremium: boolean;
+  isTrial: boolean;
+  activePlanId: BillingPlanId | null;
+  expiresAt: string | null;
+}
+
+const DEFAULT_PREMIUM: PersistedPremium = {
+  isPremium: false,
+  isTrial: false,
+  activePlanId: null,
+  expiresAt: null,
+};
+
 export function PremiumProvider({ children }: { children: ReactNode }) {
   const [isPremium, setIsPremium] = useState<boolean>(false);
   const [isTrial, setIsTrial] = useState<boolean>(false);
   const [activePlanId, setActivePlanId] = useState<BillingPlanId | null>(null);
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
   const [purchaseLoading, setPurchaseLoading] = useState<boolean>(false);
+  const [isHydrated, setIsHydrated] = useState<boolean>(false);
   const price = '$29 MXN/mes';
+
+  // Hidratación del estado Premium persistido.
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const stored = await loadJSON<PersistedPremium>(STORAGE_KEYS.premium, DEFAULT_PREMIUM);
+      if (!active) return;
+      setIsPremium(!!stored.isPremium);
+      setIsTrial(!!stored.isTrial);
+      setActivePlanId(stored.activePlanId ?? null);
+      setExpiresAt(stored.expiresAt ?? null);
+      setIsHydrated(true);
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // Persistencia del último estado conocido (sirve para uso offline en Fase 3).
+  useEffect(() => {
+    if (!isHydrated) return;
+    void saveJSON<PersistedPremium>(STORAGE_KEYS.premium, {
+      isPremium,
+      isTrial,
+      activePlanId,
+      expiresAt,
+    });
+  }, [isHydrated, isPremium, isTrial, activePlanId, expiresAt]);
 
   const togglePremium = () => {
     setIsPremium((prev) => !prev);
@@ -92,6 +139,7 @@ export function PremiumProvider({ children }: { children: ReactNode }) {
         isTrial,
         activePlanId,
         expiresAt,
+        isHydrated,
         purchaseLoading,
         price,
         togglePremium,

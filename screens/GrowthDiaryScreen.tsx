@@ -20,6 +20,7 @@ import { Button } from '../components/Button';
 import { SkeletonBox } from '../components/SkeletonLoader';
 import { BeforeAfterSlider } from '../components/BeforeAfterSlider';
 import { getPlantById } from '../services/plantApi';
+import { persistImage } from '../services/mediaService';
 import { useGarden } from '../context/GardenContext';
 import {
   getGrowthEntries,
@@ -75,11 +76,13 @@ export const GrowthDiaryScreen: React.FC = () => {
     }
   };
 
-  const handleSaveEntry = () => {
+  const handleSaveEntry = async () => {
     if (!pendingPhoto) return;
+    // Copiamos la foto elegida al almacenamiento permanente antes de guardar.
+    const persistedPhoto = (await persistImage(pendingPhoto, 'diary')) ?? pendingPhoto;
     const created = addGrowthEntry(plantId, {
       date: new Date().toISOString(),
-      photoUri: pendingPhoto,
+      photoUri: persistedPhoto,
       note: note.trim() || 'Nuevo registro de crecimiento.',
     });
     setEntries((prev) => [created, ...prev]);

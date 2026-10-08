@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useMemo, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useState, ReactNode } from 'react';
 import { useColorScheme } from 'react-native';
+import { loadJSON, saveJSON, STORAGE_KEYS } from '../services/storage';
 
 /**
  * SettingsContext
@@ -28,6 +29,8 @@ interface SettingsContextType {
   notificationsEnabled: boolean;
   hasOnboarded: boolean;
   resolvedScheme: 'light' | 'dark';
+  /** `true` cuando las preferencias persistidas ya se cargaron desde disco. */
+  isHydrated: boolean;
   setThemePreference: (value: ThemePreference) => void;
   setLanguage: (value: AppLanguage) => void;
   setNotificationsEnabled: (value: boolean) => void;
@@ -38,12 +41,55 @@ interface SettingsContextType {
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 
+interface PersistedSettings {
+  themePreference: ThemePreference;
+  language: AppLanguage;
+  notificationsEnabled: boolean;
+  hasOnboarded: boolean;
+}
+
+const DEFAULT_SETTINGS: PersistedSettings = {
+  themePreference: 'system',
+  language: 'es',
+  notificationsEnabled: true,
+  hasOnboarded: false,
+};
+
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const systemScheme = useColorScheme();
   const [themePreference, setThemePreference] = useState<ThemePreference>('system');
   const [language, setLanguage] = useState<AppLanguage>('es');
   const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(true);
   const [hasOnboarded, setHasOnboarded] = useState<boolean>(false);
+  const [isHydrated, setIsHydrated] = useState<boolean>(false);
+
+  // Hidratación desde disco.
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const stored = await loadJSON<PersistedSettings>(STORAGE_KEYS.settings, DEFAULT_SETTINGS);
+      if (!active) return;
+      setThemePreference(stored.themePreference ?? 'system');
+      setLanguage(stored.language ?? 'es');
+      setNotificationsEnabled(stored.notificationsEnabled ?? true);
+      setHasOnboarded(stored.hasOnboarded ?? false);
+      setIsHydrated(true);
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // Persistencia tras cada cambio (nunca antes de hidratar).
+  useEffect(() => {
+    if (!isHydrated) return;
+    void saveJSON<PersistedSettings>(STORAGE_KEYS.settings, {
+      themePreference,
+      language,
+      notificationsEnabled,
+      hasOnboarded,
+    });
+  }, [isHydrated, themePreference, language, notificationsEnabled, hasOnboarded]);
 
   const resolvedScheme: 'light' | 'dark' =
     themePreference === 'system' ? (systemScheme === 'dark' ? 'dark' : 'light') : themePreference;
@@ -55,6 +101,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       notificationsEnabled,
       hasOnboarded,
       resolvedScheme,
+      isHydrated,
       setThemePreference,
       setLanguage,
       setNotificationsEnabled,
@@ -66,7 +113,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         setNotificationsEnabled(true);
       },
     }),
-    [themePreference, language, notificationsEnabled, hasOnboarded, resolvedScheme]
+    [themePreference, language, notificationsEnabled, hasOnboarded, resolvedScheme, isHydrated]
   );
 
   return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>;
@@ -84,6 +131,7 @@ export function useSettings(): SettingsContextType {
       notificationsEnabled: true,
       hasOnboarded: false,
       resolvedScheme: fallbackScheme,
+      isHydrated: false,
       setThemePreference: () => {},
       setLanguage: () => {},
       setNotificationsEnabled: () => {},

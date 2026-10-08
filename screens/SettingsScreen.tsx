@@ -19,6 +19,9 @@ import { useSettings, ThemePreference, AppLanguage, LANGUAGES } from '../context
 import { usePremium } from '../context/PremiumContext';
 import { useGarden } from '../context/GardenContext';
 import { requestNotificationPermissions } from '../services/notificationService';
+import { clearAllAppData } from '../services/storage';
+import { clearGrowthDiary } from '../services/growthDiaryService';
+import { clearPersistedImages } from '../services/mediaService';
 
 export const SettingsScreen: React.FC = () => {
   const { colors, layout, spacing, typography } = useAppTheme();
@@ -31,6 +34,7 @@ export const SettingsScreen: React.FC = () => {
     notificationsEnabled,
     setNotificationsEnabled,
     resetOnboarding,
+    resetSettings,
   } = useSettings();
   const { isPremium, cancel } = usePremium();
   const { clearGarden, resetStats } = useGarden();
@@ -63,8 +67,13 @@ export const SettingsScreen: React.FC = () => {
             try {
               await cancel();
             } catch {}
+            // Borra también los datos persistidos en disco (no solo la memoria).
+            clearGrowthDiary();
+            await clearPersistedImages();
+            await clearAllAppData();
             clearGarden();
             resetStats();
+            resetSettings();
             resetOnboarding();
             try { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning); } catch {}
             Alert.alert('Datos eliminados', 'Tu cuenta y datos locales han sido eliminados.');
