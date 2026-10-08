@@ -1,0 +1,379 @@
+import React, { createContext, useContext, useMemo, useState, ReactNode } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+
+export type CareTaskType = 'riego' | 'fertilizante' | 'poda' | 'trasplante';
+
+export interface CareTask {
+  id: string;
+  type: CareTaskType;
+  title: string;
+  dueDate: string;
+  completed: boolean;
+}
+
+export interface Room {
+  id: string;
+  name: string;
+  icon: keyof typeof Ionicons.glyphMap;
+}
+
+export interface GardenPlant {
+  id: string;
+  name: string;
+  scientificName: string;
+  lastWatered: string;
+  isWateredToday: boolean;
+  wateringFrequencyDays: number;
+  light: string;
+  avatarEmoji: string;
+  imageUri?: string;
+  healthScore: number; // 0 a 100
+  lastDiagnosis?: string;
+  careTasks?: CareTask[];
+  /** Habitación / zona a la que pertenece la planta */
+  roomId?: string;
+}
+
+export interface GardenStats {
+  currentStreak: number;
+  longestStreak: number;
+  totalWaterings: number;
+  totalPlants: number;
+  totalIdentifications: number;
+  totalDiagnoses: number;
+  tasksCompleted: number;
+  identificationsToday: number;
+}
+
+interface StatsState {
+  currentStreak: number;
+  longestStreak: number;
+  totalWaterings: number;
+  totalIdentifications: number;
+  totalDiagnoses: number;
+  tasksCompleted: number;
+  identificationsToday: number;
+  lastWaterDate: string | null;
+  lastIdentificationDate: string | null;
+}
+
+const DEFAULT_ROOMS: Room[] = [
+  { id: 'room-sala', name: 'Sala', icon: 'tv' },
+  { id: 'room-dormitorio', name: 'Dormitorio', icon: 'bed' },
+  { id: 'room-cocina', name: 'Cocina', icon: 'restaurant' },
+  { id: 'room-balcon', name: 'Balcón', icon: 'sunny' },
+  { id: 'room-oficina', name: 'Oficina', icon: 'desktop' },
+];
+
+const INITIAL_STATS: StatsState = {
+  currentStreak: 4,
+  longestStreak: 9,
+  totalWaterings: 27,
+  totalIdentifications: 0,
+  totalDiagnoses: 0,
+  tasksCompleted: 12,
+  identificationsToday: 0,
+  lastWaterDate: null,
+  lastIdentificationDate: null,
+};
+
+const INITIAL_PLANTS: GardenPlant[] = [
+  {
+    id: 'plant-1',
+    name: 'Monstera Deliciosa',
+    scientificName: 'Monstera deliciosa Liebm.',
+    lastWatered: 'Hace 3 días',
+    isWateredToday: false,
+    wateringFrequencyDays: 8,
+    light: 'Luz indirecta brillante',
+    avatarEmoji: '🌿',
+    healthScore: 94,
+    lastDiagnosis: 'Estado óptimo y vigoroso',
+    roomId: 'room-sala',
+    careTasks: [
+      { id: 't1', type: 'riego', title: 'Riego profundo de sustrato', dueDate: 'En 5 días', completed: false },
+      { id: 't2', type: 'fertilizante', title: 'Abono líquido equilibrado', dueDate: 'En 12 días', completed: false },
+      { id: 't3', type: 'poda', title: 'Limpieza de hojas basales', dueDate: 'Próximo mes', completed: false },
+    ],
+  },
+  {
+    id: 'plant-2',
+    name: 'Ficus Lyrata',
+    scientificName: 'Ficus lyrata Warb.',
+    lastWatered: 'Hace 6 días',
+    isWateredToday: false,
+    wateringFrequencyDays: 10,
+    light: 'Luz filtrada intensa',
+    avatarEmoji: '🪴',
+    healthScore: 78,
+    lastDiagnosis: 'Leve clorosis por luz baja',
+    roomId: 'room-dormitorio',
+    careTasks: [
+      { id: 't4', type: 'riego', title: 'Riego de recuperación', dueDate: 'En 4 días', completed: false },
+      { id: 't5', type: 'poda', title: 'Poda de brote apical', dueDate: 'En 2 semanas', completed: false },
+    ],
+  },
+  {
+    id: 'plant-3',
+    name: 'Sansevieria Trifasciata',
+    scientificName: 'Dracaena trifasciata',
+    lastWatered: 'Hace 12 días',
+    isWateredToday: false,
+    wateringFrequencyDays: 18,
+    light: 'Cualquier iluminación',
+    avatarEmoji: '🌱',
+    healthScore: 99,
+    lastDiagnosis: 'Excelente resistencia',
+    roomId: 'room-oficina',
+    careTasks: [
+      { id: 't6', type: 'riego', title: 'Riego mensual ligero', dueDate: 'En 6 días', completed: false },
+      { id: 't7', type: 'trasplante', title: 'Cambio a maceta de barro', dueDate: 'En primavera', completed: false },
+    ],
+  },
+  {
+    id: 'plant-4',
+    name: 'Pothos Dorado',
+    scientificName: 'Epipremnum aureum',
+    lastWatered: 'Ayer',
+    isWateredToday: false,
+    wateringFrequencyDays: 6,
+    light: 'Luz indirecta',
+    avatarEmoji: '🍃',
+    healthScore: 88,
+    lastDiagnosis: 'Crecimiento activo',
+    roomId: 'room-cocina',
+    careTasks: [
+      { id: 't8', type: 'riego', title: 'Riego regular de superficie', dueDate: 'En 5 días', completed: false },
+      { id: 't9', type: 'fertilizante', title: 'Humus de lombriz', dueDate: 'En 15 días', completed: false },
+    ],
+  },
+];
+
+const dateKey = (offsetDays = 0): string => {
+  const d = new Date();
+  d.setDate(d.getDate() + offsetDays);
+  return d.toISOString().slice(0, 10);
+};
+
+type NewPlantInput = Omit<GardenPlant, 'id' | 'lastWatered' | 'isWateredToday' | 'healthScore'>;
+
+interface GardenContextType {
+  plants: GardenPlant[];
+  rooms: Room[];
+  stats: GardenStats;
+  waterPlantToday: (id: string) => void;
+  addPlant: (plant: NewPlantInput, roomId?: string) => string;
+  addPlants: (plants: NewPlantInput[], roomId?: string) => number;
+  removePlant: (id: string) => void;
+  updatePlantHealth: (id: string, score: number, diagnosis: string) => void;
+  toggleTaskCompleted: (plantId: string, taskId: string) => void;
+  assignPlantToRoom: (plantId: string, roomId?: string) => void;
+  createRoom: (name: string, icon?: Room['icon']) => Room;
+  removeRoom: (roomId: string) => void;
+  registerIdentification: () => void;
+  registerDiagnosis: () => void;
+  resetDefaultPlants: () => void;
+  resetStats: () => void;
+  clearGarden: () => void;
+}
+
+const GardenContext = createContext<GardenContextType | undefined>(undefined);
+
+const buildCareTasks = (wateringFrequencyDays: number, stamp: number): CareTask[] => [
+  {
+    id: `task-${stamp}-1`,
+    type: 'riego',
+    title: 'Riego regular',
+    dueDate: `En ${wateringFrequencyDays} días`,
+    completed: false,
+  },
+  { id: `task-${stamp}-2`, type: 'fertilizante', title: 'Nutrición foliar', dueDate: 'En 20 días', completed: false },
+];
+
+export function GardenProvider({ children }: { children: ReactNode }) {
+  const [plants, setPlants] = useState<GardenPlant[]>(INITIAL_PLANTS);
+  const [rooms, setRooms] = useState<Room[]>(DEFAULT_ROOMS);
+  const [statsState, setStatsState] = useState<StatsState>(INITIAL_STATS);
+
+  const waterPlantToday = (id: string) => {
+    setPlants((prev) =>
+      prev.map((plant) => {
+        if (plant.id === id) {
+          const now = new Date();
+          const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+          return { ...plant, lastWatered: `Hoy a las ${timeStr}`, isWateredToday: true };
+        }
+        return plant;
+      })
+    );
+
+    setStatsState((prev) => {
+      const today = dateKey();
+      let currentStreak = prev.currentStreak;
+      if (prev.lastWaterDate !== today) {
+        currentStreak = prev.lastWaterDate === dateKey(-1) ? prev.currentStreak + 1 : 1;
+      }
+      return {
+        ...prev,
+        currentStreak,
+        longestStreak: Math.max(prev.longestStreak, currentStreak),
+        totalWaterings: prev.totalWaterings + 1,
+        lastWaterDate: today,
+      };
+    });
+  };
+
+  const createPlantRecord = (newPlant: NewPlantInput, roomId: string | undefined, stamp: number): GardenPlant => ({
+    ...newPlant,
+    id: `plant-${stamp}-${Math.floor(Math.random() * 1000)}`,
+    lastWatered: 'Hoy recién agregada',
+    isWateredToday: true,
+    healthScore: 92,
+    lastDiagnosis: 'Saludable',
+    roomId: roomId ?? newPlant.roomId,
+    careTasks: buildCareTasks(newPlant.wateringFrequencyDays, stamp),
+  });
+
+  const addPlant = (newPlant: NewPlantInput, roomId?: string): string => {
+    const record = createPlantRecord(newPlant, roomId, Date.now());
+    setPlants((prev) => [record, ...prev]);
+    return record.id;
+  };
+
+  const addPlants = (newPlants: NewPlantInput[], roomId?: string): number => {
+    const base = Date.now();
+    const records = newPlants.map((p, i) => createPlantRecord(p, roomId, base + i));
+    setPlants((prev) => [...records, ...prev]);
+    return records.length;
+  };
+
+  const removePlant = (id: string) => {
+    setPlants((prev) => prev.filter((p) => p.id !== id));
+  };
+
+  const updatePlantHealth = (id: string, score: number, diagnosis: string) => {
+    const key = id.toLowerCase().replace(/[-_]/g, ' ');
+    setPlants((prev) =>
+      prev.map((p) => {
+        if (p.id === id || p.name.toLowerCase().includes(key)) {
+          return { ...p, healthScore: score, lastDiagnosis: diagnosis };
+        }
+        return p;
+      })
+    );
+  };
+
+  const toggleTaskCompleted = (plantId: string, taskId: string) => {
+    let becameCompleted = false;
+    setPlants((prev) =>
+      prev.map((p) => {
+        if (p.id !== plantId) return p;
+        return {
+          ...p,
+          careTasks: p.careTasks?.map((t) => {
+            if (t.id !== taskId) return t;
+            if (!t.completed) becameCompleted = true;
+            return { ...t, completed: !t.completed };
+          }),
+        };
+      })
+    );
+    if (becameCompleted) {
+      setStatsState((prev) => ({ ...prev, tasksCompleted: prev.tasksCompleted + 1 }));
+    }
+  };
+
+  const assignPlantToRoom = (plantId: string, roomId?: string) => {
+    setPlants((prev) => prev.map((p) => (p.id === plantId ? { ...p, roomId } : p)));
+  };
+
+  const createRoom = (name: string, icon: Room['icon'] = 'home'): Room => {
+    const room: Room = { id: `room-${Date.now()}`, name: name.trim() || 'Nueva zona', icon };
+    setRooms((prev) => [...prev, room]);
+    return room;
+  };
+
+  const removeRoom = (roomId: string) => {
+    setRooms((prev) => prev.filter((r) => r.id !== roomId));
+    setPlants((prev) => prev.map((p) => (p.roomId === roomId ? { ...p, roomId: undefined } : p)));
+  };
+
+  const registerIdentification = () => {
+    setStatsState((prev) => {
+      const today = dateKey();
+      const todayCount = prev.lastIdentificationDate === today ? prev.identificationsToday + 1 : 1;
+      return {
+        ...prev,
+        totalIdentifications: prev.totalIdentifications + 1,
+        identificationsToday: todayCount,
+        lastIdentificationDate: today,
+      };
+    });
+  };
+
+  const registerDiagnosis = () => {
+    setStatsState((prev) => ({ ...prev, totalDiagnoses: prev.totalDiagnoses + 1 }));
+  };
+
+  const resetDefaultPlants = () => {
+    setPlants(INITIAL_PLANTS);
+  };
+
+  const resetStats = () => {
+    setStatsState({ ...INITIAL_STATS, currentStreak: 1, longestStreak: 1, totalWaterings: 1 });
+  };
+
+  const clearGarden = () => {
+    setPlants([]);
+  };
+
+  const stats = useMemo<GardenStats>(
+    () => ({
+      currentStreak: statsState.currentStreak,
+      longestStreak: statsState.longestStreak,
+      totalWaterings: statsState.totalWaterings,
+      totalIdentifications: statsState.totalIdentifications,
+      totalDiagnoses: statsState.totalDiagnoses,
+      tasksCompleted: statsState.tasksCompleted,
+      identificationsToday: statsState.identificationsToday,
+      totalPlants: plants.length,
+    }),
+    [statsState, plants.length]
+  );
+
+  return (
+    <GardenContext.Provider
+      value={{
+        plants,
+        rooms,
+        stats,
+        waterPlantToday,
+        addPlant,
+        addPlants,
+        removePlant,
+        updatePlantHealth,
+        toggleTaskCompleted,
+        assignPlantToRoom,
+        createRoom,
+        removeRoom,
+        registerIdentification,
+        registerDiagnosis,
+        resetDefaultPlants,
+        resetStats,
+        clearGarden,
+      }}
+    >
+      {children}
+    </GardenContext.Provider>
+  );
+}
+
+export function useGarden(): GardenContextType {
+  const context = useContext(GardenContext);
+  if (!context) {
+    throw new Error('useGarden debe utilizarse dentro de GardenProvider');
+  }
+  return context;
+}
+
+export { DEFAULT_ROOMS };
