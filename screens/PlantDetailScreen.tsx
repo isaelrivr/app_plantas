@@ -383,7 +383,7 @@ export const PlantDetailScreen: React.FC = () => {
                 onPress={() => handleTabChange(tab)}
                 accessibilityRole="tab"
                 accessibilityState={{ selected: isActive }}
-                accessibilityLabel={`Pestaña ${labels[tab]}`}
+                accessibilityLabel={t('Pestaña {pestaña}', { pestaña: t(labels[tab]) })}
               >
                 <Text
                   style={[
@@ -394,7 +394,7 @@ export const PlantDetailScreen: React.FC = () => {
                     },
                   ]}
                 >
-                  {labels[tab]}
+                  {t(labels[tab])}
                 </Text>
               </TouchableOpacity>
             );
