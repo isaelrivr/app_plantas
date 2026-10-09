@@ -94,7 +94,7 @@ npx expo-doctor             # diagnósticos de configuración
 | Identificación de especies (escáner) | Base local de 12 plantas con lógica de coincidencia | Cloud Function IA (Google Cloud) + GBIF para metadatos |
 | Diagnóstico de salud / plagas | Catálogo local por síntomas | Cloud Function IA (Cloud Vision + LLM) |
 | Hábitat mundial | `services/habitatService.ts` (regiones por especie) | GBIF occurrence API vía Cloud Function |
-| Asistente botánico | Heurísticas en `assistantService.ts` (`USE_REMOTE_ASSISTANT=false`) | Cloud Function `assistantChat` (Firebase) |
+| Asistente botánico | Heurísticas locales como fallback | Cloud Function `assistantChat` (Firebase), activable con variable de entorno |
 | Clima | `weatherService.ts` (mock con variación diaria) | Open-Meteo API gratuita vía Cloud Function |
 | Suscripciones | `billingService.ts` (latencia simulada, trial 7 días, `plantae_premium_*`) | RevenueCat (productIds ya definidos) |
 | Persistencia | En memoria (Context) | Firestore + AsyncStorage (`services/firebase.ts` listo) |

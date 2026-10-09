@@ -12,6 +12,6 @@
 ## Pendientes conocidos
 
 - RevenueCat todavía no está conectado; el servicio actual es un adaptador local.
-- El asistente remoto requiere una Cloud Function `assistantChat`, todavía no exportada en `functions/src/index.ts`.
+- El asistente remoto ya tiene la Cloud Function `assistantChat`; falta desplegarla y configurar `EXPO_PUBLIC_ASSISTANT_ENDPOINT` con su URL.
 - Firebase Auth y sincronización no están implementados; el borrado actual elimina datos locales del dispositivo.
 - Expo Doctor necesita acceso al registro npm para validar dependencias.
