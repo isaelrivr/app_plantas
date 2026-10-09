@@ -101,10 +101,10 @@ npx expo-doctor             # diagnósticos de configuración
 
 ---
 
-## Limitaciones conocidas
+## Estado real y limitaciones conocidas
 
-- **Persistencia en memoria**: al reiniciar la app se pierde el jardín, estadísticas y ajustes. `services/firebase.ts` ya está esbozado para conectar Firestore (el `ResetDatos` de Ajustes borra estado en memoria).
-- **Modo de prueba Pro**: se activa desde el Paywall (botón *"Activar periodo de prueba Gratis"*). No hay verificación de compra real con RevenueCat.
+- **Persistencia local**: jardín, estadísticas, ajustes, diario y premium local se guardan con AsyncStorage; las fotos locales se copian a `expo-file-system`. Firebase Auth y sincronización entre dispositivos aún no están conectados.
+- **Modo Pro**: el adaptador de billing sigue siendo local y no verifica compras con RevenueCat. El botón de activación directa solo funciona en desarrollo.
 - **Expone**: para usar IA real se necesita desplegar las Cloud Functions y encender `USE_REMOTE_ASSISTANT=true`.
 - **Expo Go**: funcionalidad completa de cámara/notificaciones disponible; para un build con RevenueCat se requiere dev build (`npx expo run:android`).
 - No hay `ios/`/`android/`: la app usa Continuous Native Generation (configurable vía `app.json`).
@@ -115,3 +115,5 @@ npx expo-doctor             # diagnósticos de configuración
 - TypeScript estricto: **0 errores** (`npx tsc --noEmit`)
 - ESLint (`npx expo lint`): **0 problemas** (incluye reglas `react-hooks/refs` y del React Compiler)
 - Bundle de producción Android: **exporta correctamente** (`npx expo export --platform android`)
+- Bundle iOS: **exporta correctamente** (`npx expo export --platform ios`)
+- Functions typecheck: **0 errores** (`npm run typecheck` dentro de `functions/`)

@@ -11,6 +11,7 @@
 
 import { t } from '../i18n';
 import { loadJSON, saveJSON, STORAGE_KEYS } from './storage';
+import { deleteImage } from './mediaService';
 
 export interface GrowthEntry {
   id: string;
@@ -152,6 +153,7 @@ export function addGrowthEntry(
 
 export function deleteGrowthEntry(plantId: string, entryId: string): void {
   const current = store.get(plantId) ?? [];
+  const removed = current.find((entry) => entry.id === entryId);
   const next = current.filter((entry) => entry.id !== entryId);
   if (next.length === 0) {
     store.delete(plantId);
@@ -159,6 +161,15 @@ export function deleteGrowthEntry(plantId: string, entryId: string): void {
     store.set(plantId, next);
   }
   persist();
+  if (removed) void deleteImage(removed.photoUri);
+}
+
+/** Borra todas las entradas y fotos de una planta al eliminarla del jardín. */
+export function deleteGrowthEntriesForPlant(plantId: string): void {
+  const entries = store.get(plantId) ?? [];
+  store.delete(plantId);
+  persist();
+  for (const entry of entries) void deleteImage(entry.photoUri);
 }
 
 /** Borra el diario en memoria y en disco (usado por "Eliminar datos"). */

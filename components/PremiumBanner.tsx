@@ -23,7 +23,7 @@ export const PremiumBanner: React.FC<PremiumBannerProps> = ({
   const handleUpgrade = () => {
     if (onUpgradePress) {
       onUpgradePress();
-    } else {
+    } else if (__DEV__) {
       togglePremium();
     }
   };

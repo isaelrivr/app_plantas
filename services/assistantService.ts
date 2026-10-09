@@ -33,10 +33,10 @@ export interface AssistantMessage {
 }
 
 export const ASSISTANT_CHAT_ENDPOINT =
-  'https://us-central1-plantae-app.cloudfunctions.net/assistantChat';
+  (process.env.EXPO_PUBLIC_ASSISTANT_ENDPOINT ?? '').trim().replace(/\/+$/, '');
 
 /** Cambia a true cuando la Cloud Function esté desplegada. */
-export const USE_REMOTE_ASSISTANT = false;
+export const USE_REMOTE_ASSISTANT = process.env.EXPO_PUBLIC_USE_REMOTE_ASSISTANT === 'true';
 
 export const SUGGESTED_QUESTIONS: string[] = [
   '¿Cada cuánto riego mi monstera?',
@@ -204,7 +204,7 @@ export async function sendAssistantMessage(
   prompt: string,
   context: AssistantContext = {}
 ): Promise<AssistantMessage> {
-  if (USE_REMOTE_ASSISTANT) {
+  if (USE_REMOTE_ASSISTANT && ASSISTANT_CHAT_ENDPOINT) {
     try {
       const res = await fetch(ASSISTANT_CHAT_ENDPOINT, {
         method: 'POST',

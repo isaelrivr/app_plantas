@@ -12,6 +12,7 @@
 
 import * as Location from 'expo-location';
 import { t } from '../i18n';
+import { loadJSON, saveJSON, STORAGE_KEYS } from './storage';
 
 export interface WeatherData {
   city: string;
@@ -37,6 +38,23 @@ export interface WeatherRecommendationResult {
   weather: WeatherData;
   adjustment: ClimateWateringAdjustment;
   isMockFallback: boolean;
+}
+
+interface WeatherCacheEntry {
+  savedAt: number;
+  result: WeatherRecommendationResult;
+}
+
+const WEATHER_CACHE_TTL_MS = 30 * 60 * 1000;
+
+async function fetchWithTimeout(url: string, timeoutMs = 12_000): Promise<Response> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { signal: controller.signal });
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 // Fallback por defecto si no hay conexión o no hay permisos de GPS
@@ -108,6 +126,8 @@ function computeClimateAdjustment(weather: WeatherData): ClimateWateringAdjustme
  * Obtiene el clima actual del usuario o fallback y calcula recomendaciones para el jardín
  */
 export async function getLocalWeatherAndRecommendations(): Promise<WeatherRecommendationResult> {
+  const cached = await loadJSON<WeatherCacheEntry | null>(STORAGE_KEYS.weatherCache, null);
+  if (cached && Date.now() - cached.savedAt < WEATHER_CACHE_TTL_MS) return cached.result;
   try {
     // 1. Solicitar permisos de ubicación en Expo Go
     const { status } = await Location.requestForegroundPermissionsAsync();
@@ -134,7 +154,7 @@ export async function getLocalWeatherAndRecommendations(): Promise<WeatherRecomm
     // 2. Consultar API abierta gratuita de Open-Meteo
     const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,precipitation,weather_code,wind_speed_10m&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto`;
 
-    const res = await fetch(url);
+    const res = await fetchWithTimeout(url);
     if (!res.ok) throw new Error('Respuesta no válida de Open-Meteo');
 
     const data = await res.json();
@@ -179,11 +199,13 @@ export async function getLocalWeatherAndRecommendations(): Promise<WeatherRecomm
 
     const adjustment = computeClimateAdjustment(weather);
 
-    return {
+    const result = {
       weather,
       adjustment,
       isMockFallback: false,
     };
+    await saveJSON<WeatherCacheEntry>(STORAGE_KEYS.weatherCache, { savedAt: Date.now(), result });
+    return result;
   } catch {
     // Retorno seguro en caso de falta de red exterior o permisos
     const adjustment = computeClimateAdjustment(DEFAULT_FALLBACK_WEATHER);

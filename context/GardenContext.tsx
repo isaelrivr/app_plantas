@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useMemo, useState, ReactNo
 import { Ionicons } from '@expo/vector-icons';
 import { loadJSON, saveJSON, STORAGE_KEYS } from '../services/storage';
 import { t } from '../i18n';
+import { deleteGrowthEntriesForPlant } from '../services/growthDiaryService';
 
 export type CareTaskType = 'riego' | 'fertilizante' | 'poda' | 'trasplante';
 
@@ -216,7 +217,11 @@ export function GardenProvider({ children }: { children: ReactNode }) {
       if (stored) {
         setPlants(Array.isArray(stored.plants) ? stored.plants : []);
         setRooms(stored.rooms && stored.rooms.length > 0 ? stored.rooms : DEFAULT_ROOMS);
-        setStatsState({ ...INITIAL_STATS, ...(stored.stats ?? {}) });
+        const persistedStats = { ...INITIAL_STATS, ...(stored.stats ?? {}) };
+        if (persistedStats.lastIdentificationDate !== dateKey()) {
+          persistedStats.identificationsToday = 0;
+        }
+        setStatsState(persistedStats);
       } else if (__DEV__) {
         // Solo en desarrollo sembramos el jardín con datos de ejemplo.
         setPlants(INITIAL_PLANTS);
@@ -288,6 +293,7 @@ export function GardenProvider({ children }: { children: ReactNode }) {
 
   const removePlant = (id: string) => {
     setPlants((prev) => prev.filter((p) => p.id !== id));
+    deleteGrowthEntriesForPlant(id);
   };
 
   const updatePlantHealth = (id: string, score: number, diagnosis: string) => {

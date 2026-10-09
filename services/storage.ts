@@ -14,7 +14,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 /** Versión actual del formato persistido. Súbela al cambiar la forma de los datos. */
-export const STORAGE_SCHEMA_VERSION = 1;
+export const STORAGE_SCHEMA_VERSION = 2;
 
 const KEY_PREFIX = 'plantae:';
 
@@ -28,6 +28,7 @@ export const STORAGE_KEYS = {
   deviceId: `${KEY_PREFIX}device-id`,
   /** Caché local de fichas de cuidados generadas por el backend (Fase 2). */
   careCache: `${KEY_PREFIX}care-cache`,
+  weatherCache: `${KEY_PREFIX}weather-cache`,
 } as const;
 
 export type StorageKey = (typeof STORAGE_KEYS)[keyof typeof STORAGE_KEYS];
@@ -36,11 +37,13 @@ export type StorageKey = (typeof STORAGE_KEYS)[keyof typeof STORAGE_KEYS];
  * Lee y deserializa un valor. Devuelve `fallback` si la clave no existe o el
  * JSON está corrupto (nunca lanza).
  */
-export async function loadJSON<T>(key: StorageKey, fallback: T): Promise<T> {
+export async function loadJSON<T>(key: StorageKey, fallback: T, validate?: (value: unknown) => value is T): Promise<T> {
   try {
     const raw = await AsyncStorage.getItem(key);
     if (raw == null) return fallback;
-    return JSON.parse(raw) as T;
+    const parsed: unknown = JSON.parse(raw);
+    if (validate && !validate(parsed)) return fallback;
+    return parsed as T;
   } catch (error) {
     console.warn(`[storage] No se pudo leer "${key}". Se usará el valor por defecto.`, error);
     return fallback;
@@ -96,7 +99,7 @@ export async function runStorageMigrations(): Promise<void> {
     }
 
     // v0 -> v1: primer esquema persistido. Sin transformaciones.
-    // if (currentVersion < 1) { ...migrar... }
+    // v1 -> v2: se añade la caché de clima; no requiere migrar datos previos.
 
     await AsyncStorage.setItem(STORAGE_KEYS.schemaVersion, String(STORAGE_SCHEMA_VERSION));
   } catch (error) {
