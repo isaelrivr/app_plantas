@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '../theme';
+import { useTranslation } from '../i18n';
 import { usePremium } from '../context/PremiumContext';
 import { Button } from './Button';
 import { Badge } from './Badge';
@@ -16,6 +17,7 @@ export const PremiumBanner: React.FC<PremiumBannerProps> = ({
   onUpgradePress,
 }) => {
   const { colors, layout, spacing, typography } = useAppTheme();
+  const { t } = useTranslation();
   const { isPremium, togglePremium, price } = usePremium();
 
   const handleUpgrade = () => {
@@ -41,7 +43,7 @@ export const PremiumBanner: React.FC<PremiumBannerProps> = ({
       >
         <View style={styles.headerRow}>
           <Badge
-            label="Plantae Pro Activo"
+            label={t('Plantae Pro Activo')}
             variant="premium"
             icon={<Ionicons name="sparkles" size={14} color={colors.premiumGold} />}
           />
@@ -58,7 +60,7 @@ export const PremiumBanner: React.FC<PremiumBannerProps> = ({
             },
           ]}
         >
-          Consejo personalizado de ubicación y clima
+          {t('Consejo personalizado de ubicación y clima')}
         </Text>
 
         <Text
@@ -71,7 +73,7 @@ export const PremiumBanner: React.FC<PremiumBannerProps> = ({
           ]}
         >
           {customTip ||
-            'En tu zona geográfica actual (clima templado), mantén esta planta lejos de radiadores en invierno y aumenta el riego si la temperatura supera los 26°C.'}
+            t('En tu zona geográfica actual (clima templado), mantén esta planta lejos de radiadores en invierno y aumenta el riego si la temperatura supera los 26°C.')}
         </Text>
       </View>
     );
@@ -110,7 +112,7 @@ export const PremiumBanner: React.FC<PremiumBannerProps> = ({
               },
             ]}
           >
-            Consejos de Clima y Ubicación
+            {t('Consejos de Clima y Ubicación')}
           </Text>
           <Text
             style={[
@@ -121,7 +123,7 @@ export const PremiumBanner: React.FC<PremiumBannerProps> = ({
               },
             ]}
           >
-            Disponible exclusivamente para miembros Pro
+            {t('Disponible exclusivamente para miembros Pro')}
           </Text>
         </View>
       </View>
@@ -136,17 +138,17 @@ export const PremiumBanner: React.FC<PremiumBannerProps> = ({
           },
         ]}
       >
-        🔒 «Temperatura óptima calculada en tiempo real según tu código postal, humedad relativa y previsión climática...»
+        {t('🔒 «Temperatura óptima calculada en tiempo real según tu código postal, humedad relativa y previsión climática...»')}
       </Text>
 
       <Button
-        title={`Hazte Premium ${price}`}
+        title={t('Hazte Premium {price}', { price })}
         onPress={handleUpgrade}
         variant="premium"
         size="md"
         icon={<Ionicons name="sparkles" size={18} color="#1C1C1E" />}
-        accessibilityLabel={`Hazte Premium por ${price}`}
-        accessibilityHint="Desbloquea recomendaciones inteligentes de clima y ubicación para tus plantas"
+        accessibilityLabel={t('Hazte Premium por {price}', { price })}
+        accessibilityHint={t('Desbloquea recomendaciones inteligentes de clima y ubicación para tus plantas')}
         style={{ marginTop: spacing.xs }}
       />
     </View>

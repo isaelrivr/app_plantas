@@ -30,6 +30,7 @@ import {
   WeatherRecommendationResult,
 } from '../services/weatherService';
 import { scheduleWateringReminder } from '../services/notificationService';
+import { useTranslation } from '../i18n';
 
 /** Resuelve el id de especie del catálogo (o 'monstera' como último recurso). */
 const speciesIdFor = (name: string, scientificName?: string): string =>
@@ -49,6 +50,7 @@ export const GardenScreen: React.FC = () => {
   } = useGarden();
   const { isPremium, price } = usePremium();
   const navigation = useNavigation<any>();
+  const { t } = useTranslation();
 
   // Estado del organizador de zonas
   const [roomModalOpen, setRoomModalOpen] = useState(false);
@@ -139,11 +141,17 @@ export const GardenScreen: React.FC = () => {
     const id = await scheduleWateringReminder(plant.name, plant.wateringFrequencyDays);
     if (id) {
       Alert.alert(
-        '🔔 Notificación Programada',
-        `Recibirás un recordatorio para regar tu ${plant.name} cada ${plant.wateringFrequencyDays} días.`
+        t('🔔 Notificación Programada'),
+        t('Recibirás un recordatorio para regar tu {planta} cada {dias} días.', {
+          planta: plant.name,
+          dias: plant.wateringFrequencyDays,
+        })
       );
     } else {
-      Alert.alert('Aviso', 'Activa los permisos de notificaciones para recibir alertas de riego.');
+      Alert.alert(
+        t('Aviso'),
+        t('Activa los permisos de notificaciones para recibir alertas de riego.')
+      );
     }
   };
 
@@ -204,7 +212,7 @@ export const GardenScreen: React.FC = () => {
             },
           ]}
           accessible={true}
-          accessibilityLabel="Recomendaciones de clima y ubicación, exclusivo para usuarios Premium"
+          accessibilityLabel={t('Recomendaciones de clima y ubicación, exclusivo para usuarios Premium')}
         >
           <View style={styles.weatherLockedHeader}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -215,19 +223,19 @@ export const GardenScreen: React.FC = () => {
                   { color: colors.textPrimary, marginLeft: 6, fontWeight: '700' },
                 ]}
               >
-                Recomendaciones por Clima y GPS
+                {t('Recomendaciones por Clima y GPS')}
               </Text>
             </View>
-            <Badge label="Exclusivo Pro" variant="premium" />
+            <Badge label={t('Exclusivo Pro')} variant="premium" />
           </View>
 
           <Text style={[typography.body, { color: colors.textSecondary, marginTop: 6, lineHeight: 21 }]}>
-            Conecta tu ubicación con satélites meteorológicos en tiempo real (Open-Meteo) para ajustar automáticamente el riego según lluvia, frío o calor extremo.
+            {t('Conecta tu ubicación con satélites meteorológicos en tiempo real (Open-Meteo) para ajustar automáticamente el riego según lluvia, frío o calor extremo.')}
           </Text>
 
           <View style={{ marginTop: spacing.md }}>
             <Button
-              title={`Desbloquear con Plantae Pro (${price})`}
+              title={t('Desbloquear con Plantae Pro ({precio})', { precio: price })}
               onPress={() => navigation.navigate('Perfil')}
               variant="premium"
               size="sm"
@@ -241,11 +249,11 @@ export const GardenScreen: React.FC = () => {
     // ESTADO DE CARGA (esqueletos)
     if (weatherLoading || !weatherData) {
       return (
-        <Card style={{ marginBottom: spacing.md }} accessible={true} accessibilityLabel="Cargando pronóstico del clima">
+        <Card style={{ marginBottom: spacing.md }} accessible={true} accessibilityLabel={t('Cargando pronóstico del clima')}>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
             <Ionicons name="cloudy-night" size={16} color={colors.primary} />
             <Text style={[typography.subheadline, { color: colors.textSecondary, marginLeft: 8 }]}>
-              Sincronizando pronóstico Open-Meteo para tu ciudad...
+              {t('Sincronizando pronóstico Open-Meteo para tu ciudad...')}
             </Text>
           </View>
           <SkeletonBox width="100%" height={16} borderRadius={6} />
@@ -262,7 +270,7 @@ export const GardenScreen: React.FC = () => {
         {/* ESTADO DE ERROR: datos de respaldo porque la API falló */}
         {weatherError && (
           <ErrorBanner
-            message="No pudimos conectar con tu ubicación. Mostramos datos de respaldo: activa el GPS o revisa tu conexión para obtener recomendaciones reales."
+            message={t('No pudimos conectar con tu ubicación. Mostramos datos de respaldo: activa el GPS o revisa tu conexión para obtener recomendaciones reales.')}
             onRetry={handleRetryWeather}
             style={{ marginBottom: spacing.sm }}
           />
@@ -279,7 +287,11 @@ export const GardenScreen: React.FC = () => {
             },
           ]}
           accessible={true}
-          accessibilityLabel={`Clima en ${weather.city}: ${weather.temperatureC} grados, ${adjustment.alertTitle}`}
+          accessibilityLabel={t('Clima en {ciudad}: {temperatura} grados, {alerta}', {
+            ciudad: weather.city,
+            temperatura: weather.temperatureC,
+            alerta: adjustment.alertTitle,
+          })}
         >
           <View style={styles.weatherTopRow}>
             <View style={{ flex: 1 }}>
@@ -289,7 +301,7 @@ export const GardenScreen: React.FC = () => {
                   {weather.city}
                 </Text>
                 {weatherData.isMockFallback && (
-                  <Badge label="Datos de respaldo" variant="neutral" />
+                  <Badge label={t('Datos de respaldo')} variant="neutral" />
                 )}
               </View>
               <Text style={[typography.title2, { color: colors.textPrimary, fontWeight: '700', marginTop: 2 }]}>
@@ -321,7 +333,7 @@ export const GardenScreen: React.FC = () => {
             <View style={[styles.advicePill, { marginTop: 6 }]}>
               <Ionicons name="water" size={13} color={colors.primary} />
               <Text style={[typography.caption2, { color: colors.primary, fontWeight: '600', marginLeft: 4 }]}>
-                Consejo de hoy: {adjustment.wateringAdvice}
+                {t('Consejo de hoy: {consejo}', { consejo: adjustment.wateringAdvice })}
               </Text>
             </View>
           </View>
@@ -345,7 +357,7 @@ export const GardenScreen: React.FC = () => {
               },
             ]}
             accessibilityRole="button"
-            accessibilityLabel={`Ver detalles de ${item.name}`}
+            accessibilityLabel={t('Ver detalles de {nombre}', { nombre: item.name })}
           >
             <Text style={styles.avatarEmoji}>{item.avatarEmoji}</Text>
           </TouchableOpacity>
@@ -354,7 +366,11 @@ export const GardenScreen: React.FC = () => {
           <View style={{ flex: 1, marginLeft: spacing.md }}>
             <View style={styles.badgeRow}>
               <Badge
-                label={item.isWateredToday ? 'Hidratada hoy' : `Cada ${item.wateringFrequencyDays} días`}
+                label={
+                  item.isWateredToday
+                    ? t('Hidratada hoy')
+                    : t('Cada {dias} días', { dias: item.wateringFrequencyDays })
+                }
                 variant={item.isWateredToday ? 'success' : 'neutral'}
                 icon={
                   <Ionicons
@@ -385,14 +401,17 @@ export const GardenScreen: React.FC = () => {
             onPress={() => handleOpenDiagnosis(item)}
             style={styles.healthScoreContainer}
             accessibilityRole="button"
-            accessibilityLabel={`Salud de ${item.name}: ${item.healthScore} por ciento. Toca para diagnosticar.`}
+            accessibilityLabel={t('Salud de {nombre}: {puntuacion} por ciento. Toca para diagnosticar.', {
+              nombre: item.name,
+              puntuacion: item.healthScore,
+            })}
           >
             <ConfidenceRing
               score={item.healthScore}
               size={54}
               strokeWidth={5}
               colorVariant="health"
-              label="Salud"
+              label={t('Salud')}
             />
           </TouchableOpacity>
         </View>
@@ -401,7 +420,7 @@ export const GardenScreen: React.FC = () => {
         {item.careTasks && item.careTasks.length > 0 && (
           <View style={[styles.careTasksSection, { borderTopColor: colors.border }]}>
             <Text style={[typography.caption1, { color: colors.textTertiary, marginBottom: 4, fontWeight: '600' }]}>
-              Plan de cuidados:
+              {t('Plan de cuidados:')}
             </Text>
             {item.careTasks.slice(0, 2).map((task) => (
               <TouchableOpacity
@@ -415,8 +434,12 @@ export const GardenScreen: React.FC = () => {
                 style={styles.taskRow}
                 accessibilityRole="checkbox"
                 accessibilityState={{ checked: task.completed }}
-                accessibilityLabel={`${task.title}, ${task.dueDate}, ${task.completed ? 'completada' : 'pendiente'}`}
-                accessibilityHint="Toca para marcar o desmarcar esta tarea"
+                accessibilityLabel={t('{tarea}, {fecha}, {estado}', {
+                  tarea: t(task.title),
+                  fecha: task.dueDate,
+                  estado: task.completed ? t('completada') : t('pendiente'),
+                })}
+                accessibilityHint={t('Toca para marcar o desmarcar esta tarea')}
                 hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
               >
                 <Ionicons
@@ -435,7 +458,7 @@ export const GardenScreen: React.FC = () => {
                     },
                   ]}
                 >
-                  {task.title} ({task.dueDate})
+                  {t(task.title)} ({task.dueDate})
                 </Text>
               </TouchableOpacity>
             ))}
@@ -454,7 +477,7 @@ export const GardenScreen: React.FC = () => {
             ]}
             onPress={() => handleWater(item)}
             accessibilityRole="button"
-            accessibilityLabel={item.isWateredToday ? 'Volver a regar' : 'Marcar como regada hoy'}
+            accessibilityLabel={item.isWateredToday ? t('Volver a regar') : t('Marcar como regada hoy')}
           >
             <Ionicons
               name={item.isWateredToday ? 'checkmark' : 'water'}
@@ -471,7 +494,7 @@ export const GardenScreen: React.FC = () => {
                 },
               ]}
             >
-              {item.isWateredToday ? 'Regada' : 'Regar hoy'}
+              {item.isWateredToday ? t('Regada') : t('Regar hoy')}
             </Text>
           </TouchableOpacity>
 
@@ -479,7 +502,7 @@ export const GardenScreen: React.FC = () => {
             style={[styles.iconActionBtn, { backgroundColor: colors.surfaceSecondary }]}
             onPress={() => handleOpenDiagnosis(item)}
             accessibilityRole="button"
-            accessibilityLabel={`Diagnosticar salud de ${item.name}`}
+            accessibilityLabel={t('Diagnosticar salud de {nombre}', { nombre: item.name })}
           >
             <Ionicons name="medkit-outline" size={18} color={colors.primary} />
           </TouchableOpacity>
@@ -488,7 +511,7 @@ export const GardenScreen: React.FC = () => {
             style={[styles.iconActionBtn, { backgroundColor: colors.surfaceSecondary }]}
             onPress={() => handleSchedulePlantReminder(item)}
             accessibilityRole="button"
-            accessibilityLabel={`Programar recordatorios para ${item.name}`}
+            accessibilityLabel={t('Programar recordatorios para {nombre}', { nombre: item.name })}
           >
             <Ionicons name="notifications-outline" size={18} color={colors.textSecondary} />
           </TouchableOpacity>
@@ -497,7 +520,7 @@ export const GardenScreen: React.FC = () => {
             style={[styles.iconActionBtn, { backgroundColor: colors.surfaceSecondary }]}
             onPress={() => handleOpenDetail(item)}
             accessibilityRole="button"
-            accessibilityLabel={`Ver ficha completa de ${item.name}`}
+            accessibilityLabel={t('Ver ficha completa de {nombre}', { nombre: item.name })}
           >
             <Ionicons name="information-circle-outline" size={20} color={colors.textSecondary} />
           </TouchableOpacity>
@@ -532,24 +555,24 @@ export const GardenScreen: React.FC = () => {
               />
             </View>
             <Text style={[typography.title3, { color: colors.textPrimary, marginLeft: spacing.xs }]}>
-              {section.room ? section.room.name : 'Sin zona'}
+              {section.room ? t(section.room.name) : t('Sin zona')}
             </Text>
             <Text style={[typography.caption1, { color: colors.textTertiary, marginLeft: 6 }]}>
-              · {section.data.length} {section.data.length === 1 ? 'planta' : 'plantas'}
+              · {section.data.length} {section.data.length === 1 ? t('planta') : t('plantas')}
             </Text>
           </View>
         )}
         ListHeaderComponent={
           <View>
             <ScreenHeader
-              title="Mi Jardín"
-              subtitle={`${plants.length} plantas bajo tu cuidado`}
+              title={t('Mi Jardín')}
+              subtitle={t('{n} plantas bajo tu cuidado', { n: plants.length })}
               rightAction={
                 <TouchableOpacity
                   onPress={() => navigation.navigate('Escáner')}
                   style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: colors.primaryLight, alignItems: 'center', justifyContent: 'center' }}
                   accessibilityRole="button"
-                  accessibilityLabel="Identificar nueva planta con la cámara"
+                  accessibilityLabel={t('Identificar nueva planta con la cámara')}
                 >
                   <Ionicons name="camera" size={22} color={colors.primary} />
                 </TouchableOpacity>
@@ -567,13 +590,13 @@ export const GardenScreen: React.FC = () => {
                   onPress={() => navigation.navigate(link.route)}
                   style={styles.quickLink}
                   accessibilityRole="button"
-                  accessibilityLabel={`Abrir ${link.label}`}
+                  accessibilityLabel={t('Abrir {seccion}', { seccion: t(link.label) })}
                 >
                   <View style={[styles.quickIcon, { backgroundColor: colors.surfaceSecondary }]}>
                     <Ionicons name={link.icon} size={20} color={colors.primary} />
                   </View>
                   <Text style={[typography.caption1, { color: colors.textSecondary, marginTop: 4, fontWeight: '600' }]}>
-                    {link.label}
+                    {t(link.label)}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -582,18 +605,18 @@ export const GardenScreen: React.FC = () => {
             {plants.length > 0 && (
               <View style={styles.listSectionHeader}>
                 <Text style={[typography.headline, { color: colors.textPrimary }]}>
-                  Mis Especies Registradas
+                  {t('Mis Especies Registradas')}
                 </Text>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                   <TouchableOpacity
                     onPress={openRoomModal}
                     hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
                     accessibilityRole="button"
-                    accessibilityLabel="Organizar plantas por zona"
+                    accessibilityLabel={t('Organizar plantas por zona')}
                     style={{ minHeight: 44, justifyContent: 'center' }}
                   >
                     <Text style={[typography.footnote, { color: colors.primary, fontWeight: '600' }]}>
-                      Organizar zonas
+                      {t('Organizar zonas')}
                     </Text>
                   </TouchableOpacity>
                   {__DEV__ ? (
@@ -601,11 +624,11 @@ export const GardenScreen: React.FC = () => {
                       onPress={resetDefaultPlants}
                       hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
                       accessibilityRole="button"
-                      accessibilityLabel="Restablecer las plantas de ejemplo del jardín (solo desarrollo)"
+                      accessibilityLabel={t('Restablecer las plantas de ejemplo del jardín (solo desarrollo)')}
                       style={{ minHeight: 44, justifyContent: 'center' }}
                     >
                       <Text style={[typography.footnote, { color: colors.textTertiary, fontWeight: '600' }]}>
-                        Restablecer
+                        {t('Restablecer')}
                       </Text>
                     </TouchableOpacity>
                   ) : null}
@@ -618,16 +641,16 @@ export const GardenScreen: React.FC = () => {
           gardenLoading ? null : (
             <EmptyState
               iconName="leaf-outline"
-              title="Tu jardín está esperando"
-              description="Escanea o fotografía tu primera planta para comenzar a monitorear su salud, calendario de riego y origen biogeográfico."
-              actionTitle="Escanear primera planta"
+              title={t('Tu jardín está esperando')}
+              description={t('Escanea o fotografía tu primera planta para comenzar a monitorear su salud, calendario de riego y origen biogeográfico.')}
+              actionTitle={t('Escanear primera planta')}
               onActionPress={() => navigation.navigate('Escáner')}
             />
           )
         }
         ListFooterComponent={
           gardenLoading ? (
-            <View accessible={true} accessibilityLabel="Cargando tus plantas">
+            <View accessible={true} accessibilityLabel={t('Cargando tus plantas')}>
               <PlantCardSkeleton />
               <PlantCardSkeleton />
               <PlantCardSkeleton />
@@ -646,11 +669,11 @@ export const GardenScreen: React.FC = () => {
         <View style={styles.modalOverlay}>
           <Card style={{ width: '100%' }} elevated>
             <View style={styles.modalHeader}>
-              <Text style={[typography.title3, { color: colors.textPrimary }]}>Organizar por zonas</Text>
+              <Text style={[typography.title3, { color: colors.textPrimary }]}>{t('Organizar por zonas')}</Text>
               <TouchableOpacity
                 onPress={() => setRoomModalOpen(false)}
                 accessibilityRole="button"
-                accessibilityLabel="Cerrar"
+                accessibilityLabel={t('Cerrar')}
                 style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}
               >
                 <Ionicons name="close" size={24} color={colors.textSecondary} />
@@ -658,7 +681,7 @@ export const GardenScreen: React.FC = () => {
             </View>
 
             <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-              1. Elige una planta · 2. Asigna su zona
+              {t('1. Elige una planta · 2. Asigna su zona')}
             </Text>
 
             <View style={styles.chipWrap}>
@@ -675,7 +698,7 @@ export const GardenScreen: React.FC = () => {
                     }]}
                     accessibilityRole="radio"
                     accessibilityState={{ selected }}
-                    accessibilityLabel={`Planta ${plant.name}`}
+                    accessibilityLabel={t('Planta {nombre}', { nombre: plant.name })}
                   >
                     {plant.roomId ? <Ionicons name="location" size={12} color={selected ? '#FFFFFF' : colors.textSecondary} /> : null}
                     <Text style={[typography.caption1, { color: selected ? '#FFFFFF' : colors.textPrimary, fontWeight: '600', marginLeft: 4 }]} numberOfLines={1}>
@@ -703,18 +726,18 @@ export const GardenScreen: React.FC = () => {
                         opacity: selectedPlantId ? 1 : 0.5,
                       }]}
                       accessibilityRole="button"
-                      accessibilityLabel={`Asignar a ${room.name}, ${count} plantas`}
+                      accessibilityLabel={t('Asignar a {zona}, {n} plantas', { zona: t(room.name), n: count })}
                     >
                       <Ionicons name={room.icon} size={13} color={colors.primary} />
                       <Text style={[typography.caption1, { color: colors.textPrimary, fontWeight: '600', marginLeft: 4 }]}>
-                        {room.name} ({count})
+                        {t(room.name)} ({count})
                       </Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       onPress={() => removeRoom(room.id)}
                       style={{ width: 36, height: 36, alignItems: 'center', justifyContent: 'center' }}
                       accessibilityRole="button"
-                      accessibilityLabel={`Eliminar zona ${room.name}`}
+                      accessibilityLabel={t('Eliminar zona {zona}', { zona: t(room.name) })}
                     >
                       <Ionicons name="trash-outline" size={16} color={colors.textTertiary} />
                     </TouchableOpacity>
@@ -727,17 +750,17 @@ export const GardenScreen: React.FC = () => {
               <TextInput
                 value={newRoomName}
                 onChangeText={setNewRoomName}
-                placeholder="Nueva zona (ej. Baño)..."
+                placeholder={t('Nueva zona (ej. Baño)...')}
                 placeholderTextColor={colors.textTertiary}
                 style={[styles.newRoomInput, { color: colors.textPrimary, backgroundColor: colors.surfaceSecondary, borderRadius: layout.borderRadius.md }]}
-                accessibilityLabel="Nombre de la nueva zona"
+                accessibilityLabel={t('Nombre de la nueva zona')}
               />
               <TouchableOpacity
                 onPress={handleCreateRoom}
                 disabled={!newRoomName.trim()}
                 style={[styles.newRoomButton, { backgroundColor: newRoomName.trim() ? colors.primary : colors.border, borderRadius: layout.borderRadius.md }]}
                 accessibilityRole="button"
-                accessibilityLabel="Crear zona"
+                accessibilityLabel={t('Crear zona')}
               >
                 <Ionicons name="add" size={20} color="#FFFFFF" />
               </TouchableOpacity>

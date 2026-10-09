@@ -11,6 +11,7 @@
  */
 
 import * as Location from 'expo-location';
+import { t } from '../i18n';
 
 export interface WeatherData {
   city: string;
@@ -56,10 +57,11 @@ function computeClimateAdjustment(weather: WeatherData): ClimateWateringAdjustme
   if (weather.temperatureC <= 12 || weather.tempMinC <= 8) {
     return {
       alertType: 'frost',
-      alertTitle: '❄️ Alerta de Frío y Heladas',
-      alertMessage:
-        'Las bajas temperaturas reducen la evaporación del agua. Resguarda tus plantas tropicales en interiores y espacia el riego para evitar pudrición radicular por frío.',
-      wateringAdvice: 'Pospón el riego 2 a 3 días y usa agua a temperatura templada.',
+      alertTitle: t('❄️ Alerta de Frío y Heladas'),
+      alertMessage: t(
+        'Las bajas temperaturas reducen la evaporación del agua. Resguarda tus plantas tropicales en interiores y espacia el riego para evitar pudrición radicular por frío.'
+      ),
+      wateringAdvice: t('Pospón el riego 2 a 3 días y usa agua a temperatura templada.'),
       wateringFactor: 'delay',
     };
   }
@@ -68,10 +70,11 @@ function computeClimateAdjustment(weather: WeatherData): ClimateWateringAdjustme
   if (weather.rainProbability >= 50 || weather.humidityPercent >= 75) {
     return {
       alertType: 'rain',
-      alertTitle: '🌧️ Alta Humedad y Lluvia Pronosticada',
-      alertMessage:
-        'La atmósfera saturada y las precipitaciones mantienen el cepellón húmedo. No apliques agua hoy a las plantas de exterior.',
-      wateringAdvice: 'Suspende el riego hoy; la humedad ambiental nutre el follaje.',
+      alertTitle: t('🌧️ Alta Humedad y Lluvia Pronosticada'),
+      alertMessage: t(
+        'La atmósfera saturada y las precipitaciones mantienen el cepellón húmedo. No apliques agua hoy a las plantas de exterior.'
+      ),
+      wateringAdvice: t('Suspende el riego hoy; la humedad ambiental nutre el follaje.'),
       wateringFactor: 'delay',
     };
   }
@@ -80,10 +83,11 @@ function computeClimateAdjustment(weather: WeatherData): ClimateWateringAdjustme
   if (weather.temperatureC >= 29 || weather.tempMaxC >= 32) {
     return {
       alertType: 'heat',
-      alertTitle: '🔥 Alerta de Ola de Calor',
-      alertMessage:
-        'Las altas temperaturas evaporan la humedad del sustrato al doble de velocidad. Revisa la maceta y pulveriza follaje en horas tempranas.',
-      wateringAdvice: 'Riega a primera hora de la mañana o al atardecer para evitar choque térmico.',
+      alertTitle: t('🔥 Alerta de Ola de Calor'),
+      alertMessage: t(
+        'Las altas temperaturas evaporan la humedad del sustrato al doble de velocidad. Revisa la maceta y pulveriza follaje en horas tempranas.'
+      ),
+      wateringAdvice: t('Riega a primera hora de la mañana o al atardecer para evitar choque térmico.'),
       wateringFactor: 'increase',
     };
   }
@@ -91,10 +95,11 @@ function computeClimateAdjustment(weather: WeatherData): ClimateWateringAdjustme
   // 4. Condiciones óptimas
   return {
     alertType: 'optimal',
-    alertTitle: '🌿 Clima Templado Favorable',
-    alertMessage:
-      'Temperatura y humedad en niveles de confort biológico. El sustrato se seca de acuerdo al calendario habitual.',
-    wateringAdvice: 'Mantén el calendario de riego estándar según la especie.',
+    alertTitle: t('🌿 Clima Templado Favorable'),
+    alertMessage: t(
+      'Temperatura y humedad en niveles de confort biológico. El sustrato se seca de acuerdo al calendario habitual.'
+    ),
+    wateringAdvice: t('Mantén el calendario de riego estándar según la especie.'),
     wateringFactor: 'normal',
   };
 }
@@ -168,7 +173,7 @@ export async function getLocalWeatherAndRecommendations(): Promise<WeatherRecomm
       tempMaxC: tempMax,
       tempMinC: tempMin,
       weatherCode: code,
-      weatherDescription: desc,
+      weatherDescription: t(desc),
       weatherIcon: icon,
     };
 
@@ -183,7 +188,10 @@ export async function getLocalWeatherAndRecommendations(): Promise<WeatherRecomm
     // Retorno seguro en caso de falta de red exterior o permisos
     const adjustment = computeClimateAdjustment(DEFAULT_FALLBACK_WEATHER);
     return {
-      weather: DEFAULT_FALLBACK_WEATHER,
+      weather: {
+        ...DEFAULT_FALLBACK_WEATHER,
+        weatherDescription: t(DEFAULT_FALLBACK_WEATHER.weatherDescription),
+      },
       adjustment,
       isMockFallback: true,
     };

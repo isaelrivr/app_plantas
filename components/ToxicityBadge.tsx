@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, StyleProp, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme, ThemeColors } from '../theme';
+import { useTranslation } from '../i18n';
 import { getToxicity, toxicityLevelMeta, ToxicityLevel } from '../services/toxicityService';
 
 interface ToxicityBadgeProps {
@@ -22,6 +23,7 @@ const levelVariant: Record<ToxicityLevel, { bg: keyof ThemeColors; fg: keyof The
  */
 export const ToxicityBadge: React.FC<ToxicityBadgeProps> = ({ speciesId, compact = false, style }) => {
   const { colors, layout, spacing, typography } = useAppTheme();
+  const { t } = useTranslation();
   const info = getToxicity(speciesId);
 
   const renderChip = (
@@ -54,8 +56,8 @@ export const ToxicityBadge: React.FC<ToxicityBadgeProps> = ({ speciesId, compact
   return (
     <View style={style} accessible={!compact} accessibilityLabel={info.summary}>
       <View style={styles.row}>
-        {renderChip('pets', 'Mascotas', info.pets, 'paw')}
-        {renderChip('children', 'Niños', info.children, 'happy-outline')}
+        {renderChip('pets', t('Mascotas'), info.pets, 'paw')}
+        {renderChip('children', t('Niños'), info.children, 'happy-outline')}
       </View>
       {!compact ? (
         <Text style={[typography.footnote, { color: colors.textSecondary, marginTop: spacing.xs }]}>
@@ -74,11 +76,12 @@ interface ToxicityPanelProps {
 /** Detalle ampliado de toxicidad, para la ficha de la especie. */
 export const ToxicityPanel: React.FC<ToxicityPanelProps> = ({ speciesId, style }) => {
   const { colors, layout, spacing, typography } = useAppTheme();
+  const { t } = useTranslation();
   const info = getToxicity(speciesId);
 
   const rows: { key: string; label: string; level: ToxicityLevel; note: string; icon: keyof typeof Ionicons.glyphMap }[] = [
-    { key: 'pets', label: 'Mascotas', level: info.pets, note: info.petsNotes, icon: 'paw' },
-    { key: 'children', label: 'Niños', level: info.children, note: info.childrenNotes, icon: 'happy-outline' },
+    { key: 'pets', label: t('Mascotas'), level: info.pets, note: info.petsNotes, icon: 'paw' },
+    { key: 'children', label: t('Niños'), level: info.children, note: info.childrenNotes, icon: 'happy-outline' },
   ];
 
   return (

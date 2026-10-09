@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
+import { useTranslation } from '../i18n';
 import { useAppTheme } from '../theme';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
@@ -32,6 +33,7 @@ import {
 
 export const GrowthDiaryScreen: React.FC = () => {
   const { colors, layout, spacing, typography } = useAppTheme();
+  const { t } = useTranslation();
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { plants } = useGarden();
@@ -39,7 +41,7 @@ export const GrowthDiaryScreen: React.FC = () => {
   const plantId: string = route.params?.plantId ?? 'monstera';
   const plantDef = getPlantById(plantId);
   const gardenPlant = plants.find((p) => p.id === plantId);
-  const plantName = plantDef?.name ?? gardenPlant?.name ?? 'Mi planta';
+  const plantName = plantDef?.name ?? gardenPlant?.name ?? t('Mi planta');
 
   const [loading, setLoading] = useState(true);
   const [entries, setEntries] = useState<GrowthEntry[]>([]);
@@ -83,7 +85,7 @@ export const GrowthDiaryScreen: React.FC = () => {
     const created = addGrowthEntry(plantId, {
       date: new Date().toISOString(),
       photoUri: persistedPhoto,
-      note: note.trim() || 'Nuevo registro de crecimiento.',
+      note: note.trim() || t('Nuevo registro de crecimiento.'),
     });
     setEntries((prev) => [created, ...prev]);
     try { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); } catch {}
@@ -125,14 +127,14 @@ export const GrowthDiaryScreen: React.FC = () => {
           onPress={() => navigation.goBack()}
           style={styles.backButton}
           accessibilityRole="button"
-          accessibilityLabel="Volver"
+          accessibilityLabel={t('Volver')}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <Ionicons name="chevron-back" size={26} color={colors.primary} />
-          <Text style={[typography.body, { color: colors.primary, fontWeight: '600' }]}>Atrás</Text>
+          <Text style={[typography.body, { color: colors.primary, fontWeight: '600' }]}>{t('Atrás')}</Text>
         </TouchableOpacity>
         <Text style={[typography.headline, { color: colors.textPrimary }]} numberOfLines={1}>
-          Diario de Crecimiento
+          {t('Diario de Crecimiento')}
         </Text>
         <View style={styles.actionHeaderBtn} />
       </View>
@@ -140,7 +142,7 @@ export const GrowthDiaryScreen: React.FC = () => {
       <ScrollView contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxxl }}>
         <Text style={[typography.title2, { color: colors.textPrimary }]}>{plantName}</Text>
         <Text style={[typography.subheadline, { color: colors.textSecondary, marginBottom: spacing.md }]}>
-          {entries.length} registros · sigue la evolución de tu planta
+          {t('{n} registros · sigue la evolución de tu planta', { n: entries.length })}
         </Text>
 
         {loading ? (
@@ -153,10 +155,10 @@ export const GrowthDiaryScreen: React.FC = () => {
           <Card style={{ alignItems: 'center' }}>
             <Ionicons name="camera-outline" size={40} color={colors.textTertiary} />
             <Text style={[typography.headline, { color: colors.textPrimary, marginTop: spacing.sm }]}>
-              Aún no hay registros
+              {t('Aún no hay registros')}
             </Text>
             <Text style={[typography.footnote, { color: colors.textSecondary, textAlign: 'center', marginTop: 4 }]}>
-              Añade tu primera foto para empezar a documentar el crecimiento.
+              {t('Añade tu primera foto para empezar a documentar el crecimiento.')}
             </Text>
           </Card>
         ) : (
@@ -170,18 +172,18 @@ export const GrowthDiaryScreen: React.FC = () => {
                 />
                 <View style={{ padding: spacing.md }}>
                   <Text style={[typography.footnote, { color: colors.textSecondary }]}>
-                    {comparison.daysBetween} días de diferencia
+                    {t('{dias} días de diferencia', { dias: comparison.daysBetween ?? 0 })}
                   </Text>
                   <View style={styles.deltaRow}>
-                    {renderDelta('altura', comparison.heightDeltaCm, ' cm')}
-                    {renderDelta('hojas', comparison.leafDelta, '')}
+                    {renderDelta(t('altura'), comparison.heightDeltaCm, ' cm')}
+                    {renderDelta(t('hojas'), comparison.leafDelta, '')}
                   </View>
                 </View>
               </Card>
             ) : null}
 
             <Text style={[typography.headline, { color: colors.textPrimary, marginTop: spacing.sm, marginBottom: spacing.sm }]}>
-              Línea de tiempo
+              {t('Línea de tiempo')}
             </Text>
             {entries.map((entry) => (
               <Card key={entry.id} style={{ marginBottom: spacing.sm }}>
@@ -190,7 +192,7 @@ export const GrowthDiaryScreen: React.FC = () => {
                     source={{ uri: entry.photoUri }}
                     style={[styles.thumb, { borderRadius: layout.borderRadius.md }]}
                     accessible
-                    accessibilityLabel={`Foto del ${formatEntryDate(entry.date)}`}
+                    accessibilityLabel={t('Foto del {fecha}', { fecha: formatEntryDate(entry.date) })}
                   />
                   <View style={{ flex: 1, marginLeft: spacing.md }}>
                     <Text style={[typography.footnote, { color: colors.textTertiary }]}>
@@ -207,7 +209,7 @@ export const GrowthDiaryScreen: React.FC = () => {
                       ) : null}
                       {entry.leafCount != null ? (
                         <Text style={[typography.caption1, { color: colors.textSecondary, marginLeft: 10 }]}>
-                          🍃 {entry.leafCount} hojas
+                          🍃 {t('{n} hojas', { n: entry.leafCount })}
                         </Text>
                       ) : null}
                     </View>
@@ -219,7 +221,7 @@ export const GrowthDiaryScreen: React.FC = () => {
         )}
 
         <Button
-          title="Añadir foto al diario"
+          title={t('Añadir foto al diario')}
           onPress={handleAddPhoto}
           variant="primary"
           icon={<Ionicons name="add" size={18} color="#FFFFFF" />}
@@ -230,14 +232,14 @@ export const GrowthDiaryScreen: React.FC = () => {
       <Modal visible={modalVisible} transparent animationType="slide" onRequestClose={() => setModalVisible(false)}>
         <View style={styles.modalOverlay}>
           <Card style={{ width: '100%' }} elevated>
-            <Text style={[typography.title3, { color: colors.textPrimary }]}>Nueva entrada</Text>
+            <Text style={[typography.title3, { color: colors.textPrimary }]}>{t('Nueva entrada')}</Text>
             {pendingPhoto ? (
               <Image source={{ uri: pendingPhoto }} style={[styles.previewImage, { borderRadius: layout.borderRadius.md }]} />
             ) : null}
             <TextInput
               value={note}
               onChangeText={setNote}
-              placeholder="¿Qué observas? (nueva hoja, trasplante...)"
+              placeholder={t('¿Qué observas? (nueva hoja, trasplante...)')}
               placeholderTextColor={colors.textTertiary}
               multiline
               style={[
@@ -249,17 +251,17 @@ export const GrowthDiaryScreen: React.FC = () => {
                   backgroundColor: colors.surfaceSecondary,
                 },
               ]}
-              accessibilityLabel="Nota de la entrada"
+              accessibilityLabel={t('Nota de la entrada')}
             />
             <View style={styles.modalActions}>
               <Button
-                title="Cancelar"
+                title={t('Cancelar')}
                 onPress={() => setModalVisible(false)}
                 variant="secondary"
                 style={{ flex: 1 }}
               />
               <View style={{ width: spacing.sm }} />
-              <Button title="Guardar" onPress={handleSaveEntry} variant="primary" style={{ flex: 1 }} />
+              <Button title={t('Guardar')} onPress={handleSaveEntry} variant="primary" style={{ flex: 1 }} />
             </View>
           </Card>
         </View>

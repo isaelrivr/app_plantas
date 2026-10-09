@@ -23,11 +23,13 @@ import {
   sendAssistantMessage,
   SUGGESTED_QUESTIONS,
 } from '../services/assistantService';
+import { useTranslation } from '../i18n';
 
 export const AssistantScreen: React.FC = () => {
   const { colors, layout, spacing, typography } = useAppTheme();
   const navigation = useNavigation<any>();
   const { plants } = useGarden();
+  const { t } = useTranslation();
 
   const scrollRef = useRef<ScrollView>(null);
   const [messages, setMessages] = useState<AssistantMessage[]>([getWelcomeMessage()]);
@@ -61,7 +63,7 @@ export const AssistantScreen: React.FC = () => {
     } catch {
       setMessages((prev) => [
         ...prev,
-        createMessage('assistant', 'Lo siento, hubo un problema al procesar tu pregunta. Inténtalo de nuevo.'),
+        createMessage('assistant', t('Lo siento, hubo un problema al procesar tu pregunta. Inténtalo de nuevo.')),
       ]);
     } finally {
       setTyping(false);
@@ -84,15 +86,15 @@ export const AssistantScreen: React.FC = () => {
           onPress={() => navigation.goBack()}
           style={styles.backButton}
           accessibilityRole="button"
-          accessibilityLabel="Volver"
+          accessibilityLabel={t('Volver')}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <Ionicons name="chevron-back" size={26} color={colors.primary} />
-          <Text style={[typography.body, { color: colors.primary, fontWeight: '600' }]}>Atrás</Text>
+          <Text style={[typography.body, { color: colors.primary, fontWeight: '600' }]}>{t('Atrás')}</Text>
         </TouchableOpacity>
         <View style={{ alignItems: 'center' }}>
-          <Text style={[typography.headline, { color: colors.textPrimary }]}>Asistente de Plantas</Text>
-          <Text style={[typography.caption2, { color: colors.textTertiary }]}>Respuestas botánicas al instante</Text>
+          <Text style={[typography.headline, { color: colors.textPrimary }]}>{t('Asistente de Plantas')}</Text>
+          <Text style={[typography.caption2, { color: colors.textTertiary }]}>{t('Respuestas botánicas al instante')}</Text>
         </View>
         <View style={styles.actionHeaderBtn} />
       </View>
@@ -128,7 +130,7 @@ export const AssistantScreen: React.FC = () => {
               >
                 <ActivityIndicator size="small" color={colors.primary} />
                 <Text style={[typography.footnote, { color: colors.textSecondary, marginLeft: 8 }]}>
-                  Pensando...
+                  {t('Pensando...')}
                 </Text>
               </View>
             </View>
@@ -137,7 +139,7 @@ export const AssistantScreen: React.FC = () => {
           {messages.length <= 1 ? (
             <View style={{ marginTop: spacing.md }}>
               <Text style={[typography.footnote, { color: colors.textSecondary, marginBottom: spacing.xs }]}>
-                Preguntas frecuentes
+                {t('Preguntas frecuentes')}
               </Text>
               <View style={styles.suggestions}>
                 {SUGGESTED_QUESTIONS.map((q) => (
@@ -146,13 +148,13 @@ export const AssistantScreen: React.FC = () => {
                     onPress={() => handleSend(q)}
                     activeOpacity={0.7}
                     accessibilityRole="button"
-                    accessibilityLabel={`Preguntar: ${q}`}
+                    accessibilityLabel={t('Preguntar: {pregunta}', { pregunta: t(q) })}
                     style={[
                       styles.suggestionChip,
                       { borderColor: colors.border, backgroundColor: colors.surface, borderRadius: layout.borderRadius.md },
                     ]}
                   >
-                    <Text style={[typography.footnote, { color: colors.textPrimary }]}>{q}</Text>
+                    <Text style={[typography.footnote, { color: colors.textPrimary }]}>{t(q)}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
@@ -169,7 +171,7 @@ export const AssistantScreen: React.FC = () => {
           <TextInput
             value={input}
             onChangeText={setInput}
-            placeholder="Escribe tu pregunta..."
+            placeholder={t('Escribe tu pregunta...')}
             placeholderTextColor={colors.textTertiary}
             style={[
               styles.input,
@@ -179,7 +181,7 @@ export const AssistantScreen: React.FC = () => {
                 borderRadius: layout.borderRadius.full,
               },
             ]}
-            accessibilityLabel="Mensaje para el asistente"
+            accessibilityLabel={t('Mensaje para el asistente')}
             onSubmitEditing={() => handleSend(input)}
             returnKeyType="send"
           />
@@ -187,7 +189,7 @@ export const AssistantScreen: React.FC = () => {
             onPress={() => handleSend(input)}
             disabled={!input.trim() || typing}
             accessibilityRole="button"
-            accessibilityLabel="Enviar mensaje"
+            accessibilityLabel={t('Enviar mensaje')}
             style={[
               styles.sendButton,
               {

@@ -11,6 +11,7 @@
  */
 
 import { loadJSON, saveJSON, STORAGE_KEYS } from './storage';
+import { t } from '../i18n';
 
 export interface BotanicalCareLevels {
   lightLevel: number; // 1 a 5
@@ -92,16 +93,16 @@ export async function saveCareSheet(key: string, sheet: BotanicalCareSheet): Pro
 
 /** Ficha genérica honesta para cuando no hay catálogo ni conexión. */
 export function buildFallbackCareSheet(commonName: string, scientificName = ''): BotanicalCareSheet {
-  const name = commonName.trim() || 'Esta planta';
+  const name = commonName.trim() || t('Esta planta');
   return {
     commonName: name,
     scientificName: scientificName.trim(),
-    family: 'Familia no determinada',
-    watering: 'Riégala cuando los primeros 3-5 cm de sustrato estén secos al tacto.',
+    family: t('Familia no determinada'),
+    watering: t('Riégala cuando los primeros 3-5 cm de sustrato estén secos al tacto.'),
     wateringFrequencyDays: 7,
-    light: 'Luz indirecta brillante, evitando el sol directo intenso del mediodía.',
-    temperature: '18°C a 26°C.',
-    humidity: 'Humedad ambiental media.',
+    light: t('Luz indirecta brillante, evitando el sol directo intenso del mediodía.'),
+    temperature: t('18°C a 26°C.'),
+    humidity: t('Humedad ambiental media.'),
     careLevels: {
       lightLevel: 3,
       wateringLevel: 3,
@@ -109,15 +110,15 @@ export function buildFallbackCareSheet(commonName: string, scientificName = ''):
       tempMinC: 18,
       tempMaxC: 26,
     },
-    difficulty: 'Fácil',
+    difficulty: t('Fácil') as BotanicalCareSheet['difficulty'],
     commonProblems: [
-      'Hojas amarillas o decaídas: suele indicar exceso o falta de riego.',
-      'Puntas marrones: humedad ambiental baja o agua con demasiadas sales.',
+      t('Hojas amarillas o decaídas: suele indicar exceso o falta de riego.'),
+      t('Puntas marrones: humedad ambiental baja o agua con demasiadas sales.'),
     ],
-    climateTip: 'Ajusta el riego según la estación y la humedad de tu hogar.',
-    habitatSummary: `${name} es una especie que puede cultivarse como planta ornamental.`,
-    nativeRegions: ['Origen no confirmado'],
+    climateTip: t('Ajusta el riego según la estación y la humedad de tu hogar.'),
+    habitatSummary: t('{nombre} es una especie que puede cultivarse como planta ornamental.', { nombre: name }),
+    nativeRegions: [t('Origen no confirmado')],
     avatarEmoji: '🌿',
-    toxicity: 'Sin información específica de toxicidad; mantén mascotas y niños alejados.',
+    toxicity: t('Sin información específica de toxicidad; mantén mascotas y niños alejados.'),
   };
 }

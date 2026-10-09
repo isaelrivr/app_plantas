@@ -7,6 +7,7 @@
  */
 
 import { Ionicons } from '@expo/vector-icons';
+import { t } from '../i18n';
 
 export type AchievementMetric =
   | 'streak'
@@ -151,6 +152,9 @@ export function getAchievements(stats: GamificationStats): Achievement[] {
     const progress = Math.min(def.target, metricValue(stats, def.metric));
     return {
       ...def,
+      title: t(def.title),
+      description: t(def.description),
+      reward: t(def.reward),
       progress,
       unlocked: progress >= def.target,
     };
@@ -182,21 +186,21 @@ export function getWeeklySummary(stats: GamificationStats): WeeklySummary {
   const score = stats.currentStreak * 2 + waterings + stats.tasksCompleted;
 
   let grade: WeeklySummary['grade'] = 'C';
-  let title = '¡Buen comienzo!';
-  let message = 'Sigue registrando riegos y tareas para subir tu calificación semanal.';
+  let title = t('¡Buen comienzo!');
+  let message = t('Sigue registrando riegos y tareas para subir tu calificación semanal.');
 
   if (score >= 24) {
     grade = 'S';
-    title = '¡Semana de leyenda! 🏆';
-    message = 'Cuidado impecable. Tus plantas te lo agradecen con brotes nuevos.';
+    title = t('¡Semana de leyenda! 🏆');
+    message = t('Cuidado impecable. Tus plantas te lo agradecen con brotes nuevos.');
   } else if (score >= 14) {
     grade = 'A';
-    title = '¡Excelente semana! 🌟';
-    message = 'Constancia sobresaliente. Mantén el ritmo para conservar tu racha.';
+    title = t('¡Excelente semana! 🌟');
+    message = t('Constancia sobresaliente. Mantén el ritmo para conservar tu racha.');
   } else if (score >= 6) {
     grade = 'B';
-    title = '¡Buen trabajo! 🌿';
-    message = 'Vas por buen camino. Un par de riegos más y subes a la A.';
+    title = t('¡Buen trabajo! 🌿');
+    message = t('Vas por buen camino. Un par de riegos más y subes a la A.');
   }
 
   return {
@@ -213,9 +217,9 @@ export function getWeeklySummary(stats: GamificationStats): WeeklySummary {
 }
 
 export const streakTier = (streak: number): { label: string; color: string } => {
-  if (streak >= 30) return { label: 'Élite', color: '#FF6F00' };
-  if (streak >= 14) return { label: 'Experto', color: '#EF6C00' };
-  if (streak >= 7) return { label: 'Constante', color: '#F9A825' };
-  if (streak >= 3) return { label: 'En racha', color: '#FBC02D' };
-  return { label: 'Iniciando', color: '#8E8E93' };
+  if (streak >= 30) return { label: t('Élite'), color: '#FF6F00' };
+  if (streak >= 14) return { label: t('Experto'), color: '#EF6C00' };
+  if (streak >= 7) return { label: t('Constante'), color: '#F9A825' };
+  if (streak >= 3) return { label: t('En racha'), color: '#FBC02D' };
+  return { label: t('Iniciando'), color: '#8E8E93' };
 };

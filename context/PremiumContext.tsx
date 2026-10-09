@@ -7,6 +7,7 @@ import {
   restorePurchases,
   cancelSubscription,
 } from '../services/billingService';
+import { t as tGlobal, useTranslation } from '../i18n';
 
 interface PremiumContextType {
   isPremium: boolean;
@@ -44,13 +45,14 @@ const DEFAULT_PREMIUM: PersistedPremium = {
 };
 
 export function PremiumProvider({ children }: { children: ReactNode }) {
+  const { t } = useTranslation();
   const [isPremium, setIsPremium] = useState<boolean>(false);
   const [isTrial, setIsTrial] = useState<boolean>(false);
   const [activePlanId, setActivePlanId] = useState<BillingPlanId | null>(null);
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
   const [purchaseLoading, setPurchaseLoading] = useState<boolean>(false);
   const [isHydrated, setIsHydrated] = useState<boolean>(false);
-  const price = '$29 MXN/mes';
+  const price = t('$29 MXN/mes');
 
   // Hidratación del estado Premium persistido.
   useEffect(() => {
@@ -169,7 +171,7 @@ export function PremiumProvider({ children }: { children: ReactNode }) {
 export function usePremium(): PremiumContextType {
   const context = useContext(PremiumContext);
   if (!context) {
-    throw new Error('usePremium debe utilizarse dentro de un PremiumProvider');
+    throw new Error(tGlobal('usePremium debe utilizarse dentro de un PremiumProvider'));
   }
   return context;
 }

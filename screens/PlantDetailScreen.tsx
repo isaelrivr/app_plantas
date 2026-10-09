@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
 import { useAppTheme } from '../theme';
+import { useTranslation } from '../i18n';
 import { Card } from '../components/Card';
 import { Badge } from '../components/Badge';
 import { Button } from '../components/Button';
@@ -34,6 +35,7 @@ const tempLevelFor = (tempMinC: number, tempMaxC: number): number => {
 
 export const PlantDetailScreen: React.FC = () => {
   const { colors, isDark, spacing, typography } = useAppTheme();
+  const { t } = useTranslation();
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { addPlant, plants } = useGarden();
@@ -87,11 +89,11 @@ export const PlantDetailScreen: React.FC = () => {
     // Límite free: máx. 5 plantas (punto 16)
     if (!limits.isPremium && plants.length >= limits.plantLimit) {
       Alert.alert(
-        'Jardín gratuito lleno',
-        `El plan gratuito permite ${limits.plantLimit} plantas. Con Plantae Pro guardas las que quieras.`,
+        t('Jardín gratuito lleno'),
+        t('El plan gratuito permite {limite} plantas. Con Plantae Pro guardas las que quieras.', { limite: limits.plantLimit }),
         [
-          { text: 'Ahora no', style: 'cancel' },
-          { text: 'Ver Pro', onPress: () => navigation.navigate('Paywall') },
+          { text: t('Ahora no'), style: 'cancel' },
+          { text: t('Ver Pro'), onPress: () => navigation.navigate('Paywall') },
         ]
       );
       return;
@@ -155,14 +157,14 @@ export const PlantDetailScreen: React.FC = () => {
             onPress={() => navigation.goBack()}
             style={styles.backButton}
             accessibilityRole="button"
-            accessibilityLabel="Volver"
+            accessibilityLabel={t('Volver')}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <Ionicons name="chevron-back" size={26} color={colors.primary} />
-            <Text style={[typography.body, { color: colors.primary, fontWeight: '600' }]}>Atrás</Text>
+            <Text style={[typography.body, { color: colors.primary, fontWeight: '600' }]}>{t('Atrás')}</Text>
           </TouchableOpacity>
           <Text style={[typography.headline, { color: colors.textPrimary }]} numberOfLines={1}>
-            Ficha Botánica
+            {t('Ficha Botánica')}
           </Text>
           <View style={styles.actionHeaderBtn} />
         </View>
@@ -170,7 +172,7 @@ export const PlantDetailScreen: React.FC = () => {
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ padding: spacing.md }}
-          accessibilityLabel="Cargando ficha botánica"
+          accessibilityLabel={t('Cargando ficha botánica')}
         >
           <Card elevated style={{ marginBottom: spacing.md }}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -223,21 +225,21 @@ export const PlantDetailScreen: React.FC = () => {
             onPress={() => navigation.goBack()}
             style={styles.backButton}
             accessibilityRole="button"
-            accessibilityLabel="Volver"
+            accessibilityLabel={t('Volver')}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <Ionicons name="chevron-back" size={26} color={colors.primary} />
-            <Text style={[typography.body, { color: colors.primary, fontWeight: '600' }]}>Atrás</Text>
+            <Text style={[typography.body, { color: colors.primary, fontWeight: '600' }]}>{t('Atrás')}</Text>
           </TouchableOpacity>
           <Text style={[typography.headline, { color: colors.textPrimary }]} numberOfLines={1}>
-            Ficha Botánica
+            {t('Ficha Botánica')}
           </Text>
           <View style={styles.actionHeaderBtn} />
         </View>
         <EmptyState
           iconName="leaf-outline"
-          title="Especie no encontrada"
-          description="No pudimos recuperar la ficha de esta planta. Vuelve a escanearla o elige otra especie del catálogo."
+          title={t('Especie no encontrada')}
+          description={t('No pudimos recuperar la ficha de esta planta. Vuelve a escanearla o elige otra especie del catálogo.')}
         />
       </View>
     );
@@ -260,15 +262,15 @@ export const PlantDetailScreen: React.FC = () => {
           onPress={() => navigation.goBack()}
           style={styles.backButton}
           accessibilityRole="button"
-          accessibilityLabel="Volver"
+          accessibilityLabel={t('Volver')}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <Ionicons name="chevron-back" size={26} color={colors.primary} />
-          <Text style={[typography.body, { color: colors.primary, fontWeight: '600' }]}>Atrás</Text>
+          <Text style={[typography.body, { color: colors.primary, fontWeight: '600' }]}>{t('Atrás')}</Text>
         </TouchableOpacity>
 
         <Text style={[typography.headline, { color: colors.textPrimary }]} numberOfLines={1}>
-          Ficha Botánica
+          {t('Ficha Botánica')}
         </Text>
 
         <TouchableOpacity
@@ -276,7 +278,7 @@ export const PlantDetailScreen: React.FC = () => {
           disabled={isSaved}
           style={styles.actionHeaderBtn}
           accessibilityRole="button"
-          accessibilityLabel={isSaved ? 'Ya en tu jardín' : 'Guardar en jardín'}
+          accessibilityLabel={isSaved ? t('Ya en tu jardín') : t('Guardar en jardín')}
         >
           <Ionicons
             name={isSaved ? 'bookmark' : 'bookmark-outline'}
@@ -291,7 +293,7 @@ export const PlantDetailScreen: React.FC = () => {
         contentContainerStyle={{ padding: spacing.md, paddingBottom: 60 }}
       >
         {/* TARJETA PRINCIPAL CON AVATAR E INFORMACIÓN BOTÁNICA */}
-        <Card elevated style={{ marginBottom: spacing.md }} accessible={true} accessibilityLabel={`Ficha de ${plant.name}, familia ${plant.family}`}>
+        <Card elevated style={{ marginBottom: spacing.md }} accessible={true} accessibilityLabel={t('Ficha de {nombre}, familia {familia}', { nombre: plant.name, familia: plant.family })}>
           <View style={styles.topCardRow}>
             {/* Avatar / Símbolo */}
             <View
@@ -305,7 +307,7 @@ export const PlantDetailScreen: React.FC = () => {
 
             {/* Títulos e Identidad */}
             <View style={{ flex: 1, marginLeft: spacing.md }}>
-              <Badge label={`Familia ${plant.family}`} variant="primary" />
+              <Badge label={t('Familia {familia}', { familia: plant.family })} variant="primary" />
               <Text style={[typography.title2, { color: colors.textPrimary, fontWeight: '700', marginTop: 4 }]}>
                 {plant.name}
               </Text>
@@ -318,12 +320,12 @@ export const PlantDetailScreen: React.FC = () => {
             {plant.confidence != null ? (
               <View style={{ alignItems: 'center' }}>
                 <ConfidenceRing score={plant.confidence} size={54} strokeWidth={5} colorVariant="primary" />
-                <Text style={[typography.caption2, { color: colors.textTertiary, marginTop: 4 }]}>Precisión</Text>
+                <Text style={[typography.caption2, { color: colors.textTertiary, marginTop: 4 }]}>{t('Precisión')}</Text>
               </View>
             ) : (
               <View style={{ alignItems: 'center', width: 54 }}>
                 <Ionicons name="sparkles" size={22} color={colors.primary} />
-                <Text style={[typography.caption2, { color: colors.textTertiary, marginTop: 4 }]}>IA</Text>
+                <Text style={[typography.caption2, { color: colors.textTertiary, marginTop: 4 }]}>{t('IA')}</Text>
               </View>
             )}
           </View>
@@ -333,9 +335,9 @@ export const PlantDetailScreen: React.FC = () => {
             <View style={styles.quickInfoItem}>
               <Ionicons name="water" size={16} color={colors.info} />
               <Text style={[typography.caption1, { color: colors.textPrimary, fontWeight: '600', marginTop: 2 }]}>
-                Cada {plant.wateringFrequencyDays} días
+                {t('Cada {dias} días', { dias: plant.wateringFrequencyDays })}
               </Text>
-              <Text style={[typography.caption2, { color: colors.textTertiary }]}>Riego</Text>
+              <Text style={[typography.caption2, { color: colors.textTertiary }]}>{t('Riego')}</Text>
             </View>
 
             <View style={[styles.verticalDivider, { backgroundColor: colors.border }]} />
@@ -343,9 +345,9 @@ export const PlantDetailScreen: React.FC = () => {
             <View style={styles.quickInfoItem}>
               <Ionicons name="sunny" size={16} color={colors.warning} />
               <Text style={[typography.caption1, { color: colors.textPrimary, fontWeight: '600', marginTop: 2 }]}>
-                Nivel {plant.careLevels.lightLevel}/5
+                {t('Nivel {nivel}/5', { nivel: plant.careLevels.lightLevel })}
               </Text>
-              <Text style={[typography.caption2, { color: colors.textTertiary }]}>Luz solar</Text>
+              <Text style={[typography.caption2, { color: colors.textTertiary }]}>{t('Luz solar')}</Text>
             </View>
 
             <View style={[styles.verticalDivider, { backgroundColor: colors.border }]} />
@@ -355,7 +357,7 @@ export const PlantDetailScreen: React.FC = () => {
               <Text style={[typography.caption1, { color: colors.textPrimary, fontWeight: '600', marginTop: 2 }]}>
                 {plant.difficulty}
               </Text>
-              <Text style={[typography.caption2, { color: colors.textTertiary }]}>Dificultad</Text>
+              <Text style={[typography.caption2, { color: colors.textTertiary }]}>{t('Dificultad')}</Text>
             </View>
           </View>
         </Card>
@@ -381,7 +383,7 @@ export const PlantDetailScreen: React.FC = () => {
                 onPress={() => handleTabChange(tab)}
                 accessibilityRole="tab"
                 accessibilityState={{ selected: isActive }}
-                accessibilityLabel={`Pestaña ${labels[tab]}`}
+                accessibilityLabel={t('Pestaña {pestaña}', { pestaña: t(labels[tab]) })}
               >
                 <Text
                   style={[
@@ -392,7 +394,7 @@ export const PlantDetailScreen: React.FC = () => {
                     },
                   ]}
                 >
-                  {labels[tab]}
+                  {t(labels[tab])}
                 </Text>
               </TouchableOpacity>
             );
@@ -406,7 +408,7 @@ export const PlantDetailScreen: React.FC = () => {
           <View style={{ gap: spacing.md }}>
             <Card elevated>
               <Text style={[typography.headline, { color: colors.textPrimary, marginBottom: spacing.xs }]}>
-                Acerca de la especie
+                {t('Acerca de la especie')}
               </Text>
               <Text style={[typography.body, { color: colors.textSecondary, lineHeight: 22 }]}>
                 {plant.habitatSummary}
@@ -430,22 +432,22 @@ export const PlantDetailScreen: React.FC = () => {
 
             <Card elevated>
               <Text style={[typography.headline, { color: colors.textPrimary, marginBottom: spacing.sm }]}>
-                Clasificación Taxonómica
+                {t('Clasificación Taxonómica')}
               </Text>
               <View style={styles.taxRow}>
-                <Text style={[typography.subheadline, { color: colors.textTertiary }]}>Reino</Text>
+                <Text style={[typography.subheadline, { color: colors.textTertiary }]}>{t('Reino')}</Text>
                 <Text style={[typography.subheadline, { color: colors.textPrimary, fontWeight: '600' }]}>Plantae</Text>
               </View>
               <View style={[styles.separator, { backgroundColor: colors.border }]} />
               <View style={styles.taxRow}>
-                <Text style={[typography.subheadline, { color: colors.textTertiary }]}>Familia</Text>
+                <Text style={[typography.subheadline, { color: colors.textTertiary }]}>{t('Familia')}</Text>
                 <Text style={[typography.subheadline, { color: colors.textPrimary, fontWeight: '600' }]}>
                   {plant.family}
                 </Text>
               </View>
               <View style={[styles.separator, { backgroundColor: colors.border }]} />
               <View style={styles.taxRow}>
-                <Text style={[typography.subheadline, { color: colors.textTertiary }]}>Nombre Científico</Text>
+                <Text style={[typography.subheadline, { color: colors.textTertiary }]}>{t('Nombre Científico')}</Text>
                 <Text style={[typography.subheadline, { color: colors.textPrimary, fontStyle: 'italic', fontWeight: '600' }]}>
                   {plant.scientificName}
                 </Text>
@@ -457,10 +459,10 @@ export const PlantDetailScreen: React.FC = () => {
               <View style={styles.toxicityHeader}>
                 <View style={{ flex: 1 }}>
                   <Text style={[typography.headline, { color: colors.textPrimary }]}>
-                    Toxicidad en el hogar
+                    {t('Toxicidad en el hogar')}
                   </Text>
                   <Text style={[typography.footnote, { color: colors.textSecondary, marginTop: 2 }]}>
-                    Información clave si convives con mascotas o niños
+                    {t('Información clave si convives con mascotas o niños')}
                   </Text>
                 </View>
                 <Ionicons name="paw" size={24} color={colors.warning} />
@@ -478,12 +480,12 @@ export const PlantDetailScreen: React.FC = () => {
           <View style={{ gap: spacing.md }}>
             <Card elevated>
               <Text style={[typography.headline, { color: colors.textPrimary, marginBottom: spacing.md }]}>
-                Parámetros Botánicos de Nivel
+                {t('Parámetros Botánicos de Nivel')}
               </Text>
 
               {/* Barra de Luz */}
               <LevelBar
-                label="Luz solar"
+                label={t('Luz solar')}
                 level={plant.careLevels.lightLevel}
                 iconName="sunny"
                 valueDescription={plant.light}
@@ -492,16 +494,16 @@ export const PlantDetailScreen: React.FC = () => {
 
               {/* Barra de Riego */}
               <LevelBar
-                label="Frecuencia de Riego"
+                label={t('Frecuencia de Riego')}
                 level={plant.careLevels.wateringLevel}
                 iconName="water"
-                valueDescription={`Cada ${plant.wateringFrequencyDays} días`}
+                valueDescription={t('Cada {dias} días', { dias: plant.wateringFrequencyDays })}
                 tintColor={colors.info}
               />
 
               {/* Barra de Humedad */}
               <LevelBar
-                label="Humedad Ambiental"
+                label={t('Humedad Ambiental')}
                 level={plant.careLevels.humidityLevel}
                 iconName="cloud"
                 valueDescription={plant.humidity}
@@ -510,17 +512,17 @@ export const PlantDetailScreen: React.FC = () => {
 
               {/* Rango de Temperatura */}
               <LevelBar
-                label="Temperatura Óptima"
+                label={t('Temperatura Óptima')}
                 level={tempLevelFor(plant.careLevels.tempMinC, plant.careLevels.tempMaxC)}
                 iconName="thermometer"
-                valueDescription={`${plant.careLevels.tempMinC}°C a ${plant.careLevels.tempMaxC}°C`}
+                valueDescription={t('{min}°C a {max}°C', { min: plant.careLevels.tempMinC, max: plant.careLevels.tempMaxC })}
                 tintColor="#E91E63"
               />
             </Card>
 
             <Card elevated>
               <Text style={[typography.headline, { color: colors.textPrimary, marginBottom: spacing.xs }]}>
-                Pauta Detallada de Riego
+                {t('Pauta Detallada de Riego')}
               </Text>
               <Text style={[typography.body, { color: colors.textSecondary, lineHeight: 22 }]}>
                 {plant.watering}
@@ -535,21 +537,21 @@ export const PlantDetailScreen: React.FC = () => {
             <Card elevated>
               <View style={styles.habitatCardHeader}>
                 <View>
-                  <Badge label="Función Estrella" variant="premium" />
+                  <Badge label={t('Función Estrella')} variant="premium" />
                   <Text style={[typography.title2, { color: colors.textPrimary, fontWeight: '700', marginTop: 4 }]}>
-                    Distribución y Origen
+                    {t('Distribución y Origen')}
                   </Text>
                 </View>
                 <Ionicons name="earth" size={34} color={colors.primary} />
               </View>
 
               <Text style={[typography.body, { color: colors.textSecondary, marginTop: spacing.xs, lineHeight: 22 }]}>
-                Descubre en qué regiones del planeta habita esta especie de forma nativa, dónde ha sido naturalizada y sus zonas de cultivo global.
+                {t('Descubre en qué regiones del planeta habita esta especie de forma nativa, dónde ha sido naturalizada y sus zonas de cultivo global.')}
               </Text>
 
               <View style={[styles.regionsTeaser, { backgroundColor: isDark ? '#2C2C2E' : '#F1F3F4' }]}>
                 <Text style={[typography.subheadline, { color: colors.textPrimary, fontWeight: '600' }]}>
-                  Países de Presencia Principal:
+                  {t('Países de Presencia Principal:')}
                 </Text>
                 <View style={styles.regionTagsWrap}>
                   {plant.nativeRegions.map((reg) => (
@@ -564,7 +566,7 @@ export const PlantDetailScreen: React.FC = () => {
               </View>
 
               <Button
-                title="Abrir Mapa Mundial Interactivo 🌍"
+                title={t('Abrir Mapa Mundial Interactivo 🌍')}
                 onPress={handleOpenHabitatMap}
                 variant="primary"
                 size="lg"
@@ -582,10 +584,10 @@ export const PlantDetailScreen: React.FC = () => {
               <View style={styles.problemsHeader}>
                 <View style={{ flex: 1 }}>
                   <Text style={[typography.headline, { color: colors.textPrimary }]}>
-                    Problemas Comunes
+                    {t('Problemas Comunes')}
                   </Text>
                   <Text style={[typography.footnote, { color: colors.textSecondary, marginTop: 2 }]}>
-                    Síntomas frecuentes identificables en sus hojas
+                    {t('Síntomas frecuentes identificables en sus hojas')}
                   </Text>
                 </View>
                 <Ionicons name="warning" size={24} color={colors.warning} />
@@ -601,7 +603,7 @@ export const PlantDetailScreen: React.FC = () => {
               ))}
 
               <Button
-                title="Diagnosticar Salud con IA 🩺"
+                title={t('Diagnosticar Salud con IA 🩺')}
                 onPress={handleOpenDiagnosis}
                 variant="secondary"
                 size="md"
@@ -615,14 +617,14 @@ export const PlantDetailScreen: React.FC = () => {
         {/* BOTÓN INFERIOR DE ACCIÓN */}
         <View style={{ marginTop: spacing.xl, gap: spacing.sm }}>
           <Button
-            title="📈 Ver Diario de Crecimiento"
+            title={t('📈 Ver Diario de Crecimiento')}
             onPress={handleOpenGrowthDiary}
             variant="secondary"
             size="md"
             icon={<Ionicons name="images" size={18} color={colors.primary} />}
           />
           <Button
-            title={isSaved ? 'Guardada en Mi Jardín ✓' : 'Guardar en Mi Jardín'}
+            title={isSaved ? t('Guardada en Mi Jardín ✓') : t('Guardar en Mi Jardín')}
             onPress={handleSaveToGarden}
             disabled={isSaved}
             variant={isSaved ? 'secondary' : 'primary'}

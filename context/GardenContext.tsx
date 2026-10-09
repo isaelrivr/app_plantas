@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useState, ReactNode } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { loadJSON, saveJSON, STORAGE_KEYS } from '../services/storage';
+import { t } from '../i18n';
 
 export type CareTaskType = 'riego' | 'fertilizante' | 'poda' | 'trasplante';
 
@@ -59,11 +60,11 @@ interface StatsState {
 }
 
 const DEFAULT_ROOMS: Room[] = [
-  { id: 'room-sala', name: 'Sala', icon: 'tv' },
-  { id: 'room-dormitorio', name: 'Dormitorio', icon: 'bed' },
-  { id: 'room-cocina', name: 'Cocina', icon: 'restaurant' },
-  { id: 'room-balcon', name: 'Balcón', icon: 'sunny' },
-  { id: 'room-oficina', name: 'Oficina', icon: 'desktop' },
+  { id: 'room-sala', name: t('Sala'), icon: 'tv' },
+  { id: 'room-dormitorio', name: t('Dormitorio'), icon: 'bed' },
+  { id: 'room-cocina', name: t('Cocina'), icon: 'restaurant' },
+  { id: 'room-balcon', name: t('Balcón'), icon: 'sunny' },
+  { id: 'room-oficina', name: t('Oficina'), icon: 'desktop' },
 ];
 
 const INITIAL_STATS: StatsState = {
@@ -83,69 +84,69 @@ const INITIAL_PLANTS: GardenPlant[] = [
     id: 'plant-1',
     name: 'Monstera Deliciosa',
     scientificName: 'Monstera deliciosa Liebm.',
-    lastWatered: 'Hace 3 días',
+    lastWatered: t('Hace 3 días'),
     isWateredToday: false,
     wateringFrequencyDays: 8,
-    light: 'Luz indirecta brillante',
+    light: t('Luz indirecta brillante'),
     avatarEmoji: '🌿',
     healthScore: 94,
-    lastDiagnosis: 'Estado óptimo y vigoroso',
+    lastDiagnosis: t('Estado óptimo y vigoroso'),
     roomId: 'room-sala',
     careTasks: [
-      { id: 't1', type: 'riego', title: 'Riego profundo de sustrato', dueDate: 'En 5 días', completed: false },
-      { id: 't2', type: 'fertilizante', title: 'Abono líquido equilibrado', dueDate: 'En 12 días', completed: false },
-      { id: 't3', type: 'poda', title: 'Limpieza de hojas basales', dueDate: 'Próximo mes', completed: false },
+      { id: 't1', type: 'riego', title: t('Riego profundo de sustrato'), dueDate: t('En 5 días'), completed: false },
+      { id: 't2', type: 'fertilizante', title: t('Abono líquido equilibrado'), dueDate: t('En 12 días'), completed: false },
+      { id: 't3', type: 'poda', title: t('Limpieza de hojas basales'), dueDate: t('Próximo mes'), completed: false },
     ],
   },
   {
     id: 'plant-2',
     name: 'Ficus Lyrata',
     scientificName: 'Ficus lyrata Warb.',
-    lastWatered: 'Hace 6 días',
+    lastWatered: t('Hace 6 días'),
     isWateredToday: false,
     wateringFrequencyDays: 10,
-    light: 'Luz filtrada intensa',
+    light: t('Luz filtrada intensa'),
     avatarEmoji: '🪴',
     healthScore: 78,
-    lastDiagnosis: 'Leve clorosis por luz baja',
+    lastDiagnosis: t('Leve clorosis por luz baja'),
     roomId: 'room-dormitorio',
     careTasks: [
-      { id: 't4', type: 'riego', title: 'Riego de recuperación', dueDate: 'En 4 días', completed: false },
-      { id: 't5', type: 'poda', title: 'Poda de brote apical', dueDate: 'En 2 semanas', completed: false },
+      { id: 't4', type: 'riego', title: t('Riego de recuperación'), dueDate: t('En 4 días'), completed: false },
+      { id: 't5', type: 'poda', title: t('Poda de brote apical'), dueDate: t('En 2 semanas'), completed: false },
     ],
   },
   {
     id: 'plant-3',
     name: 'Sansevieria Trifasciata',
     scientificName: 'Dracaena trifasciata',
-    lastWatered: 'Hace 12 días',
+    lastWatered: t('Hace 12 días'),
     isWateredToday: false,
     wateringFrequencyDays: 18,
-    light: 'Cualquier iluminación',
+    light: t('Cualquier iluminación'),
     avatarEmoji: '🌱',
     healthScore: 99,
-    lastDiagnosis: 'Excelente resistencia',
+    lastDiagnosis: t('Excelente resistencia'),
     roomId: 'room-oficina',
     careTasks: [
-      { id: 't6', type: 'riego', title: 'Riego mensual ligero', dueDate: 'En 6 días', completed: false },
-      { id: 't7', type: 'trasplante', title: 'Cambio a maceta de barro', dueDate: 'En primavera', completed: false },
+      { id: 't6', type: 'riego', title: t('Riego mensual ligero'), dueDate: t('En 6 días'), completed: false },
+      { id: 't7', type: 'trasplante', title: t('Cambio a maceta de barro'), dueDate: t('En primavera'), completed: false },
     ],
   },
   {
     id: 'plant-4',
     name: 'Pothos Dorado',
     scientificName: 'Epipremnum aureum',
-    lastWatered: 'Ayer',
+    lastWatered: t('Ayer'),
     isWateredToday: false,
     wateringFrequencyDays: 6,
-    light: 'Luz indirecta',
+    light: t('Luz indirecta'),
     avatarEmoji: '🍃',
     healthScore: 88,
-    lastDiagnosis: 'Crecimiento activo',
+    lastDiagnosis: t('Crecimiento activo'),
     roomId: 'room-cocina',
     careTasks: [
-      { id: 't8', type: 'riego', title: 'Riego regular de superficie', dueDate: 'En 5 días', completed: false },
-      { id: 't9', type: 'fertilizante', title: 'Humus de lombriz', dueDate: 'En 15 días', completed: false },
+      { id: 't8', type: 'riego', title: t('Riego regular de superficie'), dueDate: t('En 5 días'), completed: false },
+      { id: 't9', type: 'fertilizante', title: t('Humus de lombriz'), dueDate: t('En 15 días'), completed: false },
     ],
   },
 ];
@@ -193,11 +194,11 @@ const buildCareTasks = (wateringFrequencyDays: number, stamp: number): CareTask[
   {
     id: `task-${stamp}-1`,
     type: 'riego',
-    title: 'Riego regular',
-    dueDate: `En ${wateringFrequencyDays} días`,
+    title: t('Riego regular'),
+    dueDate: t('En {dias} días', { dias: wateringFrequencyDays }),
     completed: false,
   },
-  { id: `task-${stamp}-2`, type: 'fertilizante', title: 'Nutrición foliar', dueDate: 'En 20 días', completed: false },
+  { id: `task-${stamp}-2`, type: 'fertilizante', title: t('Nutrición foliar'), dueDate: t('En 20 días'), completed: false },
 ];
 
 export function GardenProvider({ children }: { children: ReactNode }) {
@@ -239,7 +240,7 @@ export function GardenProvider({ children }: { children: ReactNode }) {
         if (plant.id === id) {
           const now = new Date();
           const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-          return { ...plant, lastWatered: `Hoy a las ${timeStr}`, isWateredToday: true };
+          return { ...plant, lastWatered: t('Hoy a las {hora}', { hora: timeStr }), isWateredToday: true };
         }
         return plant;
       })
@@ -264,10 +265,10 @@ export function GardenProvider({ children }: { children: ReactNode }) {
   const createPlantRecord = (newPlant: NewPlantInput, roomId: string | undefined, stamp: number): GardenPlant => ({
     ...newPlant,
     id: `plant-${stamp}-${Math.floor(Math.random() * 1000)}`,
-    lastWatered: 'Hoy recién agregada',
+    lastWatered: t('Hoy recién agregada'),
     isWateredToday: true,
     healthScore: 92,
-    lastDiagnosis: 'Saludable',
+    lastDiagnosis: t('Saludable'),
     roomId: roomId ?? newPlant.roomId,
     careTasks: buildCareTasks(newPlant.wateringFrequencyDays, stamp),
   });
@@ -307,10 +308,10 @@ export function GardenProvider({ children }: { children: ReactNode }) {
         if (p.id !== plantId) return p;
         return {
           ...p,
-          careTasks: p.careTasks?.map((t) => {
-            if (t.id !== taskId) return t;
-            if (!t.completed) becameCompleted = true;
-            return { ...t, completed: !t.completed };
+          careTasks: p.careTasks?.map((task) => {
+            if (task.id !== taskId) return task;
+            if (!task.completed) becameCompleted = true;
+            return { ...task, completed: !task.completed };
           }),
         };
       })
@@ -325,7 +326,7 @@ export function GardenProvider({ children }: { children: ReactNode }) {
   };
 
   const createRoom = (name: string, icon: Room['icon'] = 'home'): Room => {
-    const room: Room = { id: `room-${Date.now()}`, name: name.trim() || 'Nueva zona', icon };
+    const room: Room = { id: `room-${Date.now()}`, name: name.trim() || t('Nueva zona'), icon };
     setRooms((prev) => [...prev, room]);
     return room;
   };
@@ -412,7 +413,7 @@ export function GardenProvider({ children }: { children: ReactNode }) {
 export function useGarden(): GardenContextType {
   const context = useContext(GardenContext);
   if (!context) {
-    throw new Error('useGarden debe utilizarse dentro de GardenProvider');
+    throw new Error(t('useGarden debe utilizarse dentro de GardenProvider'));
   }
   return context;
 }

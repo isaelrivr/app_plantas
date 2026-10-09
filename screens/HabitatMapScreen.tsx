@@ -17,6 +17,7 @@ import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import worldData from 'world-atlas/countries-110m.json';
+import { useTranslation } from '../i18n';
 import { useAppTheme } from '../theme';
 import { Card } from '../components/Card';
 import { Badge } from '../components/Badge';
@@ -55,6 +56,7 @@ const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 export const HabitatMapScreen: React.FC = () => {
   const { colors, isDark, spacing, typography } = useAppTheme();
+  const { t } = useTranslation();
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const limits = usePlanLimits();
@@ -94,10 +96,10 @@ export const HabitatMapScreen: React.FC = () => {
   }, [plantId]);
 
   useEffect(() => {
-    const t = setTimeout(() => {
+    const timer = setTimeout(() => {
       loadHabitat();
     }, 0);
-    return () => clearTimeout(t);
+    return () => clearTimeout(timer);
   }, [loadHabitat]);
 
   // Iluminación progresiva de las regiones al cargar el mapa
@@ -215,7 +217,7 @@ export const HabitatMapScreen: React.FC = () => {
   const [panResponder, setPanResponder] = useState<PanResponderInstance | null>(null);
 
   useEffect(() => {
-    const t = setTimeout(() => {
+    const timer = setTimeout(() => {
       setPanResponder(
         PanResponder.create({
           onStartShouldSetPanResponder: () => false,
@@ -261,7 +263,7 @@ export const HabitatMapScreen: React.FC = () => {
         })
       );
     }, 0);
-    return () => clearTimeout(t);
+    return () => clearTimeout(timer);
   }, []);
 
   const handleCountryPress = (countryName: string) => {
@@ -278,11 +280,13 @@ export const HabitatMapScreen: React.FC = () => {
       setSelectedRegion({
         countryName,
         zoneType: 'cultivated',
-        climate: 'Sin registro endémico oficial',
-        floweringSeason: 'Variable según cultivo',
-        biogeographicZone: 'Zona no principal',
+        climate: t('Sin registro endémico oficial'),
+        floweringSeason: t('Variable según cultivo'),
+        biogeographicZone: t('Zona no principal'),
         elevationMeters: 'N/A',
-        notes: `No se registran poblaciones silvestres significativas de ${plant?.name || 'esta especie'} en este territorio.`,
+        notes: t('No se registran poblaciones silvestres significativas de {especie} en este territorio.', {
+          especie: plant?.name || t('esta especie'),
+        }),
       });
     }
   };
@@ -327,19 +331,19 @@ export const HabitatMapScreen: React.FC = () => {
             onPress={() => navigation.goBack()}
             style={styles.backButton}
             accessibilityRole="button"
-            accessibilityLabel="Volver a la pantalla anterior"
+            accessibilityLabel={t('Volver a la pantalla anterior')}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <Ionicons name="chevron-back" size={26} color={colors.primary} />
-            <Text style={[typography.body, { color: colors.primary, fontWeight: '600' }]}>Atrás</Text>
+            <Text style={[typography.body, { color: colors.primary, fontWeight: '600' }]}>{t('Atrás')}</Text>
           </TouchableOpacity>
 
           <View style={styles.headerTitleCenter}>
             <Text style={[typography.headline, { color: colors.textPrimary }]} numberOfLines={1}>
-              Hábitat Global
+              {t('Hábitat Global')}
             </Text>
             <Text style={[typography.caption1, { color: colors.textSecondary }]} numberOfLines={1}>
-              {plant?.scientificName || 'Distribución biogeográfica'}
+              {plant?.scientificName || t('Distribución biogeográfica')}
             </Text>
           </View>
 
@@ -358,15 +362,15 @@ export const HabitatMapScreen: React.FC = () => {
                 <Ionicons name="earth" size={34} color={colors.primary} />
               </View>
               <Text style={[typography.title2, { color: colors.textPrimary, fontWeight: '700', marginTop: spacing.sm }]}>
-                {plant?.name || 'Esta planta'}
+                {plant?.name || t('Esta planta')}
               </Text>
               <Text style={[typography.subheadline, { color: colors.textTertiary, fontStyle: 'italic' }]}>
                 {plant?.scientificName || ''}
               </Text>
               <Text style={[typography.body, { color: colors.textSecondary, marginTop: spacing.md, lineHeight: 22 }]}>
-                El mapa interactivo revela dónde {plant?.name || 'la especie'} crece de forma nativa,
-                naturalizada y cultivada: proyección cartográfica en vivo, regiones iluminadas y datos
-                biogeográficos por país.
+                {t('El mapa interactivo revela dónde {especie} crece de forma nativa, naturalizada y cultivada: proyección cartográfica en vivo, regiones iluminadas y datos biogeográficos por país.', {
+                  especie: plant?.name || t('la especie'),
+                })}
               </Text>
             </Card>
           </View>
@@ -392,19 +396,19 @@ export const HabitatMapScreen: React.FC = () => {
           onPress={() => navigation.goBack()}
           style={styles.backButton}
           accessibilityRole="button"
-          accessibilityLabel="Volver a la pantalla anterior"
+          accessibilityLabel={t('Volver a la pantalla anterior')}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <Ionicons name="chevron-back" size={26} color={colors.primary} />
-          <Text style={[typography.body, { color: colors.primary, fontWeight: '600' }]}>Atrás</Text>
+          <Text style={[typography.body, { color: colors.primary, fontWeight: '600' }]}>{t('Atrás')}</Text>
         </TouchableOpacity>
 
         <View style={styles.headerTitleCenter}>
           <Text style={[typography.headline, { color: colors.textPrimary }]} numberOfLines={1}>
-            Hábitat Global
+            {t('Hábitat Global')}
           </Text>
           <Text style={[typography.caption1, { color: colors.textSecondary }]} numberOfLines={1}>
-            {plant?.scientificName || 'Distribución biogeográfica'}
+            {plant?.scientificName || t('Distribución biogeográfica')}
           </Text>
         </View>
 
@@ -416,21 +420,21 @@ export const HabitatMapScreen: React.FC = () => {
         <View style={styles.legendItem}>
           <View style={[styles.legendDot, { backgroundColor: getRegionTypeColor('native', isDark) }]} />
           <Text style={[typography.caption2, { color: colors.textPrimary, fontWeight: '600' }]}>
-            Nativa
+            {t('Nativa')}
           </Text>
         </View>
 
         <View style={styles.legendItem}>
           <View style={[styles.legendDot, { backgroundColor: getRegionTypeColor('naturalized', isDark) }]} />
           <Text style={[typography.caption2, { color: colors.textPrimary, fontWeight: '600' }]}>
-            Naturalizada
+            {t('Naturalizada')}
           </Text>
         </View>
 
         <View style={styles.legendItem}>
           <View style={[styles.legendDot, { backgroundColor: getRegionTypeColor('cultivated', isDark) }]} />
           <Text style={[typography.caption2, { color: colors.textPrimary, fontWeight: '600' }]}>
-            Cultivada
+            {t('Cultivada')}
           </Text>
         </View>
 
@@ -441,7 +445,7 @@ export const HabitatMapScreen: React.FC = () => {
               { backgroundColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)' },
             ]}
           />
-          <Text style={[typography.caption2, { color: colors.textTertiary }]}>Otras</Text>
+          <Text style={[typography.caption2, { color: colors.textTertiary }]}>{t('Otras')}</Text>
         </View>
       </View>
 
@@ -459,13 +463,13 @@ export const HabitatMapScreen: React.FC = () => {
               </View>
             </View>
             <Text style={[typography.subheadline, { color: colors.textSecondary, marginTop: spacing.md }]}>
-              Generando proyección cartográfica...
+              {t('Generando proyección cartográfica...')}
             </Text>
           </View>
         ) : error ? (
           <View style={styles.centerState}>
             <ErrorBanner
-              message="No pudimos cargar el hábitat de esta planta. Revisa que el catálogo esté disponible e inténtalo de nuevo."
+              message={t('No pudimos cargar el hábitat de esta planta. Revisa que el catálogo esté disponible e inténtalo de nuevo.')}
               onRetry={loadHabitat}
             />
           </View>
@@ -473,16 +477,16 @@ export const HabitatMapScreen: React.FC = () => {
           <View style={styles.centerState}>
             <EmptyState
               iconName="map-outline"
-              title="No se pudo construir el mapa"
-              description="La proyección cartográfica no está disponible en este dispositivo."
+              title={t('No se pudo construir el mapa')}
+              description={t('La proyección cartográfica no está disponible en este dispositivo.')}
             />
           </View>
         ) : !habitatData || habitatData.regions.length === 0 ? (
           <View style={styles.centerState}>
             <EmptyState
               iconName="leaf-outline"
-              title="Sin registros de hábitat"
-              description="Aún no tenemos datos biogeográficos para esta especie, pero los estaremos agregando pronto."
+              title={t('Sin registros de hábitat')}
+              description={t('Aún no tenemos datos biogeográficos para esta especie, pero los estaremos agregando pronto.')}
             />
           </View>
         ) : (
@@ -538,7 +542,7 @@ export const HabitatMapScreen: React.FC = () => {
                         opacity={isHighlighted ? (lightUpFor(highlightedIdx) as any) : 0.75}
                         onPress={() => handleCountryPress(c.name)}
                         accessible={true}
-                        accessibilityLabel={`Obtener información de hábitat en ${c.name}`}
+                        accessibilityLabel={t('Obtener información de hábitat en {pais}', { pais: c.name })}
                       />
                     );
                   })}
@@ -573,7 +577,10 @@ export const HabitatMapScreen: React.FC = () => {
                         key={`beacon-${c.name}`}
                         onPress={() => handleCountryPress(c.name)}
                         accessible={true}
-                        accessibilityLabel={`Hábitat de ${plant?.name || 'la planta'} en ${c.name}`}
+                        accessibilityLabel={t('Hábitat de {planta} en {pais}', {
+                          planta: plant?.name || t('la planta'),
+                          pais: c.name,
+                        })}
                       >
                         {/* Anillo de expansión progresiva */}
                         <AnimatedCircle
@@ -617,7 +624,7 @@ export const HabitatMapScreen: React.FC = () => {
               style={[styles.controlButton, { backgroundColor: colors.surface }]}
               onPress={handleZoomIn}
               accessibilityRole="button"
-              accessibilityLabel="Aumentar zoom del mapa"
+              accessibilityLabel={t('Aumentar zoom del mapa')}
             >
               <Ionicons name="add" size={20} color={colors.textPrimary} />
             </TouchableOpacity>
@@ -626,7 +633,7 @@ export const HabitatMapScreen: React.FC = () => {
               style={[styles.controlButton, { backgroundColor: colors.surface }]}
               onPress={handleZoomOut}
               accessibilityRole="button"
-              accessibilityLabel="Reducir zoom del mapa"
+              accessibilityLabel={t('Reducir zoom del mapa')}
             >
               <Ionicons name="remove" size={20} color={colors.textPrimary} />
             </TouchableOpacity>
@@ -635,7 +642,7 @@ export const HabitatMapScreen: React.FC = () => {
               style={[styles.controlButton, { backgroundColor: colors.surface }]}
               onPress={handleResetZoom}
               accessibilityRole="button"
-              accessibilityLabel="Restablecer zoom del mapa"
+              accessibilityLabel={t('Restablecer zoom del mapa')}
             >
               <Ionicons name="locate" size={18} color={colors.primary} />
             </TouchableOpacity>
@@ -647,7 +654,7 @@ export const HabitatMapScreen: React.FC = () => {
           <View style={[styles.hintBadge, { backgroundColor: isDark ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.9)' }]}>
             <Ionicons name="finger-print" size={14} color={colors.primary} />
             <Text style={[typography.caption2, { color: colors.textSecondary, marginLeft: 4 }]}>
-              Toca una región iluminada para ver clima y floración
+              {t('Toca una región iluminada para ver clima y floración')}
             </Text>
           </View>
         )}
@@ -663,10 +670,10 @@ export const HabitatMapScreen: React.FC = () => {
                   <Badge
                     label={
                       selectedRegion.zoneType === 'native'
-                        ? 'Zona Nativa de Origen'
+                        ? t('Zona Nativa de Origen')
                         : selectedRegion.zoneType === 'naturalized'
-                        ? 'Población Naturalizada'
-                        : 'Zona de Cultivo'
+                        ? t('Población Naturalizada')
+                        : t('Zona de Cultivo')
                     }
                     variant={
                       selectedRegion.zoneType === 'native'
@@ -703,7 +710,7 @@ export const HabitatMapScreen: React.FC = () => {
                 <View style={styles.metaIconLabel}>
                   <Ionicons name="partly-sunny" size={16} color={colors.primary} />
                   <Text style={[typography.caption2, { color: colors.textTertiary, marginLeft: 4 }]}>
-                    Clima predominante
+                    {t('Clima predominante')}
                   </Text>
                 </View>
                 <Text style={[typography.footnote, { color: colors.textPrimary, fontWeight: '600', marginTop: 2 }]}>
@@ -716,7 +723,7 @@ export const HabitatMapScreen: React.FC = () => {
                 <View style={styles.metaIconLabel}>
                   <Ionicons name="calendar" size={16} color={colors.warning} />
                   <Text style={[typography.caption2, { color: colors.textTertiary, marginLeft: 4 }]}>
-                    Época de floración
+                    {t('Época de floración')}
                   </Text>
                 </View>
                 <Text style={[typography.footnote, { color: colors.textPrimary, fontWeight: '600', marginTop: 2 }]}>
@@ -729,7 +736,7 @@ export const HabitatMapScreen: React.FC = () => {
                 <View style={styles.metaIconLabel}>
                   <Ionicons name="trending-up" size={16} color={colors.info} />
                   <Text style={[typography.caption2, { color: colors.textTertiary, marginLeft: 4 }]}>
-                    Altitud / Rango
+                    {t('Altitud / Rango')}
                   </Text>
                 </View>
                 <Text style={[typography.footnote, { color: colors.textPrimary, fontWeight: '600', marginTop: 2 }]}>
@@ -742,7 +749,7 @@ export const HabitatMapScreen: React.FC = () => {
                 <View style={styles.metaIconLabel}>
                   <Ionicons name="map" size={16} color={colors.accent} />
                   <Text style={[typography.caption2, { color: colors.textTertiary, marginLeft: 4 }]}>
-                    Ecorregión
+                    {t('Ecorregión')}
                   </Text>
                 </View>
                 <Text style={[typography.footnote, { color: colors.textPrimary, fontWeight: '600', marginTop: 2 }]}>
@@ -764,7 +771,7 @@ export const HabitatMapScreen: React.FC = () => {
           <View style={styles.emptySheet}>
             <Ionicons name="globe-outline" size={32} color={colors.textTertiary} />
             <Text style={[typography.subheadline, { color: colors.textSecondary, marginTop: 8 }]}>
-              Selecciona una región del mapa para inspeccionar sus condiciones naturales
+              {t('Selecciona una región del mapa para inspeccionar sus condiciones naturales')}
             </Text>
           </View>
         )}

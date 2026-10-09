@@ -34,6 +34,7 @@ import { scheduleTreatmentReminder } from '../services/notificationService';
 import { getPlantById } from '../services/plantApi';
 import { useGarden } from '../context/GardenContext';
 import { usePlanLimits } from '../hooks/usePlanLimits';
+import { useTranslation } from '../i18n';
 
 export const HealthDiagnosisScreen: React.FC = () => {
   const { colors, isDark, spacing, typography, layout } = useAppTheme();
@@ -41,6 +42,7 @@ export const HealthDiagnosisScreen: React.FC = () => {
   const route = useRoute<any>();
   const { plants, updatePlantHealth, registerDiagnosis } = useGarden();
   const limits = usePlanLimits();
+  const { t } = useTranslation();
 
   const plantId = route.params?.plantId;
   const plantDef = plantId ? getPlantById(plantId) : undefined;
@@ -60,7 +62,7 @@ export const HealthDiagnosisScreen: React.FC = () => {
   const [lastAnalyzed, setLastAnalyzed] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isDiagnosing, setIsDiagnosing] = useState<boolean>(false);
-  const [diagnosisStepText, setDiagnosisStepText] = useState<string>('Analizando tejido foliar...');
+  const [diagnosisStepText, setDiagnosisStepText] = useState<string>(t('Analizando tejido foliar...'));
   const [diagnosisResult, setDiagnosisResult] = useState<HealthDiagnosisResult | null>(null);
   const [treatmentMode, setTreatmentMode] = useState<'organic' | 'chemical'>('organic');
   const [treatmentScheduled, setTreatmentScheduled] = useState<boolean>(false);
@@ -88,8 +90,8 @@ export const HealthDiagnosisScreen: React.FC = () => {
       );
       anim.start();
 
-      const t1 = setTimeout(() => setDiagnosisStepText('Detectando manchas y parásitos...'), 500);
-      const t2 = setTimeout(() => setDiagnosisStepText('Consultando base de patología vegetal...'), 1000);
+      const t1 = setTimeout(() => setDiagnosisStepText(t('Detectando manchas y parásitos...')), 500);
+      const t2 = setTimeout(() => setDiagnosisStepText(t('Consultando base de patología vegetal...')), 1000);
 
       return () => {
         anim.stop();
@@ -99,14 +101,14 @@ export const HealthDiagnosisScreen: React.FC = () => {
     } else {
       laserAnim.setValue(0);
     }
-  }, [isDiagnosing, laserAnim]);
+  }, [isDiagnosing, laserAnim, t]);
 
   const handleTakePhoto = async () => {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       const perm = await ImagePicker.requestCameraPermissionsAsync();
       if (!perm.granted) {
-        Alert.alert('Cámara', 'Necesitas permiso de cámara para diagnosticar la planta.');
+        Alert.alert(t('Cámara'), t('Necesitas permiso de cámara para diagnosticar la planta.'));
         return;
       }
       const shot = await ImagePicker.launchCameraAsync({
@@ -118,7 +120,7 @@ export const HealthDiagnosisScreen: React.FC = () => {
         processImage(shot.assets[0].uri);
       }
     } catch {
-      setErrorMessage('No se pudo abrir la cámara.');
+      setErrorMessage(t('No se pudo abrir la cámara.'));
     }
   };
 
@@ -135,7 +137,7 @@ export const HealthDiagnosisScreen: React.FC = () => {
         processImage(pickerResult.assets[0].uri);
       }
     } catch {
-      setErrorMessage('No se pudo abrir la galería de imágenes.');
+      setErrorMessage(t('No se pudo abrir la galería de imágenes.'));
     }
   };
 
@@ -165,11 +167,11 @@ export const HealthDiagnosisScreen: React.FC = () => {
   const guardPestResult = (result: HealthDiagnosisResult): boolean => {
     if (result.category === 'Plaga' && limits.isFeatureLocked('pestDiagnosis')) {
       Alert.alert(
-        'Diagnóstico de plagas Pro',
-        `Detectamos ${result.name}. Identificar plagas con detalle y su tratamiento es exclusivo de Plantae Pro.`,
+        t('Diagnóstico de plagas Pro'),
+        t('Detectamos {nombre}. Identificar plagas con detalle y su tratamiento es exclusivo de Plantae Pro.', { nombre: result.name }),
         [
-          { text: 'Ahora no', style: 'cancel' },
-          { text: 'Ver Pro', onPress: () => navigation.navigate('Paywall') },
+          { text: t('Ahora no'), style: 'cancel' },
+          { text: t('Ver Pro'), onPress: () => navigation.navigate('Paywall') },
         ]
       );
       return true;
@@ -208,19 +210,19 @@ export const HealthDiagnosisScreen: React.FC = () => {
     } catch (err) {
       if (err instanceof HealthNoPlantError) {
         setErrorMessage(
-          'No detectamos una planta en la imagen. Enfoca de cerca las hojas o el tallo y vuelve a intentarlo.'
+          t('No detectamos una planta en la imagen. Enfoca de cerca las hojas o el tallo y vuelve a intentarlo.')
         );
       } else if (err instanceof ApiError && err.status === 429) {
         const retry = err.retryAfterSeconds
-          ? ` Podrás volver a intentarlo en ${Math.ceil(err.retryAfterSeconds / 60)} min.`
+          ? t(' Podrás volver a intentarlo en {min} min.', { min: Math.ceil(err.retryAfterSeconds / 60) })
           : '';
-        Alert.alert('Límite de diagnósticos', `${err.message}${retry}`, [
-          { text: 'Entendido', style: 'cancel' },
-          { text: 'Ver Pro', onPress: () => navigation.navigate('Paywall') },
+        Alert.alert(t('Límite de diagnósticos'), `${err.message}${retry}`, [
+          { text: t('Entendido'), style: 'cancel' },
+          { text: t('Ver Pro'), onPress: () => navigation.navigate('Paywall') },
         ]);
         setErrorMessage(err.message);
       } else {
-        setErrorMessage('No se pudo completar el análisis fitosanitario. Revisa tu conexión y vuelve a intentarlo.');
+        setErrorMessage(t('No se pudo completar el análisis fitosanitario. Revisa tu conexión y vuelve a intentarlo.'));
       }
     } finally {
       setIsDiagnosing(false);
@@ -239,7 +241,7 @@ export const HealthDiagnosisScreen: React.FC = () => {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch {}
 
-    const reminderPlantName = plantName || 'tu planta';
+    const reminderPlantName = plantName || t('tu planta');
     const activeOption =
       treatmentMode === 'organic'
         ? diagnosisResult.treatment.organicOption.title
@@ -247,15 +249,18 @@ export const HealthDiagnosisScreen: React.FC = () => {
 
     const identifier = await scheduleTreatmentReminder(reminderPlantName, activeOption, 4);
     if (!identifier) {
-      setErrorMessage('No se pudo programar el recordatorio. Revisa los permisos de notificación.');
+      setErrorMessage(t('No se pudo programar el recordatorio. Revisa los permisos de notificación.'));
       return;
     }
     setTreatmentScheduled(true);
     setErrorMessage(null);
 
     Alert.alert(
-      '¡Tratamiento Programado!',
-      `Se ha creado un recordatorio local para aplicar "${activeOption}" cada ${diagnosisResult.treatment.frequency}`
+      t('¡Tratamiento Programado!'),
+      t('Se ha creado un recordatorio local para aplicar "{tratamiento}" cada {frecuencia}', {
+        tratamiento: activeOption,
+        frecuencia: diagnosisResult.treatment.frequency,
+      })
     );
   };
 
@@ -282,19 +287,19 @@ export const HealthDiagnosisScreen: React.FC = () => {
           onPress={() => navigation.goBack()}
           style={styles.backButton}
           accessibilityRole="button"
-          accessibilityLabel="Volver"
+          accessibilityLabel={t('Volver')}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <Ionicons name="chevron-back" size={26} color={colors.primary} />
-          <Text style={[typography.body, { color: colors.primary, fontWeight: '600' }]}>Atrás</Text>
+          <Text style={[typography.body, { color: colors.primary, fontWeight: '600' }]}>{t('Atrás')}</Text>
         </TouchableOpacity>
 
         <View style={styles.headerTitleCenter}>
           <Text style={[typography.headline, { color: colors.textPrimary }]} numberOfLines={1}>
-            Diagnóstico de Salud
+            {t('Diagnóstico de Salud')}
           </Text>
           <Text style={[typography.caption1, { color: colors.textSecondary }]} numberOfLines={1}>
-            {plantName || 'Evaluación de plagas y hongos'}
+            {plantName || t('Evaluación de plagas y hongos')}
           </Text>
         </View>
 
@@ -313,11 +318,11 @@ export const HealthDiagnosisScreen: React.FC = () => {
             </View>
 
             <Text style={[typography.title2, { color: colors.textPrimary, fontWeight: '700', marginTop: spacing.md, textAlign: 'center' }]}>
-              Diagnosticar hoja o tallo
+              {t('Diagnosticar hoja o tallo')}
             </Text>
 
             <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xs, marginBottom: spacing.lg, lineHeight: 22 }]}>
-              Toma una foto de cerca a las hojas manchadas, descoloridas o con presencia de insectos para identificar la causa exacta y su cura.
+              {t('Toma una foto de cerca a las hojas manchadas, descoloridas o con presencia de insectos para identificar la causa exacta y su cura.')}
             </Text>
 
             {errorMessage && (
@@ -330,7 +335,7 @@ export const HealthDiagnosisScreen: React.FC = () => {
 
             <View style={{ width: '100%', gap: 10 }}>
               <Button
-                title="Tomar foto con la cámara"
+                title={t('Tomar foto con la cámara')}
                 onPress={handleTakePhoto}
                 variant="primary"
                 size="lg"
@@ -338,7 +343,7 @@ export const HealthDiagnosisScreen: React.FC = () => {
               />
 
               <Button
-                title="Seleccionar foto de la galería"
+                title={t('Seleccionar foto de la galería')}
                 onPress={handlePickFromGallery}
                 variant="secondary"
                 size="lg"
@@ -348,7 +353,7 @@ export const HealthDiagnosisScreen: React.FC = () => {
               {__DEV__ ? (
                 <>
                   <Button
-                    title="Analizar muestra con Cochinilla (Demo)"
+                    title={t('Analizar muestra con Cochinilla (Demo)')}
                     onPress={() => handleUseSample('cochinilla')}
                     variant="secondary"
                     size="md"
@@ -356,7 +361,7 @@ export const HealthDiagnosisScreen: React.FC = () => {
                   />
 
                   <Button
-                    title="Analizar muestra con Hongos (Demo)"
+                    title={t('Analizar muestra con Hongos (Demo)')}
                     onPress={() => handleUseSample('hongos')}
                     variant="secondary"
                     size="md"
@@ -375,7 +380,7 @@ export const HealthDiagnosisScreen: React.FC = () => {
                 style={styles.previewImage}
                 resizeMode="cover"
                 accessible={true}
-                accessibilityLabel="Foto capturada de la planta para diagnóstico"
+                accessibilityLabel={t('Foto capturada de la planta para diagnóstico')}
               />
 
               {isDiagnosing && (
@@ -413,7 +418,7 @@ export const HealthDiagnosisScreen: React.FC = () => {
                 }}
                 style={styles.retakeFloatingBtn}
                 accessibilityRole="button"
-                accessibilityLabel="Analizar otra foto"
+                accessibilityLabel={t('Analizar otra foto')}
               >
                 <Ionicons name="refresh" size={18} color="#FFFFFF" />
               </TouchableOpacity>
@@ -429,7 +434,7 @@ export const HealthDiagnosisScreen: React.FC = () => {
 
             {/* SKELETON DEL RESULTADO MIENTRAS SE ANALIZA */}
             {isDiagnosing && (
-              <Card elevated style={{ marginTop: spacing.md }} accessible={true} accessibilityLabel="Analizando la muestra">
+              <Card elevated style={{ marginTop: spacing.md }} accessible={true} accessibilityLabel={t('Analizando la muestra')}>
                 <SkeletonBox width="60%" height={22} borderRadius={6} />
                 <SkeletonBox width="100%" height={14} borderRadius={6} style={{ marginTop: 12 }} />
                 <SkeletonBox width="85%" height={14} borderRadius={6} style={{ marginTop: 8 }} />
@@ -445,13 +450,13 @@ export const HealthDiagnosisScreen: React.FC = () => {
                   <View style={styles.resultHeaderRow}>
                     <View style={{ flex: 1 }}>
                       <View style={{ flexDirection: 'row', gap: 6, marginBottom: 4, flexWrap: 'wrap' }}>
-                        <Badge label={diagnosisResult.category} variant="neutral" />
+                        <Badge label={t(diagnosisResult.category)} variant="neutral" />
                         <Badge
-                          label={`Severidad ${diagnosisResult.severity.toUpperCase()}`}
+                          label={t('Severidad {nivel}', { nivel: t(diagnosisResult.severity).toUpperCase() })}
                           variant={getSeverityBadgeVariant(diagnosisResult.severity)}
                         />
                         {diagnosisResult.source === 'mock' ? (
-                          <Badge label="Demo" variant="neutral" />
+                          <Badge label={t('Demo')} variant="neutral" />
                         ) : null}
                       </View>
 
@@ -479,7 +484,7 @@ export const HealthDiagnosisScreen: React.FC = () => {
                     <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginTop: spacing.sm }}>
                       <Ionicons name="help-circle" size={18} color={colors.warning} />
                       <Text style={[typography.footnote, { color: colors.textSecondary, flex: 1, marginLeft: 8, lineHeight: 19 }]}>
-                        La confianza del diagnóstico es baja ({diagnosisResult.confidence}%). Toma una foto más nítida de las zonas afectadas para confirmarlo.
+                        {t('La confianza del diagnóstico es baja ({confianza}%). Toma una foto más nítida de las zonas afectadas para confirmarlo.', { confianza: diagnosisResult.confidence })}
                       </Text>
                     </View>
                   ) : null}
@@ -487,7 +492,7 @@ export const HealthDiagnosisScreen: React.FC = () => {
                   {/* SÍNTOMAS IDENTIFICADOS */}
                   <View style={[styles.symptomsBox, { backgroundColor: isDark ? '#2C2C2E' : '#F8F9FA' }]}>
                     <Text style={[typography.subheadline, { color: colors.textPrimary, fontWeight: '600', marginBottom: 6 }]}>
-                      Síntomas visuales detectados:
+                      {t('Síntomas visuales detectados:')}
                     </Text>
                     {diagnosisResult.symptoms.map((s, idx) => (
                       <View key={idx} style={styles.symptomItem}>
@@ -503,14 +508,14 @@ export const HealthDiagnosisScreen: React.FC = () => {
                   {diagnosisResult.referenceImages.length > 0 && (
                     <View style={{ marginTop: spacing.md }}>
                       <Text style={[typography.subheadline, { color: colors.textPrimary, fontWeight: '600', marginBottom: 8 }]}>
-                        Fotos de referencia:
+                        {t('Fotos de referencia:')}
                       </Text>
                       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
                         {diagnosisResult.referenceImages.map((refKey, idx) => (
                           <View
                             key={`${refKey}-${idx}`}
                             accessible={true}
-                            accessibilityLabel={`Foto de referencia ${idx + 1}: ${refKey.replace(/_/g, ' ')}`}
+                            accessibilityLabel={t('Foto de referencia {indice}: {nombre}', { indice: idx + 1, nombre: refKey.replace(/_/g, ' ') })}
                             style={[styles.referenceTile, { backgroundColor: isDark ? '#2C2C2E' : '#EFF3EE' }]}
                           >
                             <Ionicons name="image-outline" size={26} color={colors.textTertiary} />
@@ -540,7 +545,7 @@ export const HealthDiagnosisScreen: React.FC = () => {
                     }}
                     accessibilityRole="button"
                     accessibilityState={{ selected: treatmentMode === 'organic' }}
-                    accessibilityLabel="Tratamiento orgánico ecológico"
+                    accessibilityLabel={t('Tratamiento orgánico ecológico')}
                   >
                     <Ionicons
                       name="leaf"
@@ -557,7 +562,7 @@ export const HealthDiagnosisScreen: React.FC = () => {
                         },
                       ]}
                     >
-                      Opción Orgánica (Eco)
+                      {t('Opción Orgánica (Eco)')}
                     </Text>
                   </TouchableOpacity>
 
@@ -572,7 +577,7 @@ export const HealthDiagnosisScreen: React.FC = () => {
                     }}
                     accessibilityRole="button"
                     accessibilityState={{ selected: treatmentMode === 'chemical' }}
-                    accessibilityLabel="Tratamiento químico de acción rápida"
+                    accessibilityLabel={t('Tratamiento químico de acción rápida')}
                   >
                     <Ionicons
                       name="flask"
@@ -589,7 +594,7 @@ export const HealthDiagnosisScreen: React.FC = () => {
                         },
                       ]}
                     >
-                      Opción Química (Rápida)
+                      {t('Opción Química (Rápida)')}
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -608,7 +613,7 @@ export const HealthDiagnosisScreen: React.FC = () => {
                   <View style={styles.recipeRow}>
                     <Ionicons name="basket" size={18} color={colors.primary} />
                     <View style={{ flex: 1, marginLeft: 8 }}>
-                      <Text style={[typography.caption1, { color: colors.textTertiary }]}>Productos de referencia:</Text>
+                      <Text style={[typography.caption1, { color: colors.textTertiary }]}>{t('Productos de referencia:')}</Text>
                       <Text style={[typography.subheadline, { color: colors.textPrimary, fontWeight: '600' }]}>
                         {treatmentMode === 'organic'
                           ? diagnosisResult.treatment.organicOption.products
@@ -620,7 +625,7 @@ export const HealthDiagnosisScreen: React.FC = () => {
                   <View style={[styles.recipeRow, { marginTop: 8 }]}>
                     <Ionicons name="color-filter" size={18} color={colors.accent} />
                     <View style={{ flex: 1, marginLeft: 8 }}>
-                      <Text style={[typography.caption1, { color: colors.textTertiary }]}>Dosis exacta recomendada:</Text>
+                      <Text style={[typography.caption1, { color: colors.textTertiary }]}>{t('Dosis exacta recomendada:')}</Text>
                       <Text style={[typography.subheadline, { color: colors.textPrimary, fontWeight: '600' }]}>
                         {treatmentMode === 'organic'
                           ? diagnosisResult.treatment.organicOption.dosage
@@ -641,7 +646,7 @@ export const HealthDiagnosisScreen: React.FC = () => {
                   <View style={styles.timelineRow}>
                     <View style={styles.timelineItem}>
                       <Ionicons name="repeat" size={18} color={colors.info} />
-                      <Text style={[typography.caption2, { color: colors.textTertiary, marginTop: 2 }]}>Frecuencia</Text>
+                      <Text style={[typography.caption2, { color: colors.textTertiary, marginTop: 2 }]}>{t('Frecuencia')}</Text>
                       <Text style={[typography.caption1, { color: colors.textPrimary, fontWeight: '600' }]}>
                         {diagnosisResult.treatment.frequency}
                       </Text>
@@ -649,7 +654,7 @@ export const HealthDiagnosisScreen: React.FC = () => {
 
                     <View style={styles.timelineItem}>
                       <Ionicons name="time" size={18} color={colors.warning} />
-                      <Text style={[typography.caption2, { color: colors.textTertiary, marginTop: 2 }]}>Tiempo de mejora</Text>
+                      <Text style={[typography.caption2, { color: colors.textTertiary, marginTop: 2 }]}>{t('Tiempo de mejora')}</Text>
                       <Text style={[typography.caption1, { color: colors.textPrimary, fontWeight: '600' }]}>
                         {diagnosisResult.treatment.recoveryDays}
                       </Text>
@@ -662,7 +667,7 @@ export const HealthDiagnosisScreen: React.FC = () => {
                   <View style={styles.safetyHeader}>
                     <Ionicons name="warning" size={22} color={colors.warning} />
                     <Text style={[typography.headline, { color: colors.textPrimary, marginLeft: 8 }]}>
-                      Advertencia de Seguridad
+                      {t('Advertencia de Seguridad')}
                     </Text>
                   </View>
 
@@ -670,21 +675,21 @@ export const HealthDiagnosisScreen: React.FC = () => {
                     {diagnosisResult.treatment.safetyAlert.hasPetsWarning && (
                       <View style={[styles.safetyChip, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#FFE0B2' }]}>
                         <Text style={[typography.caption2, { color: colors.textPrimary, fontWeight: '600' }]}>
-                          🐾 Proteger mascotas
+                          {t('🐾 Proteger mascotas')}
                         </Text>
                       </View>
                     )}
                     {diagnosisResult.treatment.safetyAlert.hasChildrenWarning && (
                       <View style={[styles.safetyChip, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#FFE0B2' }]}>
                         <Text style={[typography.caption2, { color: colors.textPrimary, fontWeight: '600' }]}>
-                          👶 Fuera de alcance infantil
+                          {t('👶 Fuera de alcance infantil')}
                         </Text>
                       </View>
                     )}
                     {diagnosisResult.treatment.safetyAlert.requireGloves && (
                       <View style={[styles.safetyChip, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#FFE0B2' }]}>
                         <Text style={[typography.caption2, { color: colors.textPrimary, fontWeight: '600' }]}>
-                          🧤 Usar guantes
+                          {t('🧤 Usar guantes')}
                         </Text>
                       </View>
                     )}
@@ -698,7 +703,7 @@ export const HealthDiagnosisScreen: React.FC = () => {
                 {/* PREVENCIÓN */}
                 <Card elevated>
                   <Text style={[typography.headline, { color: colors.textPrimary, marginBottom: 4 }]}>
-                    Cómo prevenirlo a futuro
+                    {t('Cómo prevenirlo a futuro')}
                   </Text>
                   <Text style={[typography.body, { color: colors.textSecondary, lineHeight: 22 }]}>
                     {diagnosisResult.treatment.prevention}
@@ -717,7 +722,7 @@ export const HealthDiagnosisScreen: React.FC = () => {
 
                 {/* BOTÓN: PROGRAMAR TRATAMIENTO CON RECORDATORIOS */}
                 <Button
-                  title={treatmentScheduled ? 'Tratamiento Programado con Éxito ✓' : 'Programar Recordatorio de Tratamiento 🔔'}
+                  title={treatmentScheduled ? t('Tratamiento Programado con Éxito ✓') : t('Programar Recordatorio de Tratamiento 🔔')}
                   onPress={handleScheduleTreatment}
                   disabled={treatmentScheduled}
                   variant={treatmentScheduled ? 'secondary' : 'primary'}

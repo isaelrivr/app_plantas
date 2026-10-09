@@ -8,6 +8,8 @@
  * En producción pueden migrarse a Firestore para edición sin recompilar la app.
  */
 
+import { t } from '../i18n';
+
 export type ToxicityLevel = 'safe' | 'caution' | 'toxic';
 
 export interface ToxicityInfo {
@@ -117,19 +119,37 @@ const TOXICITY_BY_SPECIES: Record<string, Omit<ToxicityInfo, 'speciesId'>> = {
 };
 
 /**
+ * Localiza los textos visibles de una ficha de toxicidad en el idioma activo.
+ * Los niveles (`pets` / `children`) se mantienen intactos por ser valores técnicos.
+ */
+function localizeToxicity(
+  speciesId: string,
+  info: Omit<ToxicityInfo, 'speciesId'>
+): ToxicityInfo {
+  return {
+    speciesId,
+    pets: info.pets,
+    children: info.children,
+    petsNotes: t(info.petsNotes),
+    childrenNotes: t(info.childrenNotes),
+    summary: t(info.summary),
+  };
+}
+
+/**
  * Devuelve la información de toxicidad para una especie.
  * Es tolerante a IDs desconocidos (devuelve precaución por defecto).
  */
 export function getToxicity(speciesId: string): ToxicityInfo {
   const normalized = (speciesId || '').toLowerCase().replace(/[-_]/g, '-');
   const direct = TOXICITY_BY_SPECIES[normalized];
-  if (direct) return { speciesId: normalized, ...direct };
+  if (direct) return localizeToxicity(normalized, direct);
 
   // Coincidencia parcial por nombre de catálogo
   const key = Object.keys(TOXICITY_BY_SPECIES).find((k) => normalized.includes(k));
-  if (key) return { speciesId: key, ...TOXICITY_BY_SPECIES[key] };
+  if (key) return localizeToxicity(key, TOXICITY_BY_SPECIES[key]);
 
-  return { speciesId: normalized, ...DEFAULT_TOXICITY };
+  return localizeToxicity(normalized, DEFAULT_TOXICITY);
 }
 
 /** ¿Es segura para el hogar con mascotas? */
@@ -137,11 +157,23 @@ export function isPetSafe(speciesId: string): boolean {
   return getToxicity(speciesId).pets === 'safe';
 }
 
+function levelMeta(label: string, shortLabel: string, icon: string) {
+  return {
+    get label() {
+      return t(label);
+    },
+    get shortLabel() {
+      return t(shortLabel);
+    },
+    icon,
+  };
+}
+
 export const toxicityLevelMeta: Record<
   ToxicityLevel,
   { label: string; shortLabel: string; icon: string }
 > = {
-  safe: { label: 'Segura', shortLabel: 'Segura', icon: 'shield-checkmark' },
-  caution: { label: 'Precaución', shortLabel: 'Precaución', icon: 'warning' },
-  toxic: { label: 'Tóxica', shortLabel: 'Tóxica', icon: 'skull' },
+  safe: levelMeta('Segura', 'Segura', 'shield-checkmark'),
+  caution: levelMeta('Precaución', 'Precaución', 'warning'),
+  toxic: levelMeta('Tóxica', 'Tóxica', 'skull'),
 };

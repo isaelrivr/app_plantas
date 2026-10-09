@@ -26,6 +26,8 @@
  *    ```
  */
 
+import { t } from '../i18n';
+
 export type HabitatZoneType = 'native' | 'naturalized' | 'cultivated';
 
 export interface HabitatRegionDetail {
@@ -44,7 +46,7 @@ export interface PlantHabitatInfo {
   originSummary: string;
   globalCoverage: string;
   regions: HabitatRegionDetail[];
-  conservationStatus: 'Preocupación Menor (LC)' | 'Vulnerable (VU)' | 'Casi Amenazada (NT)' | 'No Evaluada (NE)';
+  conservationStatus: string;
 }
 
 const HABITAT_DATABASE: Record<string, PlantHabitatInfo> = {
@@ -644,6 +646,27 @@ const HABITAT_DATABASE: Record<string, PlantHabitatInfo> = {
   },
 };
 /**
+ * Traduce los textos visibles de una ficha de hábitat al idioma activo.
+ * Se ejecuta al construir el resultado para respetar el idioma en uso.
+ */
+function localizeHabitat(source: PlantHabitatInfo): PlantHabitatInfo {
+  return {
+    ...source,
+    originSummary: t(source.originSummary),
+    globalCoverage: t(source.globalCoverage),
+    conservationStatus: t(source.conservationStatus),
+    regions: source.regions.map((region) => ({
+      ...region,
+      climate: t(region.climate),
+      floweringSeason: t(region.floweringSeason),
+      biogeographicZone: t(region.biogeographicZone),
+      elevationMeters: t(region.elevationMeters),
+      notes: t(region.notes),
+    })),
+  };
+}
+
+/**
  * Obtiene los datos biogeográficos y regiones de hábitat de una especie
  */
 export async function getPlantHabitat(plantId: string): Promise<PlantHabitatInfo> {
@@ -651,10 +674,11 @@ export async function getPlantHabitat(plantId: string): Promise<PlantHabitatInfo
   return new Promise((resolve) => {
     setTimeout(() => {
       const data = HABITAT_DATABASE[plantId] || HABITAT_DATABASE['monstera'];
-      resolve(data);
+      resolve(localizeHabitat(data));
     }, 350);
   });
 }
+
 /**
  * Retorna todos los países únicos donde habita la planta clasificados por tipo de zona
  */

@@ -1,5 +1,6 @@
 import { useGarden } from '../context/GardenContext';
 import { usePremium } from '../context/PremiumContext';
+import { t } from '../i18n';
 
 /**
  * Límites del plan Free y desbloqueo de funciones Premium.
@@ -27,28 +28,48 @@ export const LOCKED_FEATURES: PremiumFeature[] = [
 
 export const FEATURE_LABELS: Record<PremiumFeature, { title: string; description: string; icon: string }> = {
   animatedMap: {
-    title: 'Mapa de hábitat animado',
-    description: 'Explora el origen natural de cada especie con un mapa interactivo.',
+    get title() {
+      return t('Mapa de hábitat animado');
+    },
+    get description() {
+      return t('Explora el origen natural de cada especie con un mapa interactivo.');
+    },
     icon: 'map',
   },
   pestDiagnosis: {
-    title: 'Diagnóstico de plagas',
-    description: 'Detecta plagas y enfermedades con la cámara y recibe un plan de tratamiento.',
+    get title() {
+      return t('Diagnóstico de plagas');
+    },
+    get description() {
+      return t('Detecta plagas y enfermedades con la cámara y recibe un plan de tratamiento.');
+    },
     icon: 'bug',
   },
   personalizedClimate: {
-    title: 'Clima personalizado',
-    description: 'Ajustes de riego según el clima local de tu ciudad.',
+    get title() {
+      return t('Clima personalizado');
+    },
+    get description() {
+      return t('Ajustes de riego según el clima local de tu ciudad.');
+    },
     icon: 'partly-sunny',
   },
   growthDiary: {
-    title: 'Diario de crecimiento',
-    description: 'Registra el crecimiento de tus plantas con fotos y comparador.',
+    get title() {
+      return t('Diario de crecimiento');
+    },
+    get description() {
+      return t('Registra el crecimiento de tus plantas con fotos y comparador.');
+    },
     icon: 'book',
   },
   assistant: {
-    title: 'Asistente de plantas',
-    description: 'Pregunta lo que necesites sobre el cuidado de tus plantas.',
+    get title() {
+      return t('Asistente de plantas');
+    },
+    get description() {
+      return t('Pregunta lo que necesites sobre el cuidado de tus plantas.');
+    },
     icon: 'chatbubbles',
   },
 };

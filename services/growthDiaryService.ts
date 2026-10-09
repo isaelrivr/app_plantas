@@ -9,6 +9,7 @@
  * Storage; AsyncStorage queda como caché.
  */
 
+import { t } from '../i18n';
 import { loadJSON, saveJSON, STORAGE_KEYS } from './storage';
 
 export interface GrowthEntry {
@@ -79,7 +80,7 @@ function generateDevTimeline(plantId: string): GrowthEntry[] {
       heightCm: height,
       leafCount: leaves,
       healthScore: Math.min(100, 78 + i * 4 + (seed % 5)),
-      note: NOTES[i % NOTES.length],
+      note: t(NOTES[i % NOTES.length]),
     });
   }
   return entries;

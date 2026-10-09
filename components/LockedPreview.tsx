@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, StyleProp, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '../theme';
+import { useTranslation } from '../i18n';
 import { PremiumFeature, FEATURE_LABELS } from '../hooks/usePlanLimits';
 
 interface LockedPreviewProps {
@@ -27,8 +28,9 @@ export const LockedPreview: React.FC<LockedPreviewProps> = ({
   label,
 }) => {
   const { colors, layout, spacing, typography } = useAppTheme();
+  const { t } = useTranslation();
   const meta = feature ? FEATURE_LABELS[feature] : undefined;
-  const title = label ?? meta?.title ?? 'Función Premium';
+  const title = label ?? meta?.title ?? t('Función Premium');
 
   return (
     <View style={style}>
@@ -45,7 +47,7 @@ export const LockedPreview: React.FC<LockedPreviewProps> = ({
             },
           ]}
           accessible
-          accessibilityLabel={`${title} bloqueado. Requiere Plantae Pro.`}
+          accessibilityLabel={t('{title} bloqueado. Requiere Plantae Pro.', { title })}
         >
           <View
             style={[
@@ -74,7 +76,7 @@ export const LockedPreview: React.FC<LockedPreviewProps> = ({
             onPress={onUnlock}
             activeOpacity={0.8}
             accessibilityRole="button"
-            accessibilityLabel="Desbloquear con Plantae Pro"
+            accessibilityLabel={t('Desbloquear con Plantae Pro')}
             style={[
               styles.cta,
               {
@@ -87,7 +89,7 @@ export const LockedPreview: React.FC<LockedPreviewProps> = ({
           >
             <Ionicons name="sparkles" size={16} color="#1C1C1E" />
             <Text style={[styles.ctaText, { color: '#1C1C1E', marginLeft: spacing.xs }]}>
-              Desbloquear con Pro
+              {t('Desbloquear con Pro')}
             </Text>
           </TouchableOpacity>
         </View>

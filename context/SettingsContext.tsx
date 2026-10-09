@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useEffect, useMemo, useState, ReactNode } from 'react';
 import { useColorScheme } from 'react-native';
 import { loadJSON, saveJSON, STORAGE_KEYS } from '../services/storage';
+import { setI18nLanguage } from '../i18n/core';
+import type { AppLanguage } from '../i18n/types';
 
 /**
  * SettingsContext
@@ -11,12 +13,12 @@ import { loadJSON, saveJSON, STORAGE_KEYS } from '../services/storage';
  * instala @react-native-async-storage/async-storage y guarda/lee este objeto,
  * o sincronízalo con Firestore en users/{uid}/settings.
  *
- * IDIOMA: se guarda la preferencia; el diccionario completo de traducciones se
- * centralizaría en un i18n (p. ej. i18n-js). Aquí queda el scaffolding listo.
+ * IDIOMA: la preferencia se sincroniza con el módulo i18n (../i18n), que aplica
+ * las traducciones al inglés (el español es el idioma fuente del código).
  */
 
 export type ThemePreference = 'system' | 'light' | 'dark';
-export type AppLanguage = 'es' | 'en';
+export type { AppLanguage } from '../i18n/types';
 
 export const LANGUAGES: { code: AppLanguage; label: string }[] = [
   { code: 'es', label: 'Español' },
@@ -90,6 +92,11 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       hasOnboarded,
     });
   }, [isHydrated, themePreference, language, notificationsEnabled, hasOnboarded]);
+
+  // Mantiene el traductor global (servicios, alertas) en sintonía con el idioma.
+  useEffect(() => {
+    setI18nLanguage(language);
+  }, [language]);
 
   const resolvedScheme: 'light' | 'dark' =
     themePreference === 'system' ? (systemScheme === 'dark' ? 'dark' : 'light') : themePreference;

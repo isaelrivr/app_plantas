@@ -14,6 +14,7 @@
 
 import * as Crypto from 'expo-crypto';
 import { getDeviceId } from './deviceId';
+import { t } from '../i18n';
 
 /** URL base de las Cloud Functions, sin barra final. */
 export const API_BASE_URL = (process.env.EXPO_PUBLIC_PLANT_AI_ENDPOINT ?? '').trim().replace(/\/+$/, '');
@@ -79,8 +80,8 @@ async function parseError(response: Response): Promise<ApiError> {
   const message =
     body?.error?.message ??
     (response.status >= 500
-      ? 'El servidor de Plantae no está disponible en este momento. Inténtalo de nuevo.'
-      : 'La petición no se pudo completar. Revisa los datos e inténtalo de nuevo.');
+      ? t('El servidor de Plantae no está disponible en este momento. Inténtalo de nuevo.')
+      : t('La petición no se pudo completar. Revisa los datos e inténtalo de nuevo.'));
   return new ApiError(code, message, response.status, body?.error?.retryAfterSeconds);
 }
 
@@ -92,7 +93,7 @@ export async function postJson<T>(path: string, body: unknown, options: PostOpti
   if (!isApiConfigured()) {
     throw new ApiError(
       'NOT_CONFIGURED',
-      'La app no tiene configurado el servidor de reconocimiento (EXPO_PUBLIC_PLANT_AI_ENDPOINT).',
+      t('La app no tiene configurado el servidor de reconocimiento (EXPO_PUBLIC_PLANT_AI_ENDPOINT).'),
       0
     );
   }
@@ -145,9 +146,17 @@ export async function postJson<T>(path: string, body: unknown, options: PostOpti
         if (err.status < 500 || attempt >= maxAttempts - 1) throw err;
         lastError = err;
       } else if ((err as Error)?.name === 'AbortError') {
-        lastError = new ApiError('TIMEOUT', 'El análisis tardó demasiado. Comprueba tu conexión e inténtalo de nuevo.', 0);
+        lastError = new ApiError(
+          'TIMEOUT',
+          t('El análisis tardó demasiado. Comprueba tu conexión e inténtalo de nuevo.'),
+          0
+        );
       } else {
-        lastError = new ApiError('NETWORK', 'No se pudo conectar con el servidor de Plantae. Revisa tu conexión.', 0);
+        lastError = new ApiError(
+          'NETWORK',
+          t('No se pudo conectar con el servidor de Plantae. Revisa tu conexión.'),
+          0
+        );
       }
 
       if (attempt < maxAttempts - 1) {
@@ -156,5 +165,5 @@ export async function postJson<T>(path: string, body: unknown, options: PostOpti
     }
   }
 
-  throw lastError ?? new ApiError('NETWORK', 'No se pudo conectar con el servidor de Plantae.', 0);
+  throw lastError ?? new ApiError('NETWORK', t('No se pudo conectar con el servidor de Plantae.'), 0);
 }

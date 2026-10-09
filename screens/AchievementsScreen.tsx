@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { useTranslation } from '../i18n';
 import { useAppTheme } from '../theme';
 import { Card } from '../components/Card';
 import { AchievementCard } from '../components/AchievementCard';
@@ -11,6 +12,7 @@ import { getAchievements, getWeeklySummary, streakTier } from '../services/gamif
 
 export const AchievementsScreen: React.FC = () => {
   const { colors, layout, spacing, typography } = useAppTheme();
+  const { t } = useTranslation();
   const navigation = useNavigation<any>();
   const { stats } = useGarden();
 
@@ -53,13 +55,13 @@ export const AchievementsScreen: React.FC = () => {
           onPress={() => navigation.goBack()}
           style={styles.backButton}
           accessibilityRole="button"
-          accessibilityLabel="Volver"
+          accessibilityLabel={t('Volver')}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <Ionicons name="chevron-back" size={26} color={colors.primary} />
-          <Text style={[typography.body, { color: colors.primary, fontWeight: '600' }]}>Atrás</Text>
+          <Text style={[typography.body, { color: colors.primary, fontWeight: '600' }]}>{t('Atrás')}</Text>
         </TouchableOpacity>
-        <Text style={[typography.headline, { color: colors.textPrimary }]}>Logros</Text>
+        <Text style={[typography.headline, { color: colors.textPrimary }]}>{t('Logros')}</Text>
         <View style={styles.actionHeaderBtn} />
       </View>
 
@@ -81,20 +83,25 @@ export const AchievementsScreen: React.FC = () => {
               </Animated.View>
               <View style={{ flex: 1, marginLeft: spacing.md }}>
                 <Text style={[typography.title2, { color: colors.textPrimary }]}>
-                  {stats.currentStreak} {stats.currentStreak === 1 ? 'día' : 'días'} de racha
+                  {stats.currentStreak === 1
+                    ? t('1 día de racha')
+                    : t('{n} días de racha', { n: stats.currentStreak })}
                 </Text>
                 <Text style={[typography.footnote, { color: colors.textSecondary, marginTop: 2 }]}>
-                  Nivel {tier.label} · mejor racha: {stats.longestStreak} días
+                  {t('Nivel {nivel} · mejor racha: {dias} días', {
+                    nivel: tier.label,
+                    dias: stats.longestStreak,
+                  })}
                 </Text>
                 <Text style={[typography.caption2, { color: colors.textTertiary, marginTop: 6 }]}>
-                  Riega una planta hoy para mantener tu racha 🔥
+                  {t('Riega una planta hoy para mantener tu racha 🔥')}
                 </Text>
               </View>
             </Card>
 
             {/* RESUMEN SEMANAL */}
             <Text style={[typography.headline, { color: colors.textPrimary, marginTop: spacing.lg, marginBottom: spacing.sm }]}>
-              Tu semana
+              {t('Tu semana')}
             </Text>
             <Card style={{ marginBottom: spacing.lg }}>
               <View style={styles.summaryTop}>
@@ -112,24 +119,27 @@ export const AchievementsScreen: React.FC = () => {
                 <View style={styles.summaryStat}>
                   <Ionicons name="water" size={18} color={colors.info} />
                   <Text style={[typography.title3, { color: colors.textPrimary, marginTop: 4 }]}>{summary.waterings}</Text>
-                  <Text style={[typography.caption2, { color: colors.textTertiary }]}>riegos</Text>
+                  <Text style={[typography.caption2, { color: colors.textTertiary }]}>{t('riegos')}</Text>
                 </View>
                 <View style={styles.summaryStat}>
                   <Ionicons name="checkmark-done" size={18} color={colors.primary} />
                   <Text style={[typography.title3, { color: colors.textPrimary, marginTop: 4 }]}>{summary.tasksCompleted}</Text>
-                  <Text style={[typography.caption2, { color: colors.textTertiary }]}>tareas</Text>
+                  <Text style={[typography.caption2, { color: colors.textTertiary }]}>{t('tareas')}</Text>
                 </View>
                 <View style={styles.summaryStat}>
                   <Ionicons name="leaf" size={18} color={colors.primary} />
                   <Text style={[typography.title3, { color: colors.textPrimary, marginTop: 4 }]}>{stats.totalPlants}</Text>
-                  <Text style={[typography.caption2, { color: colors.textTertiary }]}>plantas</Text>
+                  <Text style={[typography.caption2, { color: colors.textTertiary }]}>{t('plantas')}</Text>
                 </View>
               </View>
             </Card>
 
             {/* LOGROS */}
             <Text style={[typography.headline, { color: colors.textPrimary, marginBottom: spacing.sm }]}>
-              Logros ({unlockedCount}/{achievements.length})
+              {t('Logros ({desbloqueados}/{total})', {
+                desbloqueados: unlockedCount,
+                total: achievements.length,
+              })}
             </Text>
             {achievements.map((achievement) => (
               <AchievementCard key={achievement.id} achievement={achievement} style={{ marginBottom: spacing.sm }} />

@@ -20,6 +20,7 @@
 
 import { CatalogPlant, searchPlants } from './plantApi';
 import { getToxicity } from './toxicityService';
+import { t } from '../i18n';
 
 export interface AssistantMessage {
   id: string;
@@ -59,8 +60,8 @@ export function createMessage(
 export function getWelcomeMessage(): AssistantMessage {
   return createMessage(
     'assistant',
-    '¡Hola! Soy tu asistente botánico de Plantae 🌿. Pregúntame sobre riego, luz, plagas, toxicidad o cuidados de tus plantas. Puedes empezar con una de las sugerencias de abajo.',
-    { quickReplies: SUGGESTED_QUESTIONS.slice(0, 4), source: 'mock' }
+    t('¡Hola! Soy tu asistente botánico de Plantae 🌿. Pregúntame sobre riego, luz, plagas, toxicidad o cuidados de tus plantas. Puedes empezar con una de las sugerencias de abajo.'),
+    { quickReplies: SUGGESTED_QUESTIONS.slice(0, 4).map((q) => t(q)), source: 'mock' }
   );
 }
 
@@ -70,7 +71,7 @@ interface AssistantContext {
 }
 
 const findPlantByText = (text: string): CatalogPlant | null => {
-  const lower = text.toLowerCase();
+  const lower = text.toLocaleLowerCase();
   const catalog = searchPlants('');
   return (
     catalog.find(
@@ -82,94 +83,116 @@ const findPlantByText = (text: string): CatalogPlant | null => {
 };
 
 function buildMockReply(prompt: string, context: AssistantContext): AssistantMessage {
-  const lower = prompt.toLowerCase();
+  // Las sugerencias rápidas se traducen en pantalla, así que el clasificador
+  // también debe reconocer preguntas escritas en inglés.
+  const lower = prompt.toLocaleLowerCase();
+  const normalized = lower.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   const plant = findPlantByText(prompt);
 
   // Preguntas sobre mascotas / niños / toxicidad
-  if (lower.includes('gato') || lower.includes('perro') || lower.includes('mascota') || lower.includes('niño') || lower.includes('tóxic') || lower.includes('toxico')) {
+  if (normalized.includes('gato') || normalized.includes('perro') || normalized.includes('mascota') || normalized.includes('nino') || normalized.includes('toxic') || normalized.includes('cat') || normalized.includes('dog') || normalized.includes('pet') || normalized.includes('child')) {
     if (plant) {
       const tox = getToxicity(plant.id);
       return createMessage(
         'assistant',
-        `${plant.name}: ${tox.summary}\n\n• Mascotas (${tox.pets}): ${tox.petsNotes}\n• Niños (${tox.children}): ${tox.childrenNotes}\n\nPuedes ver la etiqueta de toxicidad en la ficha de la especie.`,
-        { quickReplies: ['¿Qué plantas son 100% seguras?', 'Muéstrame el catálogo seguro'], source: 'mock' }
+        t('{nombre}: {resumen}\n\n• Mascotas ({mascotas}): {notasMascotas}\n• Niños ({ninos}): {notasNinos}\n\nPuedes ver la etiqueta de toxicidad en la ficha de la especie.', {
+          nombre: plant.name,
+          resumen: tox.summary,
+          mascotas: tox.pets,
+          notasMascotas: tox.petsNotes,
+          ninos: tox.children,
+          notasNinos: tox.childrenNotes,
+        }),
+        { quickReplies: [t('¿Qué plantas son 100% seguras?'), t('Muéstrame el catálogo seguro')], source: 'mock' }
       );
     }
     return createMessage(
       'assistant',
-      'La seguridad depende de cada especie. Aloe Vera, Espatifilo, Ficus y Sansevieria son tóxicas o irritantes para gatos y perros, mientras que Echeverias, Calatheas y Helecho de Boston son seguras. Filtra el catálogo por "Segura para mascotas" para ver la lista completa.',
-      { quickReplies: ['¿Qué plantas son 100% segura?', 'Abrir enciclopedia'], source: 'mock' }
+      t('La seguridad depende de cada especie. Aloe Vera, Espatifilo, Ficus y Sansevieria son tóxicas o irritantes para gatos y perros, mientras que Echeverias, Calatheas y Helecho de Boston son seguras. Filtra el catálogo por "Segura para mascotas" para ver la lista completa.'),
+      { quickReplies: [t('¿Qué plantas son 100% seguras?'), t('Abrir enciclopedia')], source: 'mock' }
     );
   }
 
   // Riego
-  if (lower.includes('riego') || lower.includes('regar') || lower.includes('agua')) {
+  if (normalized.includes('riego') || normalized.includes('regar') || normalized.includes('agua') || normalized.includes('water') || normalized.includes('how often')) {
     if (plant) {
       return createMessage(
         'assistant',
-        `Para tu ${plant.name}, riega ${plant.watering.toLowerCase()}\n\nTip: ${plant.climateTip}`,
-        { quickReplies: ['Programar recordatorio de riego', '¿Cada cuánto?'], source: 'mock' }
+        t('Para tu {nombre}, riega {riego}\n\nTip: {tip}', {
+          nombre: plant.name,
+          riego: plant.watering.toLowerCase(),
+          tip: plant.climateTip,
+        }),
+        { quickReplies: [t('Programar recordatorio de riego'), t('¿Cada cuánto?')], source: 'mock' }
       );
     }
     return createMessage(
       'assistant',
-      'La regla de oro: introduce un dedo 3-5 cm en el sustrato y riega solo si está seco. Evita calendarios rígidos; ajusta según temperatura, humedad y estación. Dime el nombre de tu planta y te doy su frecuencia exacta.',
-      { quickReplies: ['¿Cómo sé si mi planta tiene sed?', 'Abrir calendario'], source: 'mock' }
+      t('La regla de oro: introduce un dedo 3-5 cm en el sustrato y riega solo si está seco. Evita calendarios rígidos; ajusta según temperatura, humedad y estación. Dime el nombre de tu planta y te doy su frecuencia exacta.'),
+      { quickReplies: [t('¿Cómo sé si mi planta tiene sed?'), t('Abrir calendario')], source: 'mock' }
     );
   }
 
   // Luz
-  if (lower.includes('luz') || lower.includes('sol') || lower.includes('sombra')) {
+  if (normalized.includes('luz') || normalized.includes('sol') || normalized.includes('sombra') || normalized.includes('light') || normalized.includes('sun') || normalized.includes('shade') || normalized.includes('window')) {
     return createMessage(
       'assistant',
       plant
-        ? `${plant.name} necesita: ${plant.light}`
-        : 'La mayoría de plantas de interior prefieren luz indirecta brillante (cerca de una ventana sin sol directo). El sol directo de mediodía suele quemar las hojas tropicales. ¿Para qué planta quieres la recomendación?',
-      { quickReplies: ['¿Qué es luz indirecta?', 'Tengo la ventana al norte'], source: 'mock' }
+        ? t('{nombre} necesita: {luz}', { nombre: plant.name, luz: plant.light })
+        : t('La mayoría de plantas de interior prefieren luz indirecta brillante (cerca de una ventana sin sol directo). El sol directo de mediodía suele quemar las hojas tropicales. ¿Para qué planta quieres la recomendación?'),
+      { quickReplies: [t('¿Qué es luz indirecta?'), t('Tengo la ventana al norte')], source: 'mock' }
     );
   }
 
   // Puntas marrones / problemas
-  if (lower.includes('marrón') || lower.includes('marron') || lower.includes('amarill') || lower.includes('puntas') || lower.includes('hojas')) {
+  if (normalized.includes('marron') || normalized.includes('amarill') || normalized.includes('puntas') || normalized.includes('hojas') || normalized.includes('brown') || normalized.includes('yellow') || normalized.includes('leaf') || normalized.includes('leaves') || normalized.includes('spot')) {
     return createMessage(
       'assistant',
-      'Las puntas marrones suelen indicar humedad ambiental baja o agua con exceso de sales/cloro. Prueba: 1) usa agua reposada o filtrada, 2) pulveriza el follaje, 3) aleja la planta de radiadores. Si son manchas amarillas con bultos, podría ser una plaga: usa el diagnóstico de salud.',
-      { quickReplies: ['Diagnosticar con una foto', '¿Humedad ideal?'], source: 'mock' }
+      t('Las puntas marrones suelen indicar humedad ambiental baja o agua con exceso de sales/cloro. Prueba: 1) usa agua reposada o filtrada, 2) pulveriza el follaje, 3) aleja la planta de radiadores. Si son manchas amarillas con bultos, podría ser una plaga: usa el diagnóstico de salud.'),
+      { quickReplies: [t('Diagnosticar con una foto'), t('¿Humedad ideal?')], source: 'mock' }
     );
   }
 
   // Principiantes
-  if (lower.includes('principiante') || lower.includes('fácil') || lower.includes('facil') || lower.includes('resistente')) {
+  if (normalized.includes('principiante') || normalized.includes('facil') || normalized.includes('resistente') || normalized.includes('beginner') || normalized.includes('easy') || normalized.includes('hardy')) {
     return createMessage(
       'assistant',
-      'Para empezar te recomiendo: Sansevieria (casi indestructible), Pothos (crece rápido), Echeveria (suculenta) y Espatifilo (florece con poca luz). Las cuatro toleran olvidos de riego. ¿Quieres que te muestre sus fichas?',
-      { quickReplies: ['Comparar las 4', 'Abrir enciclopedia'], source: 'mock' }
+      t('Para empezar te recomiendo: Sansevieria (casi indestructible), Pothos (crece rápido), Echeveria (suculenta) y Espatifilo (florece con poca luz). Las cuatro toleran olvidos de riego. ¿Quieres que te muestre sus fichas?'),
+      { quickReplies: [t('Comparar las 4'), t('Abrir enciclopedia')], source: 'mock' }
     );
   }
 
   // Humedad
-  if (lower.includes('humedad') || lower.includes('humid')) {
+  if (normalized.includes('humedad') || normalized.includes('humid')) {
     return createMessage(
       'assistant',
-      'Para subir la humedad: agrupa plantas, usa un humidificador, coloca la maceta sobre guijarros con agua (sin tocar el fondo) o pulveriza por la mañana. Las calatheas y helechos agradecen 60-80% de humedad.',
-      { quickReplies: ['¿Humidificador o nebulizador?', 'Abrir calathea'], source: 'mock' }
+      t('Para subir la humedad: agrupa plantas, usa un humidificador, coloca la maceta sobre guijarros con agua (sin tocar el fondo) o pulveriza por la mañana. Las calatheas y helechos agradecen 60-80% de humedad.'),
+      { quickReplies: [t('¿Humidificador o nebulizador?'), t('Abrir calathea')], source: 'mock' }
     );
   }
 
   // Trasplante
-  if (lower.includes('trasplant') || lower.includes('maceta') || lower.includes('sustrato')) {
+  if (normalized.includes('trasplant') || normalized.includes('maceta') || normalized.includes('sustrato') || normalized.includes('repot') || normalized.includes('pot ') || normalized.includes('soil')) {
     return createMessage(
       'assistant',
-      'Trasplanta cuando las raíces asomen por los agujeros o la maceta quede pequeña, idealmente en primavera. Sube solo 2-4 cm de diámetro y usa sustrato con buen drenaje. Evita trasplantar en invierno o en plena floración.',
-      { quickReplies: ['¿Qué sustrato uso?', 'Programar trasplante'], source: 'mock' }
+      t('Trasplanta cuando las raíces asomen por los agujeros o la maceta quede pequeña, idealmente en primavera. Sube solo 2-4 cm de diámetro y usa sustrato con buen drenaje. Evita trasplantar en invierno o en plena floración.'),
+      { quickReplies: [t('¿Qué sustrato uso?'), t('Programar trasplante')], source: 'mock' }
     );
   }
 
   // Toxicidad genérica ya cubierta. Caso por defecto:
+  const defaultReply = context.plantName
+    ? t('Entiendo. Sobre "{pregunta}" en relación a tu {planta}: la mejor práctica es observar el sustrato, la luz y el ambiente antes de actuar. Puedo darte detalle si mencionas el nombre de la planta o el síntoma que ves (manchas, puntas secas, hojas caídas...).', {
+        pregunta: prompt,
+        planta: context.plantName,
+      })
+    : t('Entiendo. Sobre "{pregunta}": la mejor práctica es observar el sustrato, la luz y el ambiente antes de actuar. Puedo darte detalle si mencionas el nombre de la planta o el síntoma que ves (manchas, puntas secas, hojas caídas...).', {
+        pregunta: prompt,
+      });
   return createMessage(
     'assistant',
-    `Entiendo. Sobre "${prompt}"${context.plantName ? ` en relación a tu ${context.plantName}` : ''}: la mejor práctica es observar el sustrato, la luz y el ambiente antes de actuar. Puedo darte detalle si mencionas el nombre de la planta o el síntoma que ves (manchas, puntas secas, hojas caídas...).`,
-    { quickReplies: SUGGESTED_QUESTIONS.slice(0, 3), source: 'mock' }
+    defaultReply,
+    { quickReplies: SUGGESTED_QUESTIONS.slice(0, 3).map((q) => t(q)), source: 'mock' }
   );
 }
 
