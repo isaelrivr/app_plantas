@@ -27,7 +27,9 @@ import {
   diagnosePlantHealth,
   HealthDiagnosisResult,
   getDiagnosisByKey,
+  HealthNoPlantError,
 } from '../services/healthService';
+import { ApiError } from '../services/apiClient';
 import { scheduleTreatmentReminder } from '../services/notificationService';
 import { getPlantById } from '../services/plantApi';
 import { useGarden } from '../context/GardenContext';
@@ -37,7 +39,7 @@ export const HealthDiagnosisScreen: React.FC = () => {
   const { colors, isDark, spacing, typography, layout } = useAppTheme();
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
-  const { plants, updatePlantHealth } = useGarden();
+  const { plants, updatePlantHealth, registerDiagnosis } = useGarden();
   const limits = usePlanLimits();
 
   const plantId = route.params?.plantId;
@@ -50,10 +52,12 @@ export const HealthDiagnosisScreen: React.FC = () => {
           p.name.toLowerCase().includes(plantId.replace(/[-_]/g, ' ').toLowerCase())
       )
     : undefined;
-  const plant = plantDef ?? gardenPlant;
+  // El nombre puede venir explícito (plantas identificadas por IA no están en el catálogo).
+  const plantName: string | undefined =
+    route.params?.plantName ?? plantDef?.name ?? gardenPlant?.name;
 
   const [photoUri, setPhotoUri] = useState<string | null>(null);
-  const [lastAnalyzed, setLastAnalyzed] = useState<{ uri: string; base64?: string | null } | null>(null);
+  const [lastAnalyzed, setLastAnalyzed] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isDiagnosing, setIsDiagnosing] = useState<boolean>(false);
   const [diagnosisStepText, setDiagnosisStepText] = useState<string>('Analizando tejido foliar...');
@@ -109,10 +113,9 @@ export const HealthDiagnosisScreen: React.FC = () => {
         mediaTypes: ['images'],
         allowsEditing: true,
         quality: 0.8,
-        base64: true,
       });
       if (!shot.canceled && shot.assets[0]?.uri) {
-        processImage(shot.assets[0].uri, shot.assets[0].base64);
+        processImage(shot.assets[0].uri);
       }
     } catch {
       setErrorMessage('No se pudo abrir la cámara.');
@@ -126,11 +129,10 @@ export const HealthDiagnosisScreen: React.FC = () => {
         mediaTypes: ['images'],
         allowsEditing: true,
         quality: 0.8,
-        base64: true,
       });
 
       if (!pickerResult.canceled && pickerResult.assets[0]?.uri) {
-        processImage(pickerResult.assets[0].uri, pickerResult.assets[0].base64);
+        processImage(pickerResult.assets[0].uri);
       }
     } catch {
       setErrorMessage('No se pudo abrir la galería de imágenes.');
@@ -175,21 +177,22 @@ export const HealthDiagnosisScreen: React.FC = () => {
     return false;
   };
 
-  const processImage = async (uri: string, base64?: string | null) => {
+  const processImage = async (uri: string) => {
     setPhotoUri(uri);
-    setLastAnalyzed({ uri, base64 });
+    setLastAnalyzed(uri);
     setDiagnosisResult(null);
     setTreatmentScheduled(false);
     setErrorMessage(null);
     setIsDiagnosing(true);
 
     try {
-      const result = await diagnosePlantHealth(uri, base64);
+      const result = await diagnosePlantHealth([uri], plantName);
       if (guardPestResult(result)) {
         setDiagnosisResult(null);
         return;
       }
       setDiagnosisResult(result);
+      registerDiagnosis();
 
       // Pulso háptico de detección
       try {
@@ -202,8 +205,23 @@ export const HealthDiagnosisScreen: React.FC = () => {
         const score = result.severity === 'grave' ? 45 : result.severity === 'moderada' ? 68 : 95;
         updatePlantHealth(plantId, score, result.name);
       }
-    } catch {
-      setErrorMessage('No se pudo completar el análisis fitosanitario. Revisa tu conexión y vuelve a intentarlo.');
+    } catch (err) {
+      if (err instanceof HealthNoPlantError) {
+        setErrorMessage(
+          'No detectamos una planta en la imagen. Enfoca de cerca las hojas o el tallo y vuelve a intentarlo.'
+        );
+      } else if (err instanceof ApiError && err.status === 429) {
+        const retry = err.retryAfterSeconds
+          ? ` Podrás volver a intentarlo en ${Math.ceil(err.retryAfterSeconds / 60)} min.`
+          : '';
+        Alert.alert('Límite de diagnósticos', `${err.message}${retry}`, [
+          { text: 'Entendido', style: 'cancel' },
+          { text: 'Ver Pro', onPress: () => navigation.navigate('Paywall') },
+        ]);
+        setErrorMessage(err.message);
+      } else {
+        setErrorMessage('No se pudo completar el análisis fitosanitario. Revisa tu conexión y vuelve a intentarlo.');
+      }
     } finally {
       setIsDiagnosing(false);
     }
@@ -211,7 +229,7 @@ export const HealthDiagnosisScreen: React.FC = () => {
 
   const handleRetryDiagnosis = () => {
     if (lastAnalyzed) {
-      processImage(lastAnalyzed.uri, lastAnalyzed.base64);
+      processImage(lastAnalyzed);
     }
   };
 
@@ -221,13 +239,13 @@ export const HealthDiagnosisScreen: React.FC = () => {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch {}
 
-    const plantName = plant?.name || 'tu planta';
+    const reminderPlantName = plantName || 'tu planta';
     const activeOption =
       treatmentMode === 'organic'
         ? diagnosisResult.treatment.organicOption.title
         : diagnosisResult.treatment.chemicalOption.title;
 
-    const identifier = await scheduleTreatmentReminder(plantName, activeOption, 4);
+    const identifier = await scheduleTreatmentReminder(reminderPlantName, activeOption, 4);
     if (!identifier) {
       setErrorMessage('No se pudo programar el recordatorio. Revisa los permisos de notificación.');
       return;
@@ -276,7 +294,7 @@ export const HealthDiagnosisScreen: React.FC = () => {
             Diagnóstico de Salud
           </Text>
           <Text style={[typography.caption1, { color: colors.textSecondary }]} numberOfLines={1}>
-            {plant?.name || 'Evaluación de plagas y hongos'}
+            {plantName || 'Evaluación de plagas y hongos'}
           </Text>
         </View>
 
@@ -327,21 +345,25 @@ export const HealthDiagnosisScreen: React.FC = () => {
                 icon={<Ionicons name="images" size={20} color={colors.primary} />}
               />
 
-              <Button
-                title="Analizar muestra con Cochinilla (Demo)"
-                onPress={() => handleUseSample('cochinilla')}
-                variant="secondary"
-                size="md"
-                icon={<Ionicons name="bug" size={18} color={colors.primary} />}
-              />
+              {__DEV__ ? (
+                <>
+                  <Button
+                    title="Analizar muestra con Cochinilla (Demo)"
+                    onPress={() => handleUseSample('cochinilla')}
+                    variant="secondary"
+                    size="md"
+                    icon={<Ionicons name="bug" size={18} color={colors.primary} />}
+                  />
 
-              <Button
-                title="Analizar muestra con Hongos (Demo)"
-                onPress={() => handleUseSample('hongos')}
-                variant="secondary"
-                size="md"
-                icon={<Ionicons name="shield-outline" size={18} color={colors.primary} />}
-              />
+                  <Button
+                    title="Analizar muestra con Hongos (Demo)"
+                    onPress={() => handleUseSample('hongos')}
+                    variant="secondary"
+                    size="md"
+                    icon={<Ionicons name="shield-outline" size={18} color={colors.primary} />}
+                  />
+                </>
+              ) : null}
             </View>
           </Card>
         ) : (
@@ -422,12 +444,15 @@ export const HealthDiagnosisScreen: React.FC = () => {
                 <Card elevated>
                   <View style={styles.resultHeaderRow}>
                     <View style={{ flex: 1 }}>
-                      <View style={{ flexDirection: 'row', gap: 6, marginBottom: 4 }}>
+                      <View style={{ flexDirection: 'row', gap: 6, marginBottom: 4, flexWrap: 'wrap' }}>
                         <Badge label={diagnosisResult.category} variant="neutral" />
                         <Badge
                           label={`Severidad ${diagnosisResult.severity.toUpperCase()}`}
                           variant={getSeverityBadgeVariant(diagnosisResult.severity)}
                         />
+                        {diagnosisResult.source === 'mock' ? (
+                          <Badge label="Demo" variant="neutral" />
+                        ) : null}
                       </View>
 
                       <Text style={[typography.title1, { color: colors.textPrimary, fontWeight: '700' }]}>
@@ -449,6 +474,15 @@ export const HealthDiagnosisScreen: React.FC = () => {
                   <Text style={[typography.body, { color: colors.textSecondary, marginTop: spacing.sm, lineHeight: 22 }]}>
                     {diagnosisResult.description}
                   </Text>
+
+                  {diagnosisResult.confidence < 60 && diagnosisResult.source !== 'mock' ? (
+                    <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginTop: spacing.sm }}>
+                      <Ionicons name="help-circle" size={18} color={colors.warning} />
+                      <Text style={[typography.footnote, { color: colors.textSecondary, flex: 1, marginLeft: 8, lineHeight: 19 }]}>
+                        La confianza del diagnóstico es baja ({diagnosisResult.confidence}%). Toma una foto más nítida de las zonas afectadas para confirmarlo.
+                      </Text>
+                    </View>
+                  ) : null}
 
                   {/* SÍNTOMAS IDENTIFICADOS */}
                   <View style={[styles.symptomsBox, { backgroundColor: isDark ? '#2C2C2E' : '#F8F9FA' }]}>
@@ -669,6 +703,16 @@ export const HealthDiagnosisScreen: React.FC = () => {
                   <Text style={[typography.body, { color: colors.textSecondary, lineHeight: 22 }]}>
                     {diagnosisResult.treatment.prevention}
                   </Text>
+                </Card>
+
+                {/* DESCARGO MÉDICO (obligatorio en diagnósticos por IA) */}
+                <Card style={{ backgroundColor: colors.surfaceSecondary, borderColor: colors.border }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+                    <Ionicons name="information-circle-outline" size={18} color={colors.textTertiary} />
+                    <Text style={[typography.caption1, { color: colors.textSecondary, flex: 1, marginLeft: 8, lineHeight: 18 }]}>
+                      {diagnosisResult.disclaimer}
+                    </Text>
+                  </View>
                 </Card>
 
                 {/* BOTÓN: PROGRAMAR TRATAMIENTO CON RECORDATORIOS */}

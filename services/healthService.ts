@@ -1,11 +1,20 @@
 /**
  * Plantae Health & Pest Diagnosis Service
  *
- * Arquitectura de Servicios: Diagnóstico de patologías foliares, plagas y deficiencias.
- * Listo para conectar a modelos de visión por computadora en Firebase Cloud Functions.
+ * Diagnóstico real de patologías foliares, plagas y deficiencias. Las imágenes
+ * se comprimen y se envían al backend (`/healthAssessment`), que orquesta
+ * Plant.id + Gemini. El cliente nunca maneja claves de API.
+ *
+ * En desarrollo, si no hay backend configurado, se usa un catálogo local
+ * determinista (sin `Math.random`) marcado como `source: 'mock'`.
  */
 
+import { ApiError, postJson, shouldUseMocks } from './apiClient';
+import { compressImages } from './imageCompression';
+
 export type HealthSeverity = 'leve' | 'moderada' | 'grave';
+export type HealthCategory = 'Plaga' | 'Hongo' | 'Bacteriosis' | 'Estrés Hídrico' | 'Saludable';
+export type HealthSource = 'ai-real' | 'mock';
 
 export interface TreatmentDetails {
   organicOption: {
@@ -36,16 +45,54 @@ export interface HealthDiagnosisResult {
   issueKey: string;
   name: string;
   scientificName: string;
-  category: 'Plaga' | 'Hongo' | 'Bacteriosis' | 'Estrés Hídrico' | 'Saludable';
+  category: HealthCategory;
   severity: HealthSeverity;
   confidence: number;
   symptoms: string[];
   description: string;
   referenceImages: string[];
   treatment: TreatmentDetails;
+  /** Descargo médico que debe mostrarse junto al diagnóstico. */
+  disclaimer: string;
+  source: HealthSource;
 }
 
-const HEALTH_CATALOG: HealthDiagnosisResult[] = [
+/** Entrada del catálogo de demostración, sin metadatos comunes. */
+type DemoDiagnosis = Omit<HealthDiagnosisResult, 'disclaimer' | 'source'>;
+
+/** Descargo médico (espejo del servidor) para diagnósticos orientativos. */
+export const HEALTH_DISCLAIMER =
+  'Este diagnóstico es orientativo y generado por inteligencia artificial; no sustituye la evaluación de un fitopatólogo profesional. Verifica siempre las indicaciones y las etiquetas oficiales de los productos fitosanitarios antes de aplicarlos.';
+
+/** La imagen no contiene una planta analizable. */
+export class HealthNoPlantError extends Error {
+  constructor(
+    message = 'La imagen no parece contener hojas, tallos ni partes de una planta analizables.'
+  ) {
+    super(message);
+    this.name = 'HealthNoPlantError';
+  }
+}
+
+/** Respuesta cruda del endpoint `/healthAssessment`. */
+interface HealthApiResponse {
+  isPlant: boolean;
+  isHealthy: boolean;
+  confidence: number;
+  issueKey: string;
+  name: string;
+  scientificName: string;
+  category: HealthCategory;
+  severity: HealthSeverity;
+  description: string;
+  symptoms: string[];
+  treatment: TreatmentDetails;
+  referenceImages: string[];
+  disclaimer: string;
+  source: HealthSource;
+}
+
+const HEALTH_CATALOG: DemoDiagnosis[] = [
   {
     id: 'pest-cochinilla',
     issueKey: 'cochinilla',
@@ -399,25 +446,77 @@ const HEALTH_CATALOG: HealthDiagnosisResult[] = [
   },
 ];
 
-/**
- * Diagnostica la salud de una planta a partir de una foto
- */
-export async function diagnosePlantHealth(
-  imageUri: string,
-  base64Data?: string | null
-): Promise<HealthDiagnosisResult> {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      // Retorna una de las patologías comunes para pruebas realistas
-      const index = Math.floor(Math.random() * (HEALTH_CATALOG.length - 1)); // no siempre saludable para mostrar tratamientos
-      resolve(HEALTH_CATALOG[index]);
-    }, 1500);
-  });
+/** Hash determinista simple (sin `Math.random`). */
+function hashString(input: string): number {
+  let hash = 0;
+  for (let i = 0; i < input.length; i++) {
+    hash = (hash * 31 + input.charCodeAt(i)) | 0;
+  }
+  return Math.abs(hash);
+}
+
+/** Diagnóstico simulado determinista, a partir del contenido de la imagen. */
+function mockDiagnosis(seedKey: string): HealthDiagnosisResult {
+  // Excluimos "saludable" del muestreo para que la demo siempre muestre un plan.
+  const pool = HEALTH_CATALOG.length > 1 ? HEALTH_CATALOG.slice(0, -1) : HEALTH_CATALOG;
+  const chosen = pool[hashString(seedKey) % pool.length];
+  return { ...chosen, disclaimer: HEALTH_DISCLAIMER, source: 'mock' };
 }
 
 /**
- * Obtiene diagnóstico por clave
+ * Diagnostica la salud de una planta a partir de 1 a 4 fotos. Envía las
+ * imágenes comprimidas al backend real salvo en desarrollo sin endpoint.
+ *
+ * @throws {HealthNoPlantError} si la imagen no contiene una planta.
+ * @throws {ApiError} para errores de red, cuota (`RATE_LIMITED`) o servidor.
  */
+export async function diagnosePlantHealth(
+  imageUris: string[],
+  plantName?: string
+): Promise<HealthDiagnosisResult> {
+  const compressed = await compressImages(imageUris, { max: 4 });
+  if (compressed.length === 0) {
+    throw new ApiError(
+      'NO_IMAGE',
+      'No se pudo procesar la imagen. Vuelve a tomar la foto con buena iluminación.',
+      0
+    );
+  }
+
+  if (shouldUseMocks()) {
+    const seedKey = `${plantName ?? ''}|${compressed.map((c) => c.base64.slice(0, 128)).join('|')}`;
+    return mockDiagnosis(seedKey);
+  }
+
+  const response = await postJson<HealthApiResponse>('/healthAssessment', {
+    images: compressed.map((c) => c.base64),
+    plantName,
+  });
+
+  if (response.isPlant === false) {
+    throw new HealthNoPlantError();
+  }
+
+  const issueKey = response.issueKey || 'problema';
+  return {
+    id: issueKey,
+    issueKey,
+    name: response.name || 'Problema detectado',
+    scientificName: response.scientificName || 'Agente causal no confirmado',
+    category: response.category ?? 'Saludable',
+    severity: response.severity ?? 'leve',
+    confidence: typeof response.confidence === 'number' ? response.confidence : 0,
+    symptoms: Array.isArray(response.symptoms) ? response.symptoms : [],
+    description: response.description || '',
+    referenceImages: Array.isArray(response.referenceImages) ? response.referenceImages : [],
+    treatment: response.treatment,
+    disclaimer: response.disclaimer || HEALTH_DISCLAIMER,
+    source: response.source ?? 'ai-real',
+  };
+}
+
+/** Obtiene un diagnóstico de demostración por clave (solo para `__DEV__`). */
 export function getDiagnosisByKey(key: string): HealthDiagnosisResult | undefined {
-  return HEALTH_CATALOG.find((d) => d.issueKey === key);
+  const found = HEALTH_CATALOG.find((d) => d.issueKey === key);
+  return found ? { ...found, disclaimer: HEALTH_DISCLAIMER, source: 'mock' } : undefined;
 }

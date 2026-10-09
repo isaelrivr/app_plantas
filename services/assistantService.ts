@@ -18,7 +18,7 @@
  * `USE_REMOTE_ASSISTANT = true` una vez desplegada la función.
  */
 
-import { PlantIdentificationResult, searchPlants } from './plantApi';
+import { CatalogPlant, searchPlants } from './plantApi';
 import { getToxicity } from './toxicityService';
 
 export interface AssistantMessage {
@@ -69,7 +69,7 @@ interface AssistantContext {
   isPremium?: boolean;
 }
 
-const findPlantByText = (text: string): PlantIdentificationResult | null => {
+const findPlantByText = (text: string): CatalogPlant | null => {
   const lower = text.toLowerCase();
   const catalog = searchPlants('');
   return (

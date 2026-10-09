@@ -24,6 +24,10 @@ export const STORAGE_KEYS = {
   settings: `${KEY_PREFIX}settings`,
   premium: `${KEY_PREFIX}premium`,
   growthDiary: `${KEY_PREFIX}growth-diary`,
+  /** UUID persistente que identifica el dispositivo ante el backend (Fase 2). */
+  deviceId: `${KEY_PREFIX}device-id`,
+  /** Caché local de fichas de cuidados generadas por el backend (Fase 2). */
+  careCache: `${KEY_PREFIX}care-cache`,
 } as const;
 
 export type StorageKey = (typeof STORAGE_KEYS)[keyof typeof STORAGE_KEYS];

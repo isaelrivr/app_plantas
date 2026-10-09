@@ -9,7 +9,7 @@
  */
 
 import {
-  PlantIdentificationResult,
+  CatalogPlant,
   BOTANICAL_KNOWLEDGE_BASE,
   getPlantById,
 } from './plantApi';
@@ -79,7 +79,7 @@ export const environmentFilters: { key: EnvironmentFilter; label: string }[] = [
   { key: 'exterior', label: 'Exterior' },
 ];
 
-const matchesLight = (plant: PlantIdentificationResult, light: LightFilter): boolean => {
+const matchesLight = (plant: CatalogPlant, light: LightFilter): boolean => {
   if (light === 'all') return true;
   const level = plant.careLevels.lightLevel;
   if (light === 'low') return level <= 2;
@@ -88,7 +88,7 @@ const matchesLight = (plant: PlantIdentificationResult, light: LightFilter): boo
 };
 
 const matchesEnvironment = (
-  plant: PlantIdentificationResult,
+  plant: CatalogPlant,
   env: EnvironmentFilter
 ): boolean => {
   if (env === 'all') return true;
@@ -96,7 +96,7 @@ const matchesEnvironment = (
   return value === env || value === 'both';
 };
 
-export function searchEncyclopedia(filters: EncyclopediaFilters): PlantIdentificationResult[] {
+export function searchEncyclopedia(filters: EncyclopediaFilters): CatalogPlant[] {
   const q = filters.query.toLowerCase().trim();
   return BOTANICAL_KNOWLEDGE_BASE.filter((plant) => {
     if (q) {
@@ -112,10 +112,10 @@ export function searchEncyclopedia(filters: EncyclopediaFilters): PlantIdentific
 }
 
 /** Plantas guardadas disponibles sin conexión (offline). */
-export function getPlantsByIds(ids: string[]): PlantIdentificationResult[] {
+export function getPlantsByIds(ids: string[]): CatalogPlant[] {
   return ids
     .map((id) => getPlantById(id))
-    .filter((p): p is PlantIdentificationResult => Boolean(p));
+    .filter((p): p is CatalogPlant => Boolean(p));
 }
 
 export function countActiveFilters(filters: EncyclopediaFilters): number {

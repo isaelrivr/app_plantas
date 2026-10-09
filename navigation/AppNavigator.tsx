@@ -28,8 +28,13 @@ export type RootTabParamList = {
 export type RootStackParamList = {
   MainTabs: undefined;
   HabitatMap: { plantId: string };
-  PlantDetail: { plantId: string };
-  HealthDiagnosis: { plantId?: string };
+  PlantDetail: {
+    plantId: string;
+    plantName?: string;
+    scientificName?: string;
+    confidence?: number;
+  };
+  HealthDiagnosis: { plantId?: string; plantName?: string; scientificName?: string };
   CareCalendar: undefined;
   GrowthDiary: { plantId: string };
   Assistant: undefined;

@@ -24,25 +24,16 @@ import { ConfidenceRing } from '../components/ConfidenceRing';
 import { EmptyState } from '../components/EmptyState';
 import { PlantCardSkeleton, SkeletonBox } from '../components/SkeletonLoader';
 import { ErrorBanner } from '../components/ErrorBanner';
-import { searchPlants } from '../services/plantApi';
+import { resolveSpeciesId } from '../services/plantApi';
 import {
   getLocalWeatherAndRecommendations,
   WeatherRecommendationResult,
 } from '../services/weatherService';
 import { scheduleWateringReminder } from '../services/notificationService';
 
-// Resuelve el ID de especie del catálogo a partir de un nombre de jardín
-const resolveSpeciesId = (gardenPlantName: string): string => {
-  const name = gardenPlantName.toLowerCase();
-  const tokens = name.split(/[^a-záéíóúñü]+/i).filter((t) => t.length > 3);
-  const candidates = searchPlants('');
-  const match = candidates.find((p) =>
-    tokens.some(
-      (t) => p.name.toLowerCase().includes(t) || p.scientificName.toLowerCase().includes(t)
-    )
-  );
-  return match?.id ?? 'monstera';
-};
+/** Resuelve el id de especie del catálogo (o 'monstera' como último recurso). */
+const speciesIdFor = (name: string, scientificName?: string): string =>
+  resolveSpeciesId(name, scientificName) ?? 'monstera';
 
 export const GardenScreen: React.FC = () => {
   const { colors, isDark, spacing, typography, layout } = useAppTheme();
@@ -123,14 +114,22 @@ export const GardenScreen: React.FC = () => {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     } catch {}
-    navigation.navigate('HealthDiagnosis', { plantId: resolveSpeciesId(plant.name) });
+    navigation.navigate('HealthDiagnosis', {
+      plantId: speciesIdFor(plant.name, plant.scientificName),
+      plantName: plant.name,
+      scientificName: plant.scientificName,
+    });
   };
 
   const handleOpenDetail = (plant: GardenPlant) => {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     } catch {}
-    navigation.navigate('PlantDetail', { plantId: resolveSpeciesId(plant.name) });
+    navigation.navigate('PlantDetail', {
+      plantId: speciesIdFor(plant.name, plant.scientificName),
+      plantName: plant.name,
+      scientificName: plant.scientificName,
+    });
   };
 
   const handleSchedulePlantReminder = async (plant: GardenPlant) => {

@@ -10,7 +10,6 @@ import {
   Alert,
   Animated,
   Easing,
-  Platform,
 } from 'react-native';
 import { CameraView, useCameraPermissions, CameraType } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
@@ -23,52 +22,26 @@ import { Card } from '../components/Card';
 import { Badge } from '../components/Badge';
 import { ConfidenceRing } from '../components/ConfidenceRing';
 import { ScreenHeader } from '../components/ScreenHeader';
-import { identifyPlant, PlantIdentificationResult } from '../services/plantApi';
+import {
+  identifyPlants,
+  fetchCareSheet,
+  PlantIdentificationResult,
+  IdentificationCandidate,
+} from '../services/plantApi';
+import { ApiError } from '../services/apiClient';
 import { persistImage } from '../services/mediaService';
 import { useGarden } from '../context/GardenContext';
 import { usePlanLimits, FREE_IDENTIFICATION_LIMIT } from '../hooks/usePlanLimits';
 import { SkeletonBox } from '../components/SkeletonLoader';
 import { EmptyState } from '../components/EmptyState';
-import { LinearGradient } from 'expo-linear-gradient';
 
-// Mapa de fichas de referencia visuales (offline, sin imágenes pesadas)
-const REFERENCE_VISUALS: Record<string, { icon: keyof typeof Ionicons.glyphMap; label: string }> = {
-  leaf: { icon: 'leaf', label: 'Follaje' },
-  foliage: { icon: 'leaf', label: 'Hojas' },
-  fronds: { icon: 'leaf', label: 'Frondas' },
-  stem: { icon: 'git-branch', label: 'Tallo' },
-  root: { icon: 'trail-sign', label: 'Raíces' },
-  flower: { icon: 'flower', label: 'Flor' },
-  bloom: { icon: 'flower', label: 'Floración' },
-  spike: { icon: 'flower', label: 'Vara floral' },
-  spathe: { icon: 'flower', label: 'Espata' },
-  variegated: { icon: 'color-palette', label: 'Variegación' },
-  pattern: { icon: 'color-palette', label: 'Patrón foliar' },
-  gel: { icon: 'water', label: 'Gel' },
-  cut: { icon: 'water', label: 'Corte' },
-  spore: { icon: 'ellipsis-horizontal', label: 'Esporas' },
-  basket: { icon: 'basket', label: 'Maceta colgante' },
-  growth: { icon: 'trending-up', label: 'Crecimiento' },
-  margin: { icon: 'albums', label: 'Borde foliar' },
-  needle: { icon: 'remove', label: 'Aguja' },
-  blue_flower: { icon: 'flower', label: 'Flor azul' },
-  aerial: { icon: 'git-branch', label: 'Raíces aéreas' },
-  new_leaf: { icon: 'cart', label: 'Crecimiento' },
-  underview: { icon: 'layers', label: 'Envés foliar' },
-  spear: { icon: 'triangle', label: 'Hojas lanceoladas' },
-  rosette: { icon: 'radio-button-on', label: 'Roseta' },
-};
-
-const referenceVisualFor = (token: string, fallbackIndex: number) => {
-  for (const key of Object.keys(REFERENCE_VISUALS)) {
-    if (token.includes(key)) return REFERENCE_VISUALS[key];
-  }
-  return { icon: 'leaf' as const, label: `Referencia ${fallbackIndex + 1}` };
-};
+const MAX_PHOTOS = 4;
+/** Por debajo de este umbral pedimos confirmación manual al usuario. */
+const LOW_CONFIDENCE_THRESHOLD = 60;
 
 export const ScannerScreen: React.FC = () => {
   const { colors, spacing, typography } = useAppTheme();
-  const { plants, addPlants, registerIdentification } = useGarden();
+  const { plants, addPlant, registerIdentification } = useGarden();
   const limits = usePlanLimits();
   const navigation = useNavigation<any>();
 
@@ -78,15 +51,19 @@ export const ScannerScreen: React.FC = () => {
   const [facing, setFacing] = useState<CameraType>('back');
   const [torchEnabled, setTorchEnabled] = useState<boolean>(false);
 
+  // Fotos de la MISMA planta (hasta 4 mejoran la precisión)
+  const [photos, setPhotos] = useState<string[]>([]);
+
   // Estados del flujo de escaneo
-  const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [isIdentifying, setIsIdentifying] = useState<boolean>(false);
   const [scanStepText, setScanStepText] = useState<string>('Analizando patrones...');
   const [identificationResult, setIdentificationResult] = useState<PlantIdentificationResult | null>(null);
+  const [selectedIndex, setSelectedIndex] = useState<number>(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSavedToGarden, setIsSavedToGarden] = useState<boolean>(false);
-  // Lote de plantas identificadas pendientes de guardar (escáner multi-plantas)
-  const [pendingBatch, setPendingBatch] = useState<PlantIdentificationResult[]>([]);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
+
+  const showAnalysisView = isIdentifying || identificationResult !== null || errorMessage !== null;
 
   // Animación de línea láser de escaneo
   const scanLineAnim = useRef(new Animated.Value(0)).current;
@@ -119,7 +96,7 @@ export const ScannerScreen: React.FC = () => {
       }, 400);
 
       const timer2 = setTimeout(() => {
-        setScanStepText('Buscando coincidencia en el catálogo botánico...');
+        setScanStepText('Consultando el proveedor botánico...');
       }, 900);
 
       return () => {
@@ -204,26 +181,39 @@ export const ScannerScreen: React.FC = () => {
     );
   }
 
-  // ACCIÓN PRINCIPAL: Captura con haptics
-  const handleCaptureAndIdentify = async () => {
+  // ACCIÓN: Captura con haptics (se añade a la bandeja de fotos)
+  const addPhoto = (uri: string) => {
+    setPhotos((prev) => {
+      if (prev.length >= MAX_PHOTOS) {
+        Alert.alert(
+          'Máximo de fotos',
+          `Puedes analizar hasta ${MAX_PHOTOS} fotos de la misma planta. Elimina alguna para añadir otra.`
+        );
+        return prev;
+      }
+      return [...prev, uri];
+    });
+  };
+
+  const handleCapture = async () => {
+    if (photos.length >= MAX_PHOTOS) {
+      Alert.alert(
+        'Máximo de fotos',
+        `Puedes analizar hasta ${MAX_PHOTOS} fotos de la misma planta. Pulsa "Analizar" o elimina alguna.`
+      );
+      return;
+    }
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       if (cameraRef.current) {
-        const photo = await cameraRef.current.takePictureAsync({
-          quality: 0.8,
-          base64: true,
-        });
-
-        if (photo?.uri) {
-          processImage(photo.uri, photo.base64);
-        }
+        const photo = await cameraRef.current.takePictureAsync({ quality: 0.8 });
+        if (photo?.uri) addPhoto(photo.uri);
       }
     } catch {
       Alert.alert('Error', 'No se pudo capturar la imagen. Intenta de nuevo.');
     }
   };
 
-  // ACCIÓN: Galería
   const handlePickFromGallery = async () => {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -231,26 +221,47 @@ export const ScannerScreen: React.FC = () => {
         mediaTypes: ['images'],
         allowsEditing: true,
         quality: 0.8,
-        base64: true,
       });
 
       if (!pickerResult.canceled && pickerResult.assets[0]?.uri) {
-        processImage(pickerResult.assets[0].uri, pickerResult.assets[0].base64);
+        addPhoto(pickerResult.assets[0].uri);
       }
     } catch {
       Alert.alert('Galería', 'No se pudo acceder a las fotos.');
     }
   };
 
-  // ACCIÓN: Foto de muestra
-  const handleUseMockSample = async () => {
+  const handleUseMockSample = () => {
+    if (!__DEV__) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const sampleUri = 'https://images.unsplash.com/photo-1614594975525-e45190c55d0b?auto=format&fit=crop&w=600&q=80';
-    processImage(sampleUri);
+    addPhoto(sampleUri);
   };
 
-  const processImage = async (uri: string, base64?: string | null) => {
-    // Límite free: 3 identificaciones al día (punto 16)
+  const handleRemovePhoto = (index: number) => {
+    Haptics.selectionAsync();
+    setPhotos((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleClearPhotos = () => {
+    Haptics.selectionAsync();
+    setPhotos([]);
+  };
+
+  const toggleFacing = () => {
+    Haptics.selectionAsync();
+    setFacing((prev) => (prev === 'back' ? 'front' : 'back'));
+  };
+
+  const toggleTorch = () => {
+    Haptics.selectionAsync();
+    setTorchEnabled((prev) => !prev);
+  };
+
+  const handleAnalyze = async () => {
+    if (photos.length === 0) return;
+
+    // Límite free de UX (el servidor aplica el suyo de 3/día).
     if (!limits.isPremium && limits.identificationsToday >= limits.identificationLimit) {
       Alert.alert(
         'Límite gratuito alcanzado',
@@ -263,27 +274,39 @@ export const ScannerScreen: React.FC = () => {
       return;
     }
 
-    setPhotoUri(uri);
     setErrorMessage(null);
     setIdentificationResult(null);
+    setSelectedIndex(0);
     setIsSavedToGarden(false);
     setIsIdentifying(true);
     setScanStepText('Enfocando patrones foliares...');
 
     try {
-      const result = await identifyPlant(uri, base64);
+      const result = await identifyPlants(photos);
       setIdentificationResult(result);
-      setPendingBatch((prev) => [...prev, result]);
       registerIdentification();
 
-      // Pulso háptico de confirmación al detectar
       try {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
       } catch {}
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'No se pudo identificar la planta. Intenta con mejor iluminación.';
-      setErrorMessage(msg);
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 429) {
+        const retry = err.retryAfterSeconds
+          ? ` Podrás volver a intentarlo en ${Math.ceil(err.retryAfterSeconds / 60)} min.`
+          : '';
+        Alert.alert('Límite de identificaciones', `${err.message}${retry}`, [
+          { text: 'Entendido', style: 'cancel' },
+          { text: 'Ver Pro', onPress: () => navigation.navigate('Paywall') },
+        ]);
+        setErrorMessage(err.message);
+      } else {
+        const msg =
+          err instanceof Error
+            ? err.message
+            : 'No se pudo identificar la planta. Intenta con mejor iluminación.';
+        setErrorMessage(msg);
+      }
     } finally {
       setIsIdentifying(false);
     }
@@ -291,19 +314,32 @@ export const ScannerScreen: React.FC = () => {
 
   const handleRetake = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setPhotoUri(null);
+    setPhotos([]);
     setIdentificationResult(null);
     setErrorMessage(null);
     setIsSavedToGarden(false);
     setIsIdentifying(false);
+    setSelectedIndex(0);
+    setIsSaving(false);
   };
 
-  const handleSaveAllToGarden = async () => {
-    const batch = pendingBatch.length > 0 ? pendingBatch : identificationResult ? [identificationResult] : [];
-    if (batch.length === 0) return;
+  const selectedCandidate: IdentificationCandidate | undefined =
+    identificationResult?.candidates?.[selectedIndex];
+
+  const isLowConfidence =
+    !!identificationResult && (!identificationResult.isPlant || identificationResult.confidence < LOW_CONFIDENCE_THRESHOLD);
+
+  const handleSelectCandidate = (index: number) => {
+    Haptics.selectionAsync();
+    setSelectedIndex(index);
+  };
+
+  const handleSaveToGarden = async () => {
+    const candidate = selectedCandidate;
+    if (!candidate) return;
 
     // Límite free de plantas en Mi Jardín (máx. 5)
-    if (!limits.isPremium && plants.length + batch.length > limits.plantLimit) {
+    if (!limits.isPremium && plants.length >= limits.plantLimit) {
       Alert.alert(
         'Jardín gratuito lleno',
         `El plan gratuito permite ${limits.plantLimit} plantas. Con Plantae Pro guardas las que quieras.`,
@@ -315,59 +351,72 @@ export const ScannerScreen: React.FC = () => {
       return;
     }
 
+    setIsSaving(true);
     try {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } catch {}
+      // Ampliamos la ficha con el backend/catálogo antes de guardar.
+      const sheet = await fetchCareSheet(candidate.name, candidate.scientificName);
+      const persistedUri = await persistImage(photos[0], 'plants');
 
-    // La cámara devuelve una ruta temporal en cache: la copiamos al
-    // directorio de documentos para que la foto sobreviva al cierre de la app.
-    const persistedUri = await persistImage(photoUri, 'plants');
-
-    addPlants(
-      batch.map((result) => ({
-        name: result.name,
-        scientificName: result.scientificName,
-        wateringFrequencyDays: result.wateringFrequencyDays,
-        light: result.light,
-        avatarEmoji: result.avatarEmoji,
+      addPlant({
+        name: candidate.name,
+        scientificName: candidate.scientificName,
+        wateringFrequencyDays: sheet.wateringFrequencyDays,
+        light: sheet.light,
+        avatarEmoji: sheet.avatarEmoji,
         imageUri: persistedUri,
-      }))
-    );
-    setPendingBatch([]);
-    setIsSavedToGarden(true);
-    Alert.alert(
-      '¡Plantas Registradas!',
-      batch.length > 1
-        ? `Guardamos ${batch.length} plantas en tu jardín.`
-        : `${batch[0].name} ha sido añadida a tu jardín.`
-    );
+      });
+
+      try {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      } catch {}
+      setIsSavedToGarden(true);
+      Alert.alert('Añadida a Mi Jardín', `${candidate.name} se guardó junto a su ficha de cuidados.`);
+    } catch (err) {
+      const msg =
+        err instanceof ApiError && err.status === 429
+          ? err.message
+          : 'No se pudo guardar la planta. Revisa tu conexión e inténtalo de nuevo.';
+      Alert.alert('No se pudo guardar', msg);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleOpenHabitatMap = () => {
-    if (!identificationResult) return;
+    if (!selectedCandidate) return;
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     } catch {}
-    navigation.navigate('HabitatMap', { plantId: identificationResult.id });
+    navigation.navigate('HabitatMap', { plantId: selectedCandidate.id });
   };
 
   const handleOpenPlantDetail = () => {
-    if (!identificationResult) return;
+    if (!selectedCandidate) return;
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     } catch {}
-    navigation.navigate('PlantDetail', { plantId: identificationResult.id });
+    navigation.navigate('PlantDetail', {
+      plantId: selectedCandidate.id,
+      plantName: selectedCandidate.name,
+      scientificName: selectedCandidate.scientificName,
+      confidence: selectedCandidate.confidence,
+    });
   };
 
   const handleOpenDiagnosis = () => {
+    if (!selectedCandidate) return;
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     } catch {}
-    navigation.navigate('HealthDiagnosis', { plantId: identificationResult?.id });
+    navigation.navigate('HealthDiagnosis', {
+      plantId: selectedCandidate.id,
+      plantName: selectedCandidate.name,
+      scientificName: selectedCandidate.scientificName,
+    });
   };
 
   // 2. VISTA DE ANÁLISIS Y RESULTADOS
-  if (photoUri) {
+  if (showAnalysisView) {
     const translateY = scanLineAnim.interpolate({
       inputRange: [0, 1],
       outputRange: [0, 260],
@@ -380,14 +429,20 @@ export const ScannerScreen: React.FC = () => {
         showsVerticalScrollIndicator={false}
       >
         <ScreenHeader
-          title={isIdentifying ? 'Analizando Planta' : (identificationResult ? 'Planta Identificada' : 'Vista Previa')}
+          title={
+            isIdentifying
+              ? 'Analizando Planta'
+              : identificationResult
+              ? 'Planta Identificada'
+              : 'Vista Previa'
+          }
           subtitle="Reconocimiento Inteligente"
         />
 
         {/* Tarjeta con foto y visor láser animado */}
         <View style={[styles.previewContainer, { borderColor: colors.border }]}>
           <Image
-            source={{ uri: photoUri }}
+            source={{ uri: photos[0] }}
             style={styles.previewImage}
             resizeMode="cover"
             accessibilityLabel="Foto de la planta que estás analizando"
@@ -436,19 +491,8 @@ export const ScannerScreen: React.FC = () => {
           </View>
         )}
 
-        {/* Estado vacío: foto tomada pero sin resultado aún */}
-        {!isIdentifying && !identificationResult && !errorMessage && (
-          <Card style={{ marginTop: spacing.md }}>
-            <EmptyState
-              iconName="leaf-outline"
-              title="Sin coincidencias aún"
-              description="Prueba a tomar la foto con mejor iluminación o reencuadrando la hoja completa."
-            />
-          </Card>
-        )}
-
         {/* Estado de error */}
-        {errorMessage && (
+        {!isIdentifying && errorMessage && (
           <Card style={{ marginTop: spacing.md, borderColor: colors.error }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.xs }}>
               <Ionicons name="alert-circle" size={24} color={colors.error} />
@@ -460,7 +504,7 @@ export const ScannerScreen: React.FC = () => {
               {errorMessage}
             </Text>
             <Button
-              title="Tomar otra foto"
+              title="Tomar otras fotos"
               onPress={handleRetake}
               variant="primary"
               icon={<Ionicons name="camera-reverse" size={18} color="#FFFFFF" />}
@@ -469,180 +513,247 @@ export const ScannerScreen: React.FC = () => {
         )}
 
         {/* TARJETA CON EL RESULTADO DE LA PLANTA IDENTIFICADA */}
-        {identificationResult && (
+        {!isIdentifying && identificationResult && (
           <View style={{ marginTop: spacing.md, gap: spacing.md }}>
-            <Card elevated>
-              <View style={styles.resultHeader}>
-                <View style={{ flex: 1 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                    <Badge label={`Familia ${identificationResult.family}`} variant="primary" />
-                    <Badge label="Identificada" variant="success" />
-                  </View>
-
-                  <Text style={[typography.title1, { color: colors.textPrimary, fontWeight: '700' }]}>
-                    {identificationResult.name}
-                  </Text>
-                  <Text style={[typography.footnote, { color: colors.textTertiary, fontStyle: 'italic', marginTop: 1 }]}>
-                    {identificationResult.scientificName}
+            {/* AVISO DE CALIDAD DE LA IMAGEN */}
+            {identificationResult.imageQuality.note && (
+              <Card style={{ borderColor: colors.warning }}>
+                <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+                  <Ionicons name="information-circle" size={20} color={colors.warning} />
+                  <Text style={[typography.footnote, { color: colors.textPrimary, flex: 1, marginLeft: 8, lineHeight: 20 }]}>
+                    {identificationResult.imageQuality.note}
                   </Text>
                 </View>
+              </Card>
+            )}
 
-                {/* ANILLO ANIMADO DE % DE CONFIANZA HIG */}
-                <ConfidenceRing
-                  score={identificationResult.confidence}
-                  size={64}
-                  strokeWidth={6}
-                  colorVariant="primary"
-                  label="Certeza"
-                />
-              </View>
-
-              <View style={[styles.separator, { backgroundColor: colors.border, marginVertical: spacing.md }]} />
-
-              {/* FOTOS DE REFERENCIA BOTÁNICA (tiles con gradiente + ícono, sin bytecode pesado) */}
-              <View style={{ marginBottom: spacing.md }}>
-                <Text style={[typography.caption1, { color: colors.textTertiary, fontWeight: '600', marginBottom: 8 }]}>
-                  Fotos de referencia botánica:
+            {/* "NO ESTOY SEGURO": isPlant=false o confianza < 60 */}
+            {isLowConfidence && (
+              <Card style={{ borderColor: colors.warning, backgroundColor: colors.surface }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Ionicons name="help-circle" size={26} color={colors.warning} />
+                  <Text style={[typography.headline, { color: colors.textPrimary, marginLeft: 8 }]}>
+                    No estoy seguro
+                  </Text>
+                </View>
+                <Text style={[typography.body, { color: colors.textSecondary, marginTop: 6, lineHeight: 21 }]}>
+                  {!identificationResult.isPlant
+                    ? 'No detectamos una planta en las fotos. Acércate a las hojas o tallos, evita fondos muy cargados y prueba con mejor luz.'
+                    : `La coincidencia es baja (${identificationResult.confidence}%). Revisa las opciones o vuelve a fotografiar la planta desde varios ángulos.`}
                 </Text>
-                <View style={styles.referenceRow}>
-                  {(identificationResult.referenceImages || []).slice(0, 3).map((token, index) => {
-                    const visual = referenceVisualFor(token, index);
-                    const colorA = index === 0 ? '#2E7D32' : index === 1 ? '#00838F' : '#D4A017';
-                    const colorB = index === 0 ? '#66BB6A' : index === 1 ? '#4DD0E1' : '#FFCA28';
-                    return (
-                      <View
-                        key={token}
-                        style={[styles.referenceTile, { backgroundColor: colors.surfaceSecondary }]}
-                        accessible={true}
-                        accessibilityLabel={`Foto de referencia: ${visual.label}`}
-                      >
-                        <LinearGradient
-                          colors={[colorA, colorB]}
-                          start={{ x: 0, y: 0 }}
-                          end={{ x: 1, y: 1 }}
-                          style={styles.referenceTileGradient}
-                        >
-                          <Ionicons name={visual.icon} size={26} color="#FFFFFF" />
-                          <Text style={styles.referenceTileLabel}>{visual.label}</Text>
-                        </LinearGradient>
-                      </View>
-                    );
-                  })}
-                </View>
-              </View>
+              </Card>
+            )}
 
-              {/* BOTONES PRINCIPALES: MAPA MUNDIAL (FUNCIÓN ESTRELLA) Y FICHA */}
-              <View style={{ gap: 10 }}>
-                <Button
-                  title="Ver Mapa Mundial de Hábitat 🌍"
-                  onPress={handleOpenHabitatMap}
-                  variant="primary"
-                  size="lg"
-                  icon={<Ionicons name="globe" size={18} color="#FFFFFF" />}
-                />
+            {identificationResult.candidates.length > 0 && (
+              <Card elevated>
+                <View style={styles.resultHeader}>
+                  <View style={{ flex: 1 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4, flexWrap: 'wrap' }}>
+                      <Badge label={`Familia ${selectedCandidate?.family ?? '—'}`} variant="primary" />
+                      {identificationResult.source === 'mock' ? (
+                        <Badge label="Demo" variant="neutral" />
+                      ) : (
+                        <Badge label="IA real" variant="success" />
+                      )}
+                    </View>
 
-                <Button
-                  title="Ver Ficha Completa de Cuidados"
-                  onPress={handleOpenPlantDetail}
-                  variant="secondary"
-                  size="md"
-                  icon={<Ionicons name="list" size={18} color={colors.primary} />}
-                />
-
-                <Button
-                  title="Diagnosticar Salud de esta Hoja 🩺"
-                  onPress={handleOpenDiagnosis}
-                  variant="secondary"
-                  size="md"
-                  icon={<Ionicons name="medkit" size={18} color={colors.primary} />}
-                />
-              </View>
-
-              <View style={[styles.separator, { backgroundColor: colors.border, marginVertical: spacing.md }]} />
-
-              {/* LOTE MULTI-PLANTAS (punto 14) */}
-              {pendingBatch.length > 1 && (
-                <View style={{ marginBottom: spacing.md }}>
-                  <Text style={[typography.caption1, { color: colors.textTertiary, fontWeight: '600', marginBottom: 6 }]}>
-                    Lote de {pendingBatch.length} plantas identificadas:
-                  </Text>
-                  <View style={styles.batchRow}>
-                    {pendingBatch.map((p) => (
-                      <View key={p.id} style={[styles.batchChip, { backgroundColor: colors.primaryLight, borderRadius: 999 }]}>
-                        <Text style={[typography.caption2, { color: colors.primary, fontWeight: '600' }]}>{p.avatarEmoji} {p.name.split(' ').slice(0, 2).join(' ')}</Text>
-                      </View>
-                    ))}
+                    <Text style={[typography.title1, { color: colors.textPrimary, fontWeight: '700' }]}>
+                      {selectedCandidate?.name}
+                    </Text>
+                    <Text style={[typography.footnote, { color: colors.textTertiary, fontStyle: 'italic', marginTop: 1 }]}>
+                      {selectedCandidate?.scientificName}
+                    </Text>
                   </View>
-                  <Text style={[typography.caption2, { color: colors.textTertiary, marginTop: 6 }]}>
-                    Pulsa guardar para añadirlas todas a Mi Jardín.
-                  </Text>
-                </View>
-              )}
 
-              {/* ACCIONES INFERIORES */}
-              <View style={styles.bottomActionsRow}>
-                <TouchableOpacity
-                  style={[styles.outlineBtn, { borderColor: colors.border }]}
-                  onPress={handleRetake}
-                  accessibilityRole="button"
-                  accessibilityLabel="Escanear otra planta"
-                >
-                  <Ionicons name="camera-outline" size={18} color={colors.textPrimary} />
-                  <Text style={[typography.subheadline, { color: colors.textPrimary, fontWeight: '600', marginLeft: 6 }]}>
-                    Escanear otra
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[
-                    styles.primaryBtn,
-                    {
-                      backgroundColor: isSavedToGarden ? colors.surfaceSecondary : colors.primary,
-                      flex: 1,
-                    },
-                  ]}
-                  onPress={handleSaveAllToGarden}
-                  disabled={isSavedToGarden}
-                  accessibilityRole="button"
-                  accessibilityLabel={
-                    isSavedToGarden
-                      ? 'Plantas guardadas en jardín'
-                      : pendingBatch.length > 1
-                      ? `Guardar lote de ${pendingBatch.length} plantas en Mi Jardín`
-                      : 'Guardar en Mi Jardín'
-                  }
-                >
-                  <Ionicons
-                    name={isSavedToGarden ? 'checkmark' : 'add'}
-                    size={18}
-                    color={isSavedToGarden ? colors.textSecondary : '#FFFFFF'}
+                  <ConfidenceRing
+                    score={selectedCandidate?.confidence ?? identificationResult.confidence}
+                    size={64}
+                    strokeWidth={6}
+                    colorVariant="primary"
+                    label="Certeza"
                   />
-                  <Text
+                </View>
+
+                {selectedCandidate?.wikiDescription ? (
+                  <Text style={[typography.body, { color: colors.textSecondary, marginTop: spacing.sm, lineHeight: 21 }]}>
+                    {selectedCandidate.wikiDescription}
+                  </Text>
+                ) : null}
+
+                {/* CORRECCIÓN MANUAL DE LA CANDIDATA */}
+                {identificationResult.candidates.length > 1 && (
+                  <View style={{ marginTop: spacing.md }}>
+                    <Text style={[typography.caption1, { color: colors.textTertiary, fontWeight: '600', marginBottom: 8 }]}>
+                      ¿Otra opción? Elige la correcta:
+                    </Text>
+                    <View style={styles.candidateWrap}>
+                      {identificationResult.candidates.map((candidate, index) => {
+                        const active = index === selectedIndex;
+                        return (
+                          <TouchableOpacity
+                            key={`${candidate.id}-${index}`}
+                            onPress={() => handleSelectCandidate(index)}
+                            style={[
+                              styles.candidateChip,
+                              {
+                                backgroundColor: active ? colors.primaryLight : colors.surfaceSecondary,
+                                borderColor: active ? colors.primary : colors.border,
+                              },
+                            ]}
+                            accessibilityRole="radio"
+                            accessibilityState={{ selected: active }}
+                            accessibilityLabel={`Elegir ${candidate.name}, ${candidate.confidence} por ciento de certeza`}
+                          >
+                            <Text
+                              style={[
+                                typography.caption1,
+                                { color: active ? colors.primary : colors.textPrimary, fontWeight: '600' },
+                              ]}
+                              numberOfLines={1}
+                            >
+                              {candidate.name} · {candidate.confidence}%
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  </View>
+                )}
+
+                {/* FOTOS DE REFERENCIA REALES DEL PROVEEDOR */}
+                {(selectedCandidate?.referenceImages?.length ?? 0) > 0 && (
+                  <View style={{ marginTop: spacing.md }}>
+                    <Text style={[typography.caption1, { color: colors.textTertiary, fontWeight: '600', marginBottom: 8 }]}>
+                      Fotos de referencia:
+                    </Text>
+                    <View style={styles.referenceRow}>
+                      {selectedCandidate?.referenceImages.slice(0, 3).map((ref, index) => (
+                        <View
+                          key={`${ref.small}-${index}`}
+                          style={[styles.referenceTile, { backgroundColor: colors.surfaceSecondary }]}
+                        >
+                          <Image
+                            source={{ uri: ref.small || ref.full }}
+                            style={styles.referenceImage}
+                            resizeMode="cover"
+                            accessibilityLabel={`Foto de referencia ${index + 1} de ${selectedCandidate?.name}`}
+                          />
+                        </View>
+                      ))}
+                    </View>
+                  </View>
+                )}
+
+                <View style={[styles.separator, { backgroundColor: colors.border, marginVertical: spacing.md }]} />
+
+                {/* BOTONES PRINCIPALES */}
+                <View style={{ gap: 10 }}>
+                  <Button
+                    title="Ver Mapa Mundial de Hábitat 🌍"
+                    onPress={handleOpenHabitatMap}
+                    variant="primary"
+                    size="lg"
+                    icon={<Ionicons name="globe" size={18} color="#FFFFFF" />}
+                  />
+
+                  <Button
+                    title="Ver Ficha Completa de Cuidados"
+                    onPress={handleOpenPlantDetail}
+                    variant="secondary"
+                    size="md"
+                    icon={<Ionicons name="list" size={18} color={colors.primary} />}
+                  />
+
+                  <Button
+                    title="Diagnosticar Salud de esta Hoja 🩺"
+                    onPress={handleOpenDiagnosis}
+                    variant="secondary"
+                    size="md"
+                    icon={<Ionicons name="medkit" size={18} color={colors.primary} />}
+                  />
+                </View>
+
+                <View style={[styles.separator, { backgroundColor: colors.border, marginVertical: spacing.md }]} />
+
+                {/* ACCIONES INFERIORES */}
+                <View style={styles.bottomActionsRow}>
+                  <TouchableOpacity
+                    style={[styles.outlineBtn, { borderColor: colors.border }]}
+                    onPress={handleRetake}
+                    accessibilityRole="button"
+                    accessibilityLabel="Escanear otra planta"
+                  >
+                    <Ionicons name="camera-outline" size={18} color={colors.textPrimary} />
+                    <Text style={[typography.subheadline, { color: colors.textPrimary, fontWeight: '600', marginLeft: 6 }]}>
+                      Escanear otra
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
                     style={[
-                      typography.subheadline,
+                      styles.primaryBtn,
                       {
-                        color: isSavedToGarden ? colors.textSecondary : '#FFFFFF',
-                        fontWeight: '600',
-                        marginLeft: 6,
+                        backgroundColor: isSavedToGarden ? colors.surfaceSecondary : colors.primary,
+                        flex: 1,
+                        opacity: isSaving ? 0.7 : 1,
                       },
                     ]}
+                    onPress={handleSaveToGarden}
+                    disabled={isSavedToGarden || isSaving}
+                    accessibilityRole="button"
+                    accessibilityLabel={
+                      isSavedToGarden
+                        ? 'Planta guardada en jardín'
+                        : `Guardar ${selectedCandidate?.name ?? 'la planta'} en Mi Jardín`
+                    }
                   >
-                    {isSavedToGarden
-                      ? 'En Mi Jardín ✓'
-                      : pendingBatch.length > 1
-                      ? `Guardar lote (${pendingBatch.length})`
-                      : 'Guardar en Jardín'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
+                    {isSaving ? (
+                      <ActivityIndicator size="small" color="#FFFFFF" />
+                    ) : (
+                      <>
+                        <Ionicons
+                          name={isSavedToGarden ? 'checkmark' : 'add'}
+                          size={18}
+                          color={isSavedToGarden ? colors.textSecondary : '#FFFFFF'}
+                        />
+                        <Text
+                          style={[
+                            typography.subheadline,
+                            {
+                              color: isSavedToGarden ? colors.textSecondary : '#FFFFFF',
+                              fontWeight: '600',
+                              marginLeft: 6,
+                            },
+                          ]}
+                        >
+                          {isSavedToGarden ? 'En Mi Jardín ✓' : 'Guardar en Jardín'}
+                        </Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                </View>
 
-              {/* CONTADOR DE IDENTIFICACIONES GRATUITAS */}
-              {!limits.isPremium && (
-                <Text style={[typography.caption2, { color: colors.textTertiary, textAlign: 'center', marginTop: spacing.md }]}>
-                  Te quedan {Math.max(0, FREE_IDENTIFICATION_LIMIT - limits.identificationsToday)} de {FREE_IDENTIFICATION_LIMIT} identificaciones gratuitas hoy
-                </Text>
-              )}
-            </Card>
+                {/* CONTADOR DE IDENTIFICACIONES GRATUITAS */}
+                {!limits.isPremium && (
+                  <Text style={[typography.caption2, { color: colors.textTertiary, textAlign: 'center', marginTop: spacing.md }]}>
+                    Te quedan {Math.max(0, FREE_IDENTIFICATION_LIMIT - limits.identificationsToday)} de {FREE_IDENTIFICATION_LIMIT} identificaciones gratuitas hoy
+                  </Text>
+                )}
+              </Card>
+            )}
+
+            {/* Sin candidatos y no es planta: ofrecer solo reintento */}
+            {identificationResult.candidates.length === 0 && (
+              <Card style={{ marginTop: spacing.xs }}>
+                <EmptyState
+                  iconName="leaf-outline"
+                  title="Sin coincidencias"
+                  description="Prueba a fotografiar la hoja completa con buena iluminación y un fondo sencillo."
+                  actionTitle="Tomar otras fotos"
+                  onActionPress={handleRetake}
+                />
+              </Card>
+            )}
           </View>
         )}
       </ScrollView>
@@ -660,7 +771,7 @@ export const ScannerScreen: React.FC = () => {
       />
 
       {/* MARCO GUÍA DE ENFOQUE BOTÁNICO */}
-      <View style={styles.overlayFrameContainer}>
+      <View style={styles.overlayFrameContainer} pointerEvents="none">
         <View style={styles.targetReticle}>
           <View style={[styles.cornerTL, { borderColor: colors.primary }]} />
           <View style={[styles.cornerTR, { borderColor: colors.primary }]} />
@@ -670,8 +781,35 @@ export const ScannerScreen: React.FC = () => {
 
         <View style={styles.guidancePill}>
           <Ionicons name="scan" size={16} color="#FFFFFF" />
-          <Text style={styles.guidanceText}>Encuadra la hoja o flor en el centro</Text>
+          <Text style={styles.guidanceText}>
+            {photos.length === 0
+              ? 'Encuadra la hoja o flor en el centro'
+              : photos.length < MAX_PHOTOS
+              ? 'Añade otra foto desde otro ángulo (opcional)'
+              : 'Listo: pulsa Analizar'}
+          </Text>
         </View>
+      </View>
+
+      {/* BOTONES SUPERIORES: VOLTEAR CÁMARA Y FLASH */}
+      <View style={styles.topControls}>
+        <TouchableOpacity
+          style={[styles.topControlBtn, { backgroundColor: colors.surface }]}
+          onPress={toggleFacing}
+          accessibilityRole="button"
+          accessibilityLabel="Cambiar de cámara"
+        >
+          <Ionicons name="camera-reverse" size={20} color={colors.textPrimary} />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.topControlBtn, { backgroundColor: colors.surface }]}
+          onPress={toggleTorch}
+          accessibilityRole="button"
+          accessibilityLabel={torchEnabled ? 'Apagar la linterna' : 'Encender la linterna'}
+        >
+          <Ionicons name={torchEnabled ? 'flash' : 'flash-off'} size={20} color={torchEnabled ? colors.warning : colors.textPrimary} />
+        </TouchableOpacity>
       </View>
 
       {/* BOTÓN FLOTANTE DIRECTO PARA "DIAGNOSTICAR SALUD" */}
@@ -687,6 +825,54 @@ export const ScannerScreen: React.FC = () => {
         </Text>
       </TouchableOpacity>
 
+      {/* BANDEJA DE FOTOS (FILMSTRIP) Y BOTÓN ANALIZAR */}
+      {photos.length > 0 && (
+        <View style={[styles.captureTray, { backgroundColor: colors.surface }]}>
+          <View style={styles.trayHeader}>
+            <Text style={[typography.caption1, { color: colors.textSecondary, fontWeight: '600' }]}>
+              {photos.length}/{MAX_PHOTOS} fotos · misma planta
+            </Text>
+            <TouchableOpacity
+              onPress={handleClearPhotos}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              accessibilityRole="button"
+              accessibilityLabel="Eliminar todas las fotos"
+            >
+              <Text style={[typography.caption1, { color: colors.error, fontWeight: '600' }]}>Limpiar</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.filmstrip}>
+            {photos.map((uri, index) => (
+              <View key={`${uri}-${index}`} style={styles.filmstripItem}>
+                <Image source={{ uri }} style={styles.filmstripThumb} resizeMode="cover" />
+                <TouchableOpacity
+                  style={styles.removeBadge}
+                  onPress={() => handleRemovePhoto(index)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Eliminar foto ${index + 1}`}
+                  hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                >
+                  <Ionicons name="close" size={12} color="#FFFFFF" />
+                </TouchableOpacity>
+              </View>
+            ))}
+          </View>
+
+          <TouchableOpacity
+            style={[styles.analyzeBtn, { backgroundColor: colors.primary }]}
+            onPress={handleAnalyze}
+            accessibilityRole="button"
+            accessibilityLabel={`Analizar ${photos.length} ${photos.length === 1 ? 'foto' : 'fotos'}`}
+          >
+            <Ionicons name="sparkles" size={18} color="#FFFFFF" />
+            <Text style={[typography.subheadline, { color: '#FFFFFF', fontWeight: '700', marginLeft: 6 }]}>
+              Analizar {photos.length === 1 ? 'foto' : `${photos.length} fotos`}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
       {/* BARRA INFERIOR DE CONTROLES DE CÁMARA */}
       <View style={styles.cameraControlsBar}>
         <TouchableOpacity
@@ -701,50 +887,39 @@ export const ScannerScreen: React.FC = () => {
         {/* BOTÓN OBTURADOR PRINCIPAL */}
         <TouchableOpacity
           style={[styles.shutterButtonOuter, { borderColor: '#FFFFFF' }]}
-          onPress={handleCaptureAndIdentify}
+          onPress={handleCapture}
           accessibilityRole="button"
-          accessibilityLabel="Capturar y escanear planta"
+          accessibilityLabel="Capturar foto de la planta"
         >
           <View style={[styles.shutterButtonInner, { backgroundColor: colors.primary }]} />
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.auxControlButton}
-          onPress={handleUseMockSample}
-          accessibilityRole="button"
-          accessibilityLabel="Usar foto de prueba"
-        >
-          <Ionicons name="sparkles" size={24} color="#FFFFFF" />
-        </TouchableOpacity>
+        {__DEV__ ? (
+          <TouchableOpacity
+            style={styles.auxControlButton}
+            onPress={handleUseMockSample}
+            accessibilityRole="button"
+            accessibilityLabel="Usar foto de prueba (solo desarrollo)"
+          >
+            <Ionicons name="sparkles" size={24} color="#FFFFFF" />
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.auxControlButton} />
+        )}
       </View>
 
       {/* CONTADOR DE IDENTIFICACIONES GRATIS (plan Free) */}
-      {!limits.isPremium && (
-        <View style={styles.freeCounter} accessible accessibilityLabel={`Te quedan ${Math.max(0, FREE_IDENTIFICATION_LIMIT - limits.identificationsToday)} de ${FREE_IDENTIFICATION_LIMIT} identificaciones gratuitas hoy`}>
+      {!limits.isPremium && photos.length === 0 && (
+        <View
+          style={styles.freeCounter}
+          accessible
+          accessibilityLabel={`Te quedan ${Math.max(0, FREE_IDENTIFICATION_LIMIT - limits.identificationsToday)} de ${FREE_IDENTIFICATION_LIMIT} identificaciones gratuitas hoy`}
+        >
           <Ionicons name="sparkles-outline" size={13} color="#FFD54F" />
           <Text style={[typography.caption1, { color: '#FFFFFF', fontWeight: '600', marginLeft: 5 }]}>
             {Math.max(0, FREE_IDENTIFICATION_LIMIT - limits.identificationsToday)}/{FREE_IDENTIFICATION_LIMIT} gratis hoy
           </Text>
         </View>
-      )}
-
-      {/* LOTE PENDIENTE DE GUARDADO EN LA VISTA DE CÁMARA */}
-      {pendingBatch.length > 0 && (
-        <TouchableOpacity
-          style={[styles.cameraBatchBanner, { backgroundColor: colors.surface }]}
-          onPress={handleSaveAllToGarden}
-          activeOpacity={0.85}
-          accessibilityRole="button"
-          accessibilityLabel={`Guardar lote de ${pendingBatch.length} plantas en Mi Jardín`}
-        >
-          <View style={[styles.cameraBatchIcon, { backgroundColor: colors.primaryLight }]}>
-            <Ionicons name="leaf" size={16} color={colors.primary} />
-          </View>
-          <Text style={[typography.subheadline, { color: colors.textPrimary, fontWeight: '700', flex: 1, marginLeft: 10 }]}>
-            {pendingBatch.length} {pendingBatch.length === 1 ? 'planta lista' : 'plantas listas'}
-          </Text>
-          <Text style={[typography.footnote, { color: colors.primary, fontWeight: '700' }]}>Guardar</Text>
-        </TouchableOpacity>
       )}
     </View>
   );
@@ -753,11 +928,6 @@ export const ScannerScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  centerContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   permissionContainer: {
     flex: 1,
@@ -840,6 +1010,25 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginLeft: 6,
   },
+  topControls: {
+    position: 'absolute',
+    top: 20,
+    left: 16,
+    flexDirection: 'row',
+    gap: 10,
+  },
+  topControlBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+  },
   floatingDiagnosisBtn: {
     position: 'absolute',
     top: 20,
@@ -847,7 +1036,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 44, // HIG 44x44
+    minHeight: 44,
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 22,
@@ -856,6 +1045,56 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
+  },
+  captureTray: {
+    position: 'absolute',
+    bottom: 118,
+    left: 12,
+    right: 12,
+    borderRadius: 16,
+    padding: 12,
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+  },
+  trayHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  filmstrip: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 10,
+  },
+  filmstripItem: {
+    position: 'relative',
+  },
+  filmstripThumb: {
+    width: 56,
+    height: 56,
+    borderRadius: 10,
+  },
+  removeBadge: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: 'rgba(0,0,0,0.8)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  analyzeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 46,
+    borderRadius: 12,
   },
   cameraControlsBar: {
     position: 'absolute',
@@ -940,6 +1179,18 @@ const styles = StyleSheet.create({
     height: 1,
     width: '100%',
   },
+  candidateWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  candidateChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    borderWidth: 1,
+    maxWidth: '100%',
+  },
   referenceRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -951,18 +1202,9 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     overflow: 'hidden',
   },
-  referenceTileGradient: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 6,
-  },
-  referenceTileLabel: {
-    color: '#FFFFFF',
-    fontSize: 10,
-    fontWeight: '600',
-    marginTop: 4,
-    textAlign: 'center',
+  referenceImage: {
+    width: '100%',
+    height: '100%',
   },
   bottomActionsRow: {
     flexDirection: 'row',
@@ -986,44 +1228,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 12,
   },
-  batchRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  batchChip: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-  },
   freeCounter: {
     position: 'absolute',
     bottom: 122,
     left: 0,
     right: 0,
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cameraBatchBanner: {
-    position: 'absolute',
-    bottom: 118,
-    left: 16,
-    right: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 14,
-    elevation: 6,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 6,
-  },
-  cameraBatchIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
   },

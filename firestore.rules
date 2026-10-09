@@ -1,0 +1,13 @@
+rules_version = '2';
+
+// Plantae Fase 2: TODOS los datos (cuota, caché de fichas, futuros usuarios)
+// viven detrás del Admin SDK de las Cloud Functions. El cliente nunca habla
+// directamente con Firestore todavía, así que denegamos todo por defecto.
+// En Fase 4 se abrirán reglas concretas para `users/{uid}`.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -19,7 +19,7 @@ import { ConfidenceRing } from '../components/ConfidenceRing';
 import { LevelBar } from '../components/LevelBar';
 import { EmptyState } from '../components/EmptyState';
 import { SkeletonBox } from '../components/SkeletonLoader';
-import { getPlantById } from '../services/plantApi';
+import { resolvePlantForDetail, CatalogPlant } from '../services/plantApi';
 import { useGarden } from '../context/GardenContext';
 import { usePlanLimits } from '../hooks/usePlanLimits';
 import { ToxicityBadge, ToxicityPanel } from '../components/ToxicityBadge';
@@ -40,58 +40,40 @@ export const PlantDetailScreen: React.FC = () => {
   const limits = usePlanLimits();
 
   const plantId = route.params?.plantId || 'monstera';
-  const plantDef = getPlantById(plantId);
+  const plantNameParam = route.params?.plantName as string | undefined;
+  const scientificNameParam = route.params?.scientificName as string | undefined;
+  const confidenceParam = route.params?.confidence as number | undefined;
 
   const [activeTab, setActiveTab] = useState<TabType>('resumen');
+  const [plant, setPlant] = useState<CatalogPlant | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const [isSaved, setIsSaved] = useState<boolean>(() =>
-    !!plantDef &&
-    plants.some((p) => p.name.toLowerCase().includes(plantDef.name.toLowerCase().split(' ')[0]))
-  );
+  const [isSaved, setIsSaved] = useState<boolean>(false);
+
+  // Resolución real: catálogo local o ficha generada por IA a partir del nombre.
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    (async () => {
+      let resolved: CatalogPlant | null = null;
+      try {
+        resolved = await resolvePlantForDetail(plantId, plantNameParam, scientificNameParam, confidenceParam);
+      } catch {
+        resolved = null;
+      }
+      if (!active) return;
+      setPlant(resolved);
+      setLoading(false);
+    })();
+    return () => {
+      active = false;
+    };
+  }, [plantId, plantNameParam, scientificNameParam, confidenceParam]);
 
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 700);
-    return () => clearTimeout(timer);
-  }, []);
-
-  if (!plantDef) {
-    return (
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <View
-          style={[
-            styles.header,
-            {
-              backgroundColor: colors.surface,
-              borderBottomColor: colors.border,
-              paddingTop: Platform.OS === 'ios' ? 12 : 16,
-            },
-          ]}
-        >
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={styles.backButton}
-            accessibilityRole="button"
-            accessibilityLabel="Volver"
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <Ionicons name="chevron-back" size={26} color={colors.primary} />
-            <Text style={[typography.body, { color: colors.primary, fontWeight: '600' }]}>Atrás</Text>
-          </TouchableOpacity>
-          <Text style={[typography.headline, { color: colors.textPrimary }]} numberOfLines={1}>
-            Ficha Botánica
-          </Text>
-          <View style={styles.actionHeaderBtn} />
-        </View>
-        <EmptyState
-          iconName="leaf-outline"
-          title="Especie no encontrada"
-          description="Esta planta no está disponible en el catálogo botánico. Vuelve a escanear o elige otra especie."
-        />
-      </View>
-    );
-  }
-
-  const plant = plantDef;
+    if (!plant) return;
+    const token = plant.name.toLowerCase().split(' ')[0];
+    setIsSaved(plants.some((p) => p.name.toLowerCase().includes(token)));
+  }, [plant, plants]);
 
   const handleTabChange = (tab: TabType) => {
     try {
@@ -101,6 +83,7 @@ export const PlantDetailScreen: React.FC = () => {
   };
 
   const handleSaveToGarden = () => {
+    if (!plant) return;
     // Límite free: máx. 5 plantas (punto 16)
     if (!limits.isPremium && plants.length >= limits.plantLimit) {
       Alert.alert(
@@ -127,6 +110,7 @@ export const PlantDetailScreen: React.FC = () => {
   };
 
   const handleOpenGrowthDiary = () => {
+    if (!plant) return;
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     } catch {}
@@ -134,6 +118,7 @@ export const PlantDetailScreen: React.FC = () => {
   };
 
   const handleOpenHabitatMap = () => {
+    if (!plant) return;
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     } catch {}
@@ -141,10 +126,15 @@ export const PlantDetailScreen: React.FC = () => {
   };
 
   const handleOpenDiagnosis = () => {
+    if (!plant) return;
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     } catch {}
-    navigation.navigate('HealthDiagnosis', { plantId: plant.id });
+    navigation.navigate('HealthDiagnosis', {
+      plantId: plant.id,
+      plantName: plant.name,
+      scientificName: plant.scientificName,
+    });
   };
 
   // Estado de carga con esqueletos
@@ -212,6 +202,43 @@ export const PlantDetailScreen: React.FC = () => {
             <SkeletonBox width="70%" height={14} borderRadius={6} style={{ marginTop: 6 }} />
           </Card>
         </ScrollView>
+      </View>
+    );
+  }
+
+  if (!plant) {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <View
+          style={[
+            styles.header,
+            {
+              backgroundColor: colors.surface,
+              borderBottomColor: colors.border,
+              paddingTop: Platform.OS === 'ios' ? 12 : 16,
+            },
+          ]}
+        >
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}
+            accessibilityRole="button"
+            accessibilityLabel="Volver"
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Ionicons name="chevron-back" size={26} color={colors.primary} />
+            <Text style={[typography.body, { color: colors.primary, fontWeight: '600' }]}>Atrás</Text>
+          </TouchableOpacity>
+          <Text style={[typography.headline, { color: colors.textPrimary }]} numberOfLines={1}>
+            Ficha Botánica
+          </Text>
+          <View style={styles.actionHeaderBtn} />
+        </View>
+        <EmptyState
+          iconName="leaf-outline"
+          title="Especie no encontrada"
+          description="No pudimos recuperar la ficha de esta planta. Vuelve a escanearla o elige otra especie del catálogo."
+        />
       </View>
     );
   }
@@ -287,11 +314,18 @@ export const PlantDetailScreen: React.FC = () => {
               </Text>
             </View>
 
-            {/* Anillo de Confianza / Salud */}
-            <View style={{ alignItems: 'center' }}>
-              <ConfidenceRing score={plant.confidence} size={54} strokeWidth={5} colorVariant="primary" />
-              <Text style={[typography.caption2, { color: colors.textTertiary, marginTop: 4 }]}>Precisión</Text>
-            </View>
+            {/* Anillo de Confianza / Salud (solo si conocemos la precisión) */}
+            {plant.confidence != null ? (
+              <View style={{ alignItems: 'center' }}>
+                <ConfidenceRing score={plant.confidence} size={54} strokeWidth={5} colorVariant="primary" />
+                <Text style={[typography.caption2, { color: colors.textTertiary, marginTop: 4 }]}>Precisión</Text>
+              </View>
+            ) : (
+              <View style={{ alignItems: 'center', width: 54 }}>
+                <Ionicons name="sparkles" size={22} color={colors.primary} />
+                <Text style={[typography.caption2, { color: colors.textTertiary, marginTop: 4 }]}>IA</Text>
+              </View>
+            )}
           </View>
 
           {/* CHIPS RÁPIDOS DE CUIDADO */}
