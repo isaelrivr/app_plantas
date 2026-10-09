@@ -10,6 +10,7 @@ import { Badge } from '../components/Badge';
 import { ErrorBanner } from '../components/ErrorBanner';
 import { usePremium } from '../context/PremiumContext';
 import { BILLING_PLANS, BillingPlanId } from '../services/billingService';
+import { useTranslation } from '../i18n';
 
 interface ComparisonRow {
   label: string;
@@ -32,6 +33,7 @@ export const PaywallScreen: React.FC = () => {
   const { colors, layout, spacing, typography } = useAppTheme();
   const navigation = useNavigation<any>();
   const { isPremium, purchase, restore, purchaseLoading, expiresAt } = usePremium();
+  const { t } = useTranslation();
 
   const [selectedPlan, setSelectedPlan] = useState<BillingPlanId>('annual');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -47,10 +49,10 @@ export const PaywallScreen: React.FC = () => {
         // Cerrar paywall inmediatamente tras activar Pro
         navigation.goBack();
       } else if (!result.cancelled) {
-        setErrorMessage(result.errorMessage ?? 'No se pudo completar la compra.');
+        setErrorMessage(result.errorMessage ?? t('No se pudo completar la compra.'));
       }
     } catch {
-      setErrorMessage('No se pudo completar la compra. Inténtalo de nuevo.');
+      setErrorMessage(t('No se pudo completar la compra. Inténtalo de nuevo.'));
     }
   };
 
@@ -61,10 +63,10 @@ export const PaywallScreen: React.FC = () => {
       if (result.entitlement.active) {
         setSuccess(true);
       } else {
-        Alert.alert('Restaurar compras', 'No encontramos compras previas asociadas a tu cuenta.');
+        Alert.alert(t('Restaurar compras'), t('No encontramos compras previas asociadas a tu cuenta.'));
       }
     } catch {
-      setErrorMessage('No se pudieron restaurar las compras.');
+      setErrorMessage(t('No se pudieron restaurar las compras.'));
     }
   };
 
@@ -77,7 +79,7 @@ export const PaywallScreen: React.FC = () => {
     }
     return (
       <Text style={[typography.caption1, { color: isPro ? colors.primary : colors.textSecondary, fontWeight: '600' }]}>
-        {value}
+        {t(value)}
       </Text>
     );
   };
@@ -95,13 +97,13 @@ export const PaywallScreen: React.FC = () => {
           <TouchableOpacity
             onPress={() => navigation.goBack()}
             accessibilityRole="button"
-            accessibilityLabel="Cerrar"
+            accessibilityLabel={t('Cerrar')}
             style={styles.closeButton}
           >
             <Ionicons name="close" size={26} color={colors.textSecondary} />
           </TouchableOpacity>
           <Badge
-            label="PRUEBA 7 DÍAS GRATIS"
+            label={t('PRUEBA 7 DÍAS GRATIS')}
             variant="premium"
             icon={<Ionicons name="sparkles" size={13} color={colors.premiumGold} />}
           />
@@ -116,7 +118,7 @@ export const PaywallScreen: React.FC = () => {
             Plantae Pro
           </Text>
           <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xs }]}>
-            Cuida tus plantas como un experto: análisis ilimitados, clima local y diagnóstico de plagas.
+            {t('Cuida tus plantas como un experto: análisis ilimitados, clima local y diagnóstico de plagas.')}
           </Text>
         </View>
 

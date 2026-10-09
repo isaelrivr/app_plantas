@@ -22,6 +22,7 @@ import { requestNotificationPermissions } from '../services/notificationService'
 import { clearAllAppData } from '../services/storage';
 import { clearGrowthDiary } from '../services/growthDiaryService';
 import { clearPersistedImages } from '../services/mediaService';
+import { useTranslation } from '../i18n';
 
 export const SettingsScreen: React.FC = () => {
   const { colors, layout, spacing, typography } = useAppTheme();
@@ -38,11 +39,12 @@ export const SettingsScreen: React.FC = () => {
   } = useSettings();
   const { isPremium, cancel } = usePremium();
   const { clearGarden, resetStats } = useGarden();
+  const { t } = useTranslation();
 
   const themeOptions: { key: ThemePreference; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
-    { key: 'system', label: 'Sistema', icon: 'phone-portrait-outline' },
-    { key: 'light', label: 'Claro', icon: 'sunny-outline' },
-    { key: 'dark', label: 'Oscuro', icon: 'moon-outline' },
+    { key: 'system', label: t('Sistema'), icon: 'phone-portrait-outline' },
+    { key: 'light', label: t('Claro'), icon: 'sunny-outline' },
+    { key: 'dark', label: t('Oscuro'), icon: 'moon-outline' },
   ];
 
   const handleToggleNotifications = async (value: boolean) => {
@@ -56,12 +58,12 @@ export const SettingsScreen: React.FC = () => {
 
   const handleDeleteData = () => {
     Alert.alert(
-      'Eliminar cuenta y datos',
-      'Se borrarán tu jardín, estadísticas, ajustes y suscripción local de forma permanente. Esta acción no se puede deshacer.',
+      t('Eliminar cuenta y datos'),
+      t('Se borrarán tu jardín, estadísticas, ajustes y suscripción local de forma permanente. Esta acción no se puede deshacer.'),
       [
-        { text: 'Cancelar', style: 'cancel' },
+        { text: t('Cancelar'), style: 'cancel' },
         {
-          text: 'Eliminar todo',
+          text: t('Eliminar todo'),
           style: 'destructive',
           onPress: async () => {
             try {
@@ -76,7 +78,7 @@ export const SettingsScreen: React.FC = () => {
             resetSettings();
             resetOnboarding();
             try { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning); } catch {}
-            Alert.alert('Datos eliminados', 'Tu cuenta y datos locales han sido eliminados.');
+            Alert.alert(t('Datos eliminados'), t('Tu cuenta y datos locales han sido eliminados.'));
             navigation.goBack();
           },
         },
@@ -86,9 +88,9 @@ export const SettingsScreen: React.FC = () => {
 
   const handlePrivacy = () => {
     Alert.alert(
-      'Privacidad',
-      'En Plantae las fotos se procesan para identificar plantas. En producción, la identificación se realiza mediante Cloud Functions y no se almacenan imágenes sin tu consentimiento. Puedes eliminar todos tus datos en cualquier momento desde esta pantalla.\n\nPolítica completa: plantae.app/privacidad',
-      [{ text: 'Entendido' }]
+      t('Privacidad'),
+      t('En Plantae las fotos se procesan para identificar plantas. En producción, la identificación se realiza mediante Cloud Functions y no se almacenan imágenes sin tu consentimiento. Puedes eliminar todos tus datos en cualquier momento desde esta pantalla.\n\nPolítica completa: plantae.app/privacidad'),
+      [{ text: t('Entendido') }]
     );
   };
 
@@ -115,23 +117,23 @@ export const SettingsScreen: React.FC = () => {
           onPress={() => navigation.goBack()}
           style={styles.backButton}
           accessibilityRole="button"
-          accessibilityLabel="Volver"
+          accessibilityLabel={t('Volver')}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <Ionicons name="chevron-back" size={26} color={colors.primary} />
-          <Text style={[typography.body, { color: colors.primary, fontWeight: '600' }]}>Atrás</Text>
+          <Text style={[typography.body, { color: colors.primary, fontWeight: '600' }]}>{t('Atrás')}</Text>
         </TouchableOpacity>
-        <Text style={[typography.headline, { color: colors.textPrimary }]}>Ajustes</Text>
+        <Text style={[typography.headline, { color: colors.textPrimary }]}>{t('Ajustes')}</Text>
         <View style={styles.actionHeaderBtn} />
       </View>
 
       <ScrollView contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxxl }}>
-        {renderSectionTitle('Apariencia')}
+        {renderSectionTitle(t('Apariencia'))}
         <Card>
           <View style={styles.row}>
-            <Text style={[typography.body, { color: colors.textPrimary }]}>Tema</Text>
+            <Text style={[typography.body, { color: colors.textPrimary }]}>{t('Tema')}</Text>
             <Text style={[typography.caption1, { color: colors.textTertiary }]}>
-              {themeOptions.find((t) => t.key === themePreference)?.label}
+              {themeOptions.find((option) => option.key === themePreference)?.label}
             </Text>
           </View>
           <View style={styles.segmentRow}>
@@ -146,7 +148,7 @@ export const SettingsScreen: React.FC = () => {
                   }}
                   accessibilityRole="radio"
                   accessibilityState={{ selected }}
-                  accessibilityLabel={`Tema ${option.label}`}
+                  accessibilityLabel={t('Tema {theme}', { theme: option.label })}
                   style={[
                     styles.segment,
                     {
@@ -166,7 +168,7 @@ export const SettingsScreen: React.FC = () => {
           </View>
         </Card>
 
-        {renderSectionTitle('Idioma')}
+        {renderSectionTitle(t('Idioma'))}
         <Card>
           {LANGUAGES.map((lang, index) => {
             const selected = language === lang.code;
@@ -179,7 +181,7 @@ export const SettingsScreen: React.FC = () => {
                   }}
                   accessibilityRole="radio"
                   accessibilityState={{ selected }}
-                  accessibilityLabel={`Idioma ${lang.label}`}
+                  accessibilityLabel={t('Idioma {lenguaje}', { lenguaje: lang.label })}
                   style={styles.rowTap}
                 >
                   <Text style={[typography.body, { color: colors.textPrimary }]}>{lang.label}</Text>
@@ -191,64 +193,64 @@ export const SettingsScreen: React.FC = () => {
           })}
         </Card>
 
-        {renderSectionTitle('Notificaciones')}
+        {renderSectionTitle(t('Notificaciones'))}
         <Card>
           <View style={styles.row}>
             <View style={{ flex: 1 }}>
-              <Text style={[typography.body, { color: colors.textPrimary }]}>Recordatorios de cuidado</Text>
+              <Text style={[typography.body, { color: colors.textPrimary }]}>{t('Recordatorios de cuidado')}</Text>
               <Text style={[typography.caption1, { color: colors.textTertiary, marginTop: 2 }]}>
-                Riego, abono y poda según cada planta
+                {t('Riego, abono y poda según cada planta')}
               </Text>
             </View>
             <Switch
               value={notificationsEnabled}
               onValueChange={handleToggleNotifications}
               trackColor={{ true: colors.primary, false: colors.border }}
-              accessibilityLabel="Activar recordatorios de cuidado"
+              accessibilityLabel={t('Activar recordatorios de cuidado')}
             />
           </View>
         </Card>
 
-        {renderSectionTitle('Suscripción')}
+        {renderSectionTitle(t('Suscripción'))}
         <Card>
           <TouchableOpacity
             onPress={() => navigation.navigate('Paywall')}
             accessibilityRole="button"
-            accessibilityLabel={isPremium ? 'Gestionar suscripción' : 'Ver planes Premium'}
+            accessibilityLabel={isPremium ? t('Gestionar suscripción') : t('Ver planes Premium')}
             style={styles.rowTap}
           >
             <View style={{ flex: 1 }}>
               <Text style={[typography.body, { color: colors.textPrimary }]}>
-                {isPremium ? 'Plantae Pro activo' : 'Mejorar a Plantae Pro'}
+                {isPremium ? t('Plantae Pro activo') : t('Mejorar a Plantae Pro')}
               </Text>
               <Text style={[typography.caption1, { color: colors.textTertiary, marginTop: 2 }]}>
-                {isPremium ? 'Gestiona tu plan y facturación' : 'Desbloquea todas las funciones'}
+                {isPremium ? t('Gestiona tu plan y facturación') : t('Desbloquea todas las funciones')}
               </Text>
             </View>
             {isPremium ? <Badge label="PRO" variant="premium" /> : <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />}
           </TouchableOpacity>
         </Card>
 
-        {renderSectionTitle('Privacidad y datos')}
+        {renderSectionTitle(t('Privacidad y datos'))}
         <Card>
-          <TouchableOpacity onPress={handlePrivacy} accessibilityRole="button" accessibilityLabel="Política de privacidad" style={styles.rowTap}>
-            <Text style={[typography.body, { color: colors.textPrimary }]}>Política de privacidad</Text>
+          <TouchableOpacity onPress={handlePrivacy} accessibilityRole="button" accessibilityLabel={t('Política de privacidad')} style={styles.rowTap}>
+            <Text style={[typography.body, { color: colors.textPrimary }]}>{t('Política de privacidad')}</Text>
             <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
           </TouchableOpacity>
           <View style={[styles.separator, { backgroundColor: colors.border }]} />
-          <TouchableOpacity onPress={resetOnboarding} accessibilityRole="button" accessibilityLabel="Ver introducción de nuevo" style={styles.rowTap}>
-            <Text style={[typography.body, { color: colors.textPrimary }]}>Ver introducción de nuevo</Text>
+          <TouchableOpacity onPress={resetOnboarding} accessibilityRole="button" accessibilityLabel={t('Ver introducción de nuevo')} style={styles.rowTap}>
+            <Text style={[typography.body, { color: colors.textPrimary }]}>{t('Ver introducción de nuevo')}</Text>
             <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
           </TouchableOpacity>
           <View style={[styles.separator, { backgroundColor: colors.border }]} />
-          <TouchableOpacity onPress={handleDeleteData} accessibilityRole="button" accessibilityLabel="Eliminar cuenta y datos" style={styles.rowTap}>
-            <Text style={[typography.body, { color: colors.error }]}>Eliminar cuenta y datos</Text>
+          <TouchableOpacity onPress={handleDeleteData} accessibilityRole="button" accessibilityLabel={t('Eliminar cuenta y datos')} style={styles.rowTap}>
+            <Text style={[typography.body, { color: colors.error }]}>{t('Eliminar cuenta y datos')}</Text>
             <Ionicons name="trash-outline" size={20} color={colors.error} />
           </TouchableOpacity>
         </Card>
 
         <Text style={[typography.caption2, { color: colors.textTertiary, textAlign: 'center', marginTop: spacing.xl }]}>
-          Plantae · Versión 1.0.0 (Expo SDK 57)
+          {t('Plantae · Versión 1.0.0 (Expo SDK 57)')}
         </Text>
       </ScrollView>
     </View>

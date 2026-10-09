@@ -85,6 +85,8 @@ const fragment: Record<string, string> = {
   Limpiar: 'Clear',
   'Eliminar foto {indice}': 'Remove photo {indice}',
   'Analizar {cantidad} {unidad}': 'Analyze {cantidad} {unidad}',
+  'Analizar foto': 'Analyze photo',
+  'Analizar {cantidad} fotos': 'Analyze {cantidad} photos',
   foto: 'photo',
   fotos: 'photos',
   'Abrir galería de fotos': 'Open photo gallery',

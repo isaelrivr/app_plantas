@@ -18,6 +18,7 @@ import { PaywallScreen } from '../screens/PaywallScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { useAppTheme } from '../theme';
 import { usePremium } from '../context/PremiumContext';
+import { useTranslation } from '../i18n';
 
 export type RootTabParamList = {
   'Escáner': undefined;
@@ -50,6 +51,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 function BottomTabs() {
   const { colors, typography, layout } = useAppTheme();
   const { isPremium } = usePremium();
+  const { t } = useTranslation();
 
   return (
     <Tab.Navigator
@@ -84,8 +86,8 @@ function BottomTabs() {
         name="Escáner"
         component={ScannerScreen}
         options={{
-          tabBarLabel: 'Escáner',
-          tabBarAccessibilityLabel: 'Pestaña de Escáner y Reconocimiento de Plantas',
+          tabBarLabel: t('Escáner'),
+          tabBarAccessibilityLabel: t('Pestaña de Escáner y Reconocimiento de Plantas'),
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons
               name={focused ? 'camera' : 'camera-outline'}
@@ -99,8 +101,8 @@ function BottomTabs() {
         name="Mi Jardín"
         component={GardenScreen}
         options={{
-          tabBarLabel: 'Mi Jardín',
-          tabBarAccessibilityLabel: 'Pestaña de Mi Jardín y Registro de Riegos',
+          tabBarLabel: t('Mi Jardín'),
+          tabBarAccessibilityLabel: t('Pestaña de Mi Jardín y Registro de Riegos'),
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons
               name={focused ? 'leaf' : 'leaf-outline'}
@@ -114,8 +116,8 @@ function BottomTabs() {
         name="Perfil"
         component={ProfileScreen}
         options={{
-          tabBarLabel: isPremium ? 'Perfil (Pro)' : 'Perfil',
-          tabBarAccessibilityLabel: 'Pestaña de Perfil y Suscripción Premium',
+          tabBarLabel: isPremium ? t('Perfil (Pro)') : t('Perfil'),
+          tabBarAccessibilityLabel: t('Pestaña de Perfil y Suscripción Premium'),
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons
               name={focused ? (isPremium ? 'sparkles' : 'person') : (isPremium ? 'sparkles-outline' : 'person-outline')}

@@ -172,7 +172,7 @@ export const PlantDetailScreen: React.FC = () => {
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ padding: spacing.md }}
-          accessibilityLabel="Cargando ficha botánica"
+          accessibilityLabel={t('Cargando ficha botánica')}
         >
           <Card elevated style={{ marginBottom: spacing.md }}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -293,7 +293,7 @@ export const PlantDetailScreen: React.FC = () => {
         contentContainerStyle={{ padding: spacing.md, paddingBottom: 60 }}
       >
         {/* TARJETA PRINCIPAL CON AVATAR E INFORMACIÓN BOTÁNICA */}
-        <Card elevated style={{ marginBottom: spacing.md }} accessible={true} accessibilityLabel={`Ficha de ${plant.name}, familia ${plant.family}`}>
+        <Card elevated style={{ marginBottom: spacing.md }} accessible={true} accessibilityLabel={t('Ficha de {nombre}, familia {familia}', { nombre: plant.name, familia: plant.family })}>
           <View style={styles.topCardRow}>
             {/* Avatar / Símbolo */}
             <View
@@ -480,12 +480,12 @@ export const PlantDetailScreen: React.FC = () => {
           <View style={{ gap: spacing.md }}>
             <Card elevated>
               <Text style={[typography.headline, { color: colors.textPrimary, marginBottom: spacing.md }]}>
-                Parámetros Botánicos de Nivel
+                {t('Parámetros Botánicos de Nivel')}
               </Text>
 
               {/* Barra de Luz */}
               <LevelBar
-                label="Luz solar"
+                label={t('Luz solar')}
                 level={plant.careLevels.lightLevel}
                 iconName="sunny"
                 valueDescription={plant.light}
@@ -494,16 +494,16 @@ export const PlantDetailScreen: React.FC = () => {
 
               {/* Barra de Riego */}
               <LevelBar
-                label="Frecuencia de Riego"
+                label={t('Frecuencia de Riego')}
                 level={plant.careLevels.wateringLevel}
                 iconName="water"
-                valueDescription={`Cada ${plant.wateringFrequencyDays} días`}
+                valueDescription={t('Cada {dias} días', { dias: plant.wateringFrequencyDays })}
                 tintColor={colors.info}
               />
 
               {/* Barra de Humedad */}
               <LevelBar
-                label="Humedad Ambiental"
+                label={t('Humedad Ambiental')}
                 level={plant.careLevels.humidityLevel}
                 iconName="cloud"
                 valueDescription={plant.humidity}
@@ -512,17 +512,17 @@ export const PlantDetailScreen: React.FC = () => {
 
               {/* Rango de Temperatura */}
               <LevelBar
-                label="Temperatura Óptima"
+                label={t('Temperatura Óptima')}
                 level={tempLevelFor(plant.careLevels.tempMinC, plant.careLevels.tempMaxC)}
                 iconName="thermometer"
-                valueDescription={`${plant.careLevels.tempMinC}°C a ${plant.careLevels.tempMaxC}°C`}
+                valueDescription={t('{min}°C a {max}°C', { min: plant.careLevels.tempMinC, max: plant.careLevels.tempMaxC })}
                 tintColor="#E91E63"
               />
             </Card>
 
             <Card elevated>
               <Text style={[typography.headline, { color: colors.textPrimary, marginBottom: spacing.xs }]}>
-                Pauta Detallada de Riego
+                {t('Pauta Detallada de Riego')}
               </Text>
               <Text style={[typography.body, { color: colors.textSecondary, lineHeight: 22 }]}>
                 {plant.watering}
@@ -537,21 +537,21 @@ export const PlantDetailScreen: React.FC = () => {
             <Card elevated>
               <View style={styles.habitatCardHeader}>
                 <View>
-                  <Badge label="Función Estrella" variant="premium" />
+                  <Badge label={t('Función Estrella')} variant="premium" />
                   <Text style={[typography.title2, { color: colors.textPrimary, fontWeight: '700', marginTop: 4 }]}>
-                    Distribución y Origen
+                    {t('Distribución y Origen')}
                   </Text>
                 </View>
                 <Ionicons name="earth" size={34} color={colors.primary} />
               </View>
 
               <Text style={[typography.body, { color: colors.textSecondary, marginTop: spacing.xs, lineHeight: 22 }]}>
-                Descubre en qué regiones del planeta habita esta especie de forma nativa, dónde ha sido naturalizada y sus zonas de cultivo global.
+                {t('Descubre en qué regiones del planeta habita esta especie de forma nativa, dónde ha sido naturalizada y sus zonas de cultivo global.')}
               </Text>
 
               <View style={[styles.regionsTeaser, { backgroundColor: isDark ? '#2C2C2E' : '#F1F3F4' }]}>
                 <Text style={[typography.subheadline, { color: colors.textPrimary, fontWeight: '600' }]}>
-                  Países de Presencia Principal:
+                  {t('Países de Presencia Principal:')}
                 </Text>
                 <View style={styles.regionTagsWrap}>
                   {plant.nativeRegions.map((reg) => (
@@ -566,7 +566,7 @@ export const PlantDetailScreen: React.FC = () => {
               </View>
 
               <Button
-                title="Abrir Mapa Mundial Interactivo 🌍"
+                title={t('Abrir Mapa Mundial Interactivo 🌍')}
                 onPress={handleOpenHabitatMap}
                 variant="primary"
                 size="lg"
@@ -584,10 +584,10 @@ export const PlantDetailScreen: React.FC = () => {
               <View style={styles.problemsHeader}>
                 <View style={{ flex: 1 }}>
                   <Text style={[typography.headline, { color: colors.textPrimary }]}>
-                    Problemas Comunes
+                    {t('Problemas Comunes')}
                   </Text>
                   <Text style={[typography.footnote, { color: colors.textSecondary, marginTop: 2 }]}>
-                    Síntomas frecuentes identificables en sus hojas
+                    {t('Síntomas frecuentes identificables en sus hojas')}
                   </Text>
                 </View>
                 <Ionicons name="warning" size={24} color={colors.warning} />
@@ -603,7 +603,7 @@ export const PlantDetailScreen: React.FC = () => {
               ))}
 
               <Button
-                title="Diagnosticar Salud con IA 🩺"
+                title={t('Diagnosticar Salud con IA 🩺')}
                 onPress={handleOpenDiagnosis}
                 variant="secondary"
                 size="md"
@@ -617,14 +617,14 @@ export const PlantDetailScreen: React.FC = () => {
         {/* BOTÓN INFERIOR DE ACCIÓN */}
         <View style={{ marginTop: spacing.xl, gap: spacing.sm }}>
           <Button
-            title="📈 Ver Diario de Crecimiento"
+            title={t('📈 Ver Diario de Crecimiento')}
             onPress={handleOpenGrowthDiary}
             variant="secondary"
             size="md"
             icon={<Ionicons name="images" size={18} color={colors.primary} />}
           />
           <Button
-            title={isSaved ? 'Guardada en Mi Jardín ✓' : 'Guardar en Mi Jardín'}
+            title={isSaved ? t('Guardada en Mi Jardín ✓') : t('Guardar en Mi Jardín')}
             onPress={handleSaveToGarden}
             disabled={isSaved}
             variant={isSaved ? 'secondary' : 'primary'}

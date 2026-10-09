@@ -217,7 +217,7 @@ export const EncyclopediaScreen: React.FC = () => {
               activeOpacity={0.8}
               onPress={() => navigation.navigate('PlantDetail', { plantId: plant.id })}
               accessibilityRole="button"
-              accessibilityLabel={`Ver ficha de ${plant.name}`}
+              accessibilityLabel={t('Ver ficha de {nombre}', { nombre: plant.name })}
             >
               <Card style={{ marginBottom: spacing.sm }}>
                 <View style={styles.plantRow}>

@@ -875,7 +875,9 @@ export const ScannerScreen: React.FC = () => {
           >
             <Ionicons name="sparkles" size={18} color="#FFFFFF" />
             <Text style={[typography.subheadline, { color: '#FFFFFF', fontWeight: '700', marginLeft: 6 }]}>
-              Analizar {photos.length === 1 ? 'foto' : `${photos.length} fotos`}
+              {photos.length === 1
+                ? t('Analizar foto')
+                : t('Analizar {cantidad} fotos', { cantidad: photos.length })}
             </Text>
           </TouchableOpacity>
         </View>

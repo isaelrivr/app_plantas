@@ -29,6 +29,7 @@ const fragment: Record<string, string> = {
   'Atrás': 'Back',
   'Diagnóstico de Salud': 'Health Diagnosis',
   'Evaluación de plagas y hongos': 'Pest and fungus assessment',
+  'tu planta': 'your plant',
   'Diagnosticar hoja o tallo': 'Diagnose leaf or stem',
   'Toma una foto de cerca a las hojas manchadas, descoloridas o con presencia de insectos para identificar la causa exacta y su cura.':
     'Take a close-up photo of spotted, discolored leaves or leaves with insects to identify the exact cause and its cure.',

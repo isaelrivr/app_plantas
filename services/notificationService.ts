@@ -10,6 +10,7 @@
 
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
+import { t } from '../i18n';
 
 // Configurar cómo se presentan las notificaciones cuando la app está abierta en primer plano
 Notifications.setNotificationHandler({
@@ -53,7 +54,7 @@ export async function requestNotificationPermissions(): Promise<boolean> {
 
     if (Platform.OS === 'android') {
       await Notifications.setNotificationChannelAsync('plantae_care_channel', {
-        name: 'Recordatorios de Cuidado y Jardín',
+        name: t('Recordatorios de Cuidado y Jardín'),
         importance: Notifications.AndroidImportance.HIGH,
         vibrationPattern: [0, 250, 250, 250],
         lightColor: '#2E7D32',
@@ -91,8 +92,10 @@ export async function scheduleWateringReminder(
 
     const identifier = await Notifications.scheduleNotificationAsync({
       content: {
-        title: `💧 Hora de regar tu ${plantName}`,
-        body: `Tu planta necesita hidratación cada ${interval} días. Revisa que el sustrato seco antes de regar.`,
+        title: t('💧 Hora de regar tu {plantName}', { plantName }),
+        body: t('Tu planta necesita hidratación cada {interval} días. Revisa que el sustrato esté seco antes de regar.', {
+          interval,
+        }),
         sound: true,
         data: { type: 'watering', plantName, intervalDays: interval },
       },
@@ -126,8 +129,11 @@ export async function scheduleTreatmentReminder(
 
     const identifier = await Notifications.scheduleNotificationAsync({
       content: {
-        title: `🧪 Aplicación de tratamiento: ${plantName}`,
-        body: `Toca aplicar "${treatmentTitle}" a tu planta. Frecuencia recomendada: cada ${interval} días. Usa guantes y mantén alejados a niños y mascotas.`,
+        title: t('🧪 Aplicación de tratamiento: {plantName}', { plantName }),
+        body: t(
+          'Toca aplicar "{treatmentTitle}" a tu planta. Frecuencia recomendada: cada {interval} días. Usa guantes y mantén alejados a niños y mascotas.',
+          { treatmentTitle, interval }
+        ),
         sound: true,
         data: { type: 'treatment', plantName, treatmentTitle, intervalDays: interval },
       },
@@ -165,12 +171,26 @@ export async function scheduleCareTaskReminder(
       trasplante: '🪴',
     };
 
+    const taskLabels: Record<typeof taskType, string> = {
+      riego: t('Riego'),
+      fertilizante: t('Fertilizante'),
+      poda: t('Poda'),
+      trasplante: t('Trasplante'),
+    };
+
     const fireAt = nextOccurrence(daysFromNow, 8);
 
     const identifier = await Notifications.scheduleNotificationAsync({
       content: {
-        title: `${icons[taskType] || '🌱'} ${taskTitle} — ${plantName}`,
-        body: `Tarea de ${taskType} programada para ${Math.max(0, Math.round(daysFromNow))} días más.`,
+        title: t('{icon} {taskTitle} — {plantName}', {
+          icon: icons[taskType] || '🌱',
+          taskTitle,
+          plantName,
+        }),
+        body: t('Tarea de {tipo} programada para {dias} días más.', {
+          tipo: taskLabels[taskType],
+          dias: Math.max(0, Math.round(daysFromNow)),
+        }),
         sound: true,
         data: { type: 'care-task', taskType, plantName, taskTitle },
       },
