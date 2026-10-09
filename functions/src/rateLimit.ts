@@ -11,7 +11,7 @@ import type { Identity } from './guard';
 import { ApiError, quotaExceeded } from './errors';
 import type { QuotaRule } from './config';
 
-export type QuotaKind = 'identify' | 'care' | 'health';
+export type QuotaKind = 'identify' | 'care' | 'health' | 'assistant';
 
 const memCounters = new Map<string, number>();
 

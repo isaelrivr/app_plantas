@@ -21,7 +21,8 @@ import { getCachedResponse, cacheResponse } from './idempotency';
 import { runIdentify } from './identify';
 import { resolveCareSheet } from './care';
 import { runHealthAssessment } from './health';
-import type { CareRequest, HealthRequest, IdentifyRequest } from './types';
+import { runAssistant } from './assistant';
+import type { AssistantRequest, CareRequest, HealthRequest, IdentifyRequest } from './types';
 
 initializeApp();
 
@@ -81,4 +82,8 @@ export const careSheet = createEndpoint<CareRequest>((config, identity, body) =>
 
 export const healthAssessment = createEndpoint<HealthRequest>((config, identity, body) =>
   runHealthAssessment(config, identity, body)
+);
+
+export const assistantChat = createEndpoint<AssistantRequest>((config, identity, body) =>
+  runAssistant(config, identity, body)
 );

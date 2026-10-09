@@ -110,6 +110,17 @@ export interface HealthRequest {
   requestId?: string;
 }
 
+export interface AssistantRequest {
+  message: string;
+  context?: { plantName?: string; isPremium?: boolean };
+  requestId?: string;
+}
+
+export interface AssistantResponse {
+  reply: string;
+  source: 'ai-real';
+}
+
 /** Descargo médico fijo que acompaña a todo diagnóstico. */
 export const HEALTH_DISCLAIMER =
   'Este diagnóstico es orientativo y generado por inteligencia artificial; no sustituye la evaluación de un fitopatólogo profesional. Verifica siempre las indicaciones y las etiquetas oficiales de los productos fitosanitarios antes de aplicarlos.';

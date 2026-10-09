@@ -128,6 +128,38 @@ async function generateJson(config: AppConfig, system: string, prompt: string, s
   return null;
 }
 
+export async function generateAssistantText(config: AppConfig, prompt: string): Promise<string> {
+  const apiKey = config.geminiApiKey;
+  if (!apiKey) throw upstreamError('GEMINI_AUTH', 'El servidor no tiene configurada la clave GEMINI_API_KEY.', 502);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), config.geminiTimeoutMs);
+  try {
+    const response = await fetch(`${GENERATIVE_BASE}/interactions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+      body: JSON.stringify({
+        model: config.geminiModel,
+        input: prompt.slice(0, 4000),
+        system_instruction: { parts: [{ text: 'Eres un asistente botánico seguro y práctico. Responde en español, en texto claro y breve. No inventes diagnósticos definitivos ni instrucciones peligrosas.' }] },
+      }),
+      signal: controller.signal,
+    });
+    const json = await response.json().catch(() => null) as any;
+    if (!response.ok) throw upstreamError('GEMINI_ERROR', `El proveedor de IA respondió con error ${response.status}.`, 502);
+    const steps: InteractionStep[] = Array.isArray(json?.steps) ? json.steps : [];
+    const modelStep = steps.find((step) => step?.type === 'model_output');
+    const textPart = modelStep?.content?.find((part) => part?.type === 'text' && typeof part.text === 'string');
+    const reply = textPart?.text?.trim();
+    if (!reply) throw upstreamError('GEMINI_EMPTY', 'El proveedor de IA no devolvió una respuesta.', 502);
+    return reply.slice(0, 5000);
+  } catch (error) {
+    if ((error as Error)?.name === 'AbortError') throw upstreamError('GEMINI_TIMEOUT', 'El proveedor de IA tardó demasiado en responder.', 504);
+    throw error;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Ficha de cuidados
 // ---------------------------------------------------------------------------

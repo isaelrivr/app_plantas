@@ -22,6 +22,7 @@ export interface AppConfig {
     identify: QuotaRule;
     care: QuotaRule;
     health: QuotaRule;
+    assistant: QuotaRule;
   };
   careCacheDays: number;
   /** Solo para desarrollo local. Nunca en producción. */
@@ -46,6 +47,7 @@ export function getConfig(): AppConfig {
       identify: { free: 3, premium: 200 },
       care: { free: 30, premium: 300 },
       health: { free: 3, premium: 100 },
+      assistant: { free: 30, premium: 300 },
     },
     careCacheDays: Number(env.CARE_CACHE_DAYS || 30),
     useMockProviders,
