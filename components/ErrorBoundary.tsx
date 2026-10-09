@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '../theme';
+import { useTranslation, t as tGlobal } from '../i18n';
 import { ErrorBanner } from './ErrorBanner';
 
 interface ErrorBoundaryProps {
@@ -16,6 +17,7 @@ interface ErrorBoundaryState {
 /** Pantalla de recuperación que usa el tema y el ErrorBanner de la app. */
 const ErrorFallback: React.FC<{ message: string; onRetry: () => void }> = ({ message, onRetry }) => {
   const { colors, spacing, typography, layout } = useAppTheme();
+  const { t } = useTranslation();
 
   return (
     <ScrollView
@@ -37,7 +39,7 @@ const ErrorFallback: React.FC<{ message: string; onRetry: () => void }> = ({ mes
           { color: colors.textPrimary, textAlign: 'center', marginBottom: spacing.sm },
         ]}
       >
-        Algo salió mal
+        {t('Algo salió mal')}
       </Text>
 
       <Text
@@ -46,7 +48,7 @@ const ErrorFallback: React.FC<{ message: string; onRetry: () => void }> = ({ mes
           { color: colors.textSecondary, textAlign: 'center', marginBottom: spacing.lg },
         ]}
       >
-        Tuvimos un problema al mostrar esta pantalla. Tus datos están a salvo en tu dispositivo.
+        {t('Tuvimos un problema al mostrar esta pantalla. Tus datos están a salvo en tu dispositivo.')}
       </Text>
 
       <ErrorBanner message={message} />
@@ -54,14 +56,14 @@ const ErrorFallback: React.FC<{ message: string; onRetry: () => void }> = ({ mes
       <TouchableOpacity
         onPress={onRetry}
         accessibilityRole="button"
-        accessibilityLabel="Reintentar cargar la aplicación"
+        accessibilityLabel={t('Reintentar cargar la aplicación')}
         style={[
           styles.retryButton,
           { backgroundColor: colors.primary, borderRadius: layout.borderRadius.md, marginTop: spacing.lg },
         ]}
       >
         <Ionicons name="refresh" size={18} color="#FFFFFF" />
-        <Text style={[typography.headline, { color: '#FFFFFF', marginLeft: 8 }]}>Reintentar</Text>
+        <Text style={[typography.headline, { color: '#FFFFFF', marginLeft: 8 }]}>{t('Reintentar')}</Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -77,7 +79,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
   static getDerivedStateFromError(error: unknown): ErrorBoundaryState {
     return {
       hasError: true,
-      errorMessage: error instanceof Error ? error.message : 'Error inesperado',
+      errorMessage: error instanceof Error ? error.message : tGlobal('Error inesperado'),
     };
   }
 

@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
 import { useAppTheme } from '../theme';
+import { useTranslation } from '../i18n';
 import { Card } from '../components/Card';
 import { Badge } from '../components/Badge';
 import { Button } from '../components/Button';
@@ -34,6 +35,7 @@ const tempLevelFor = (tempMinC: number, tempMaxC: number): number => {
 
 export const PlantDetailScreen: React.FC = () => {
   const { colors, isDark, spacing, typography } = useAppTheme();
+  const { t } = useTranslation();
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { addPlant, plants } = useGarden();
@@ -87,11 +89,11 @@ export const PlantDetailScreen: React.FC = () => {
     // Límite free: máx. 5 plantas (punto 16)
     if (!limits.isPremium && plants.length >= limits.plantLimit) {
       Alert.alert(
-        'Jardín gratuito lleno',
-        `El plan gratuito permite ${limits.plantLimit} plantas. Con Plantae Pro guardas las que quieras.`,
+        t('Jardín gratuito lleno'),
+        t('El plan gratuito permite {limite} plantas. Con Plantae Pro guardas las que quieras.', { limite: limits.plantLimit }),
         [
-          { text: 'Ahora no', style: 'cancel' },
-          { text: 'Ver Pro', onPress: () => navigation.navigate('Paywall') },
+          { text: t('Ahora no'), style: 'cancel' },
+          { text: t('Ver Pro'), onPress: () => navigation.navigate('Paywall') },
         ]
       );
       return;
@@ -155,14 +157,14 @@ export const PlantDetailScreen: React.FC = () => {
             onPress={() => navigation.goBack()}
             style={styles.backButton}
             accessibilityRole="button"
-            accessibilityLabel="Volver"
+            accessibilityLabel={t('Volver')}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <Ionicons name="chevron-back" size={26} color={colors.primary} />
-            <Text style={[typography.body, { color: colors.primary, fontWeight: '600' }]}>Atrás</Text>
+            <Text style={[typography.body, { color: colors.primary, fontWeight: '600' }]}>{t('Atrás')}</Text>
           </TouchableOpacity>
           <Text style={[typography.headline, { color: colors.textPrimary }]} numberOfLines={1}>
-            Ficha Botánica
+            {t('Ficha Botánica')}
           </Text>
           <View style={styles.actionHeaderBtn} />
         </View>
@@ -223,21 +225,21 @@ export const PlantDetailScreen: React.FC = () => {
             onPress={() => navigation.goBack()}
             style={styles.backButton}
             accessibilityRole="button"
-            accessibilityLabel="Volver"
+            accessibilityLabel={t('Volver')}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <Ionicons name="chevron-back" size={26} color={colors.primary} />
-            <Text style={[typography.body, { color: colors.primary, fontWeight: '600' }]}>Atrás</Text>
+            <Text style={[typography.body, { color: colors.primary, fontWeight: '600' }]}>{t('Atrás')}</Text>
           </TouchableOpacity>
           <Text style={[typography.headline, { color: colors.textPrimary }]} numberOfLines={1}>
-            Ficha Botánica
+            {t('Ficha Botánica')}
           </Text>
           <View style={styles.actionHeaderBtn} />
         </View>
         <EmptyState
           iconName="leaf-outline"
-          title="Especie no encontrada"
-          description="No pudimos recuperar la ficha de esta planta. Vuelve a escanearla o elige otra especie del catálogo."
+          title={t('Especie no encontrada')}
+          description={t('No pudimos recuperar la ficha de esta planta. Vuelve a escanearla o elige otra especie del catálogo.')}
         />
       </View>
     );
@@ -260,15 +262,15 @@ export const PlantDetailScreen: React.FC = () => {
           onPress={() => navigation.goBack()}
           style={styles.backButton}
           accessibilityRole="button"
-          accessibilityLabel="Volver"
+          accessibilityLabel={t('Volver')}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <Ionicons name="chevron-back" size={26} color={colors.primary} />
-          <Text style={[typography.body, { color: colors.primary, fontWeight: '600' }]}>Atrás</Text>
+          <Text style={[typography.body, { color: colors.primary, fontWeight: '600' }]}>{t('Atrás')}</Text>
         </TouchableOpacity>
 
         <Text style={[typography.headline, { color: colors.textPrimary }]} numberOfLines={1}>
-          Ficha Botánica
+          {t('Ficha Botánica')}
         </Text>
 
         <TouchableOpacity
@@ -276,7 +278,7 @@ export const PlantDetailScreen: React.FC = () => {
           disabled={isSaved}
           style={styles.actionHeaderBtn}
           accessibilityRole="button"
-          accessibilityLabel={isSaved ? 'Ya en tu jardín' : 'Guardar en jardín'}
+          accessibilityLabel={isSaved ? t('Ya en tu jardín') : t('Guardar en jardín')}
         >
           <Ionicons
             name={isSaved ? 'bookmark' : 'bookmark-outline'}
@@ -305,7 +307,7 @@ export const PlantDetailScreen: React.FC = () => {
 
             {/* Títulos e Identidad */}
             <View style={{ flex: 1, marginLeft: spacing.md }}>
-              <Badge label={`Familia ${plant.family}`} variant="primary" />
+              <Badge label={t('Familia {familia}', { familia: plant.family })} variant="primary" />
               <Text style={[typography.title2, { color: colors.textPrimary, fontWeight: '700', marginTop: 4 }]}>
                 {plant.name}
               </Text>
@@ -318,12 +320,12 @@ export const PlantDetailScreen: React.FC = () => {
             {plant.confidence != null ? (
               <View style={{ alignItems: 'center' }}>
                 <ConfidenceRing score={plant.confidence} size={54} strokeWidth={5} colorVariant="primary" />
-                <Text style={[typography.caption2, { color: colors.textTertiary, marginTop: 4 }]}>Precisión</Text>
+                <Text style={[typography.caption2, { color: colors.textTertiary, marginTop: 4 }]}>{t('Precisión')}</Text>
               </View>
             ) : (
               <View style={{ alignItems: 'center', width: 54 }}>
                 <Ionicons name="sparkles" size={22} color={colors.primary} />
-                <Text style={[typography.caption2, { color: colors.textTertiary, marginTop: 4 }]}>IA</Text>
+                <Text style={[typography.caption2, { color: colors.textTertiary, marginTop: 4 }]}>{t('IA')}</Text>
               </View>
             )}
           </View>
@@ -333,9 +335,9 @@ export const PlantDetailScreen: React.FC = () => {
             <View style={styles.quickInfoItem}>
               <Ionicons name="water" size={16} color={colors.info} />
               <Text style={[typography.caption1, { color: colors.textPrimary, fontWeight: '600', marginTop: 2 }]}>
-                Cada {plant.wateringFrequencyDays} días
+                {t('Cada {dias} días', { dias: plant.wateringFrequencyDays })}
               </Text>
-              <Text style={[typography.caption2, { color: colors.textTertiary }]}>Riego</Text>
+              <Text style={[typography.caption2, { color: colors.textTertiary }]}>{t('Riego')}</Text>
             </View>
 
             <View style={[styles.verticalDivider, { backgroundColor: colors.border }]} />
@@ -343,9 +345,9 @@ export const PlantDetailScreen: React.FC = () => {
             <View style={styles.quickInfoItem}>
               <Ionicons name="sunny" size={16} color={colors.warning} />
               <Text style={[typography.caption1, { color: colors.textPrimary, fontWeight: '600', marginTop: 2 }]}>
-                Nivel {plant.careLevels.lightLevel}/5
+                {t('Nivel {nivel}/5', { nivel: plant.careLevels.lightLevel })}
               </Text>
-              <Text style={[typography.caption2, { color: colors.textTertiary }]}>Luz solar</Text>
+              <Text style={[typography.caption2, { color: colors.textTertiary }]}>{t('Luz solar')}</Text>
             </View>
 
             <View style={[styles.verticalDivider, { backgroundColor: colors.border }]} />
@@ -355,7 +357,7 @@ export const PlantDetailScreen: React.FC = () => {
               <Text style={[typography.caption1, { color: colors.textPrimary, fontWeight: '600', marginTop: 2 }]}>
                 {plant.difficulty}
               </Text>
-              <Text style={[typography.caption2, { color: colors.textTertiary }]}>Dificultad</Text>
+              <Text style={[typography.caption2, { color: colors.textTertiary }]}>{t('Dificultad')}</Text>
             </View>
           </View>
         </Card>

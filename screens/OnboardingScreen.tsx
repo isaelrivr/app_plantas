@@ -13,6 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '../theme';
 import { Button } from '../components/Button';
+import { useTranslation } from '../i18n';
 import { requestNotificationPermissions } from '../services/notificationService';
 
 const { width } = Dimensions.get('window');
@@ -51,6 +52,7 @@ interface OnboardingScreenProps {
 
 export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }) => {
   const { colors, layout, spacing, typography } = useAppTheme();
+  const { t } = useTranslation();
   const scrollRef = useRef<ScrollView>(null);
   const [index, setIndex] = useState(0);
   const [welcomeScale] = useState(() => new Animated.Value(0.6));
@@ -87,10 +89,10 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
       <TouchableOpacity
         onPress={onComplete}
         accessibilityRole="button"
-        accessibilityLabel="Saltar introducción"
+        accessibilityLabel={t('Saltar introducción')}
         style={styles.skipButton}
       >
-        <Text style={[typography.subheadline, { color: colors.textSecondary, fontWeight: '600' }]}>Saltar</Text>
+        <Text style={[typography.subheadline, { color: colors.textSecondary, fontWeight: '600' }]}>{t('Saltar')}</Text>
       </TouchableOpacity>
 
       <ScrollView
@@ -119,7 +121,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
                 <Ionicons name={page.icon} size={72} color={accent} />
               </Animated.View>
               <Text style={[typography.largeTitle, { color: colors.textPrimary, textAlign: 'center', marginTop: spacing.xl }]}>
-                {page.title}
+                {t(page.title)}
               </Text>
               <Text
                 style={[
@@ -127,7 +129,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
                   { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.md, paddingHorizontal: spacing.lg, lineHeight: 24 },
                 ]}
               >
-                {page.description}
+                {t(page.description)}
               </Text>
             </View>
           );
@@ -151,7 +153,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
         </View>
 
         <Button
-          title={index < PAGES.length - 1 ? 'Siguiente' : 'Comenzar'}
+          title={index < PAGES.length - 1 ? t('Siguiente') : t('Comenzar')}
           onPress={handleNext}
           variant="primary"
           size="lg"

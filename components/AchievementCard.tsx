@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Animated, StyleProp, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '../theme';
+import { useTranslation } from '../i18n';
 import { Achievement } from '../services/gamificationService';
 
 interface AchievementCardProps {
@@ -15,6 +16,7 @@ interface AchievementCardProps {
  */
 export const AchievementCard: React.FC<AchievementCardProps> = ({ achievement, style }) => {
   const { colors, layout, spacing, typography } = useAppTheme();
+  const { t } = useTranslation();
   const [scale] = useState(() => new Animated.Value(achievement.unlocked ? 0.85 : 1));
   const [glow] = useState(() => new Animated.Value(achievement.unlocked ? 0 : 1));
 
@@ -52,7 +54,12 @@ export const AchievementCard: React.FC<AchievementCardProps> = ({ achievement, s
       ]}
       accessible
       accessibilityLabel={`${achievement.title}. ${
-        achievement.unlocked ? 'Desbloqueado' : `Progreso ${achievement.progress} de ${achievement.target}`
+        achievement.unlocked
+          ? t('Desbloqueado')
+          : t('Progreso {progress} de {target}', {
+              progress: achievement.progress,
+              target: achievement.target,
+            })
       }. ${achievement.description}`}
     >
       <View style={styles.header}>

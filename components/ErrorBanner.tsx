@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '../theme';
+import { useTranslation } from '../i18n';
 
 interface ErrorBannerProps {
   message: string;
@@ -11,6 +12,7 @@ interface ErrorBannerProps {
 
 export const ErrorBanner: React.FC<ErrorBannerProps> = ({ message, onRetry, style }) => {
   const { colors, typography, spacing } = useAppTheme();
+  const { t } = useTranslation();
 
   return (
     <View
@@ -25,7 +27,7 @@ export const ErrorBanner: React.FC<ErrorBannerProps> = ({ message, onRetry, styl
       ]}
       accessible={true}
       accessibilityRole="alert"
-      accessibilityLabel={`Error: ${message}`}
+      accessibilityLabel={`${t('Error')}: ${message}`}
     >
       <View style={styles.contentRow}>
         <Ionicons name="alert-circle" size={24} color={colors.error} />
@@ -48,12 +50,12 @@ export const ErrorBanner: React.FC<ErrorBannerProps> = ({ message, onRetry, styl
           onPress={onRetry}
           style={[styles.retryButton, { backgroundColor: colors.error, marginTop: spacing.sm }]}
           accessibilityRole="button"
-          accessibilityLabel="Reintentar operación"
+          accessibilityLabel={t('Reintentar operación')}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
           <Ionicons name="refresh" size={16} color="#FFFFFF" />
           <Text style={[typography.subheadline, { color: '#FFFFFF', fontWeight: '600', marginLeft: 6 }]}>
-            Reintentar
+            {t('Reintentar')}
           </Text>
         </TouchableOpacity>
       )}

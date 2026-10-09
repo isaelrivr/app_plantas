@@ -20,6 +20,7 @@ import { EmptyState } from '../components/EmptyState';
 import { ErrorBanner } from '../components/ErrorBanner';
 import { PlantCardSkeleton } from '../components/SkeletonLoader';
 import { scheduleWateringReminder, scheduleCareTaskReminder } from '../services/notificationService';
+import { useTranslation } from '../i18n';
 
 type CalendarView = 'semana' | 'mes';
 type FilterTaskType = CareTaskType | 'todos';
@@ -78,6 +79,7 @@ export const CareCalendarScreen: React.FC = () => {
   const { colors, isDark, spacing, typography, layout } = useAppTheme();
   const { plants, waterPlantToday, toggleTaskCompleted } = useGarden();
   const navigation = useNavigation<any>();
+  const { t } = useTranslation();
 
   const [calendarView, setCalendarView] = useState<CalendarView>('semana');
   const [filterType, setFilterType] = useState<FilterTaskType>('todos');
@@ -134,11 +136,15 @@ export const CareCalendarScreen: React.FC = () => {
     if (id) {
       setErrorMessage(null);
       Alert.alert(
-        '🔔 Recordatorio Programado',
-        `Recibirás una notificación para regar "${plantName}" en tu dispositivo.`
+        t('🔔 Recordatorio Programado'),
+        t('Recibirás una notificación para regar "{planta}" en tu dispositivo.', {
+          planta: plantName,
+        })
       );
     } else {
-      setErrorMessage('Activa las notificaciones de Plantae en los Ajustes de tu dispositivo para recibir recordatorios de riego.');
+      setErrorMessage(
+        t('Activa las notificaciones de Plantae en los Ajustes de tu dispositivo para recibir recordatorios de riego.')
+      );
     }
   };
 
@@ -150,9 +156,16 @@ export const CareCalendarScreen: React.FC = () => {
     const id = await scheduleCareTaskReminder(task.plantName, task.type, task.title, daysFromNow);
     if (id) {
       setErrorMessage(null);
-      Alert.alert('🔔 Recordatorio Programado', `Se avisará "${task.title}" para ${task.plantName} en ${daysFromNow} día(s).`);
+      Alert.alert(
+        t('🔔 Recordatorio Programado'),
+        t('Se avisará "{tarea}" para {planta} en {dias} día(s).', {
+          tarea: t(task.title),
+          planta: task.plantName,
+          dias: daysFromNow,
+        })
+      );
     } else {
-      setErrorMessage('No se pudo programar el recordatorio. Revisa los permisos de notificación.');
+      setErrorMessage(t('No se pudo programar el recordatorio. Revisa los permisos de notificación.'));
     }
   };
 
@@ -197,11 +210,11 @@ export const CareCalendarScreen: React.FC = () => {
       const first = days[0];
       const last = days[6];
       if (first.getMonth() === last.getMonth()) {
-        return `${first.getDate()} – ${last.getDate()} ${monthNames[first.getMonth()]} ${first.getFullYear()}`;
+        return `${first.getDate()} – ${last.getDate()} ${t(monthNames[first.getMonth()])} ${first.getFullYear()}`;
       }
-      return `${first.getDate()} ${monthNames[first.getMonth()].slice(0, 3)} – ${last.getDate()} ${monthNames[last.getMonth()].slice(0, 3)} ${last.getFullYear()}`;
+      return `${first.getDate()} ${t(monthNames[first.getMonth()]).slice(0, 3)} – ${last.getDate()} ${t(monthNames[last.getMonth()]).slice(0, 3)} ${last.getFullYear()}`;
     }
-    return `${monthNames[anchorDate.getMonth()]} ${anchorDate.getFullYear()}`;
+    return `${t(monthNames[anchorDate.getMonth()])} ${anchorDate.getFullYear()}`;
   };
 
   const renderTaskItem = ({ item }: { item: typeof filteredTasks[0] }) => {
@@ -235,7 +248,7 @@ export const CareCalendarScreen: React.FC = () => {
                 ]}
                 numberOfLines={1}
               >
-                {item.title}
+                {t(item.title)}
               </Text>
             </View>
 
@@ -244,7 +257,7 @@ export const CareCalendarScreen: React.FC = () => {
                 {item.plantEmoji} {item.plantName}
               </Text>
               <Text style={[typography.caption1, { color: item.completed ? colors.textTertiary : colors.warning }]}>
-                {item.completed ? 'Completado ✓' : item.dueDate}
+                {item.completed ? t('Completado ✓') : item.dueDate}
               </Text>
             </View>
           </View>
@@ -255,7 +268,10 @@ export const CareCalendarScreen: React.FC = () => {
             onPress={() => handleCompleteTask(item.plantId, item.id)}
             accessibilityRole="checkbox"
             accessibilityState={{ checked: item.completed }}
-            accessibilityLabel={`Marcar "${item.title}" como ${item.completed ? 'pendiente' : 'completada'}`}
+            accessibilityLabel={t('Marcar "{tarea}" como {estado}', {
+              tarea: t(item.title),
+              estado: item.completed ? t('pendiente') : t('completada'),
+            })}
           >
             <Ionicons
               name={item.completed ? 'checkmark-circle' : 'radio-button-off'}
@@ -269,7 +285,7 @@ export const CareCalendarScreen: React.FC = () => {
               style={styles.checkButton}
               onPress={() => handleScheduleTaskReminder(item)}
               accessibilityRole="button"
-              accessibilityLabel={`Programar recordatorio para "${item.title}"`}
+              accessibilityLabel={t('Programar recordatorio para "{tarea}"', { tarea: t(item.title) })}
             >
               <Ionicons name="notifications-outline" size={22} color={colors.textSecondary} />
             </TouchableOpacity>
@@ -287,7 +303,7 @@ export const CareCalendarScreen: React.FC = () => {
       <TouchableOpacity
         onPress={() => navigation.navigate('HealthDiagnosis', { plantId: item.id })}
         accessibilityRole="button"
-        accessibilityLabel={`Ver diagnóstico de salud de ${item.name}`}
+        accessibilityLabel={t('Ver diagnóstico de salud de {nombre}', { nombre: item.name })}
       >
         <View style={styles.plantHealthRow}>
           <Text style={styles.plantHealthEmoji}>{item.avatarEmoji}</Text>
@@ -296,7 +312,7 @@ export const CareCalendarScreen: React.FC = () => {
               {item.name}
             </Text>
             <Text style={[typography.caption2, { color: colors.textTertiary }]}>
-              {item.lastDiagnosis || 'Sin diagnóstico reciente'}
+              {item.lastDiagnosis || t('Sin diagnóstico reciente')}
             </Text>
           </View>
           <ConfidenceRing
@@ -317,10 +333,10 @@ export const CareCalendarScreen: React.FC = () => {
         {/* HEADER */}
         <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
           <Text style={[typography.largeTitle, { color: colors.textPrimary, fontWeight: '700' }]}>
-            Plan de Cuidados
+            {t('Plan de Cuidados')}
           </Text>
           <Text style={[typography.subheadline, { color: colors.textSecondary, marginTop: 2 }]}>
-            Calendario inteligente de tareas botánicas
+            {t('Calendario inteligente de tareas botánicas')}
           </Text>
         </View>
 
@@ -335,7 +351,7 @@ export const CareCalendarScreen: React.FC = () => {
 
           {/* RESUMEN DE SALUD POR PLANTA - CARRUSEL HORIZONTAL */}
           <Text style={[typography.headline, { color: colors.textPrimary, marginBottom: spacing.sm }]}>
-            Puntuación de Salud
+            {t('Puntuación de Salud')}
           </Text>
           {calendarLoading ? (
             <View style={{ marginBottom: spacing.lg }}>
@@ -356,7 +372,7 @@ export const CareCalendarScreen: React.FC = () => {
           {/* CALENDARIO SEMANAL / MENSUAL */}
           <View style={styles.calendarHeaderRow}>
             <Text style={[typography.headline, { color: colors.textPrimary }]}>
-              Calendario
+              {t('Calendario')}
             </Text>
             <View style={[styles.viewToggle, { backgroundColor: isDark ? '#1C1C1E' : '#E5E5EA' }]}>
               {(['semana', 'mes'] as CalendarView[]).map((view) => {
@@ -374,7 +390,9 @@ export const CareCalendarScreen: React.FC = () => {
                     ]}
                     accessibilityRole="button"
                     accessibilityState={{ selected: active }}
-                    accessibilityLabel={`Ver calendario por ${view}`}
+                    accessibilityLabel={t('Ver calendario por {vista}', {
+                      vista: view === 'semana' ? t('Semana') : t('Mes'),
+                    })}
                   >
                     <Text
                       style={[
@@ -386,7 +404,7 @@ export const CareCalendarScreen: React.FC = () => {
                         },
                       ]}
                     >
-                      {view}
+                      {view === 'semana' ? t('Semana') : t('Mes')}
                     </Text>
                   </TouchableOpacity>
                 );
@@ -400,7 +418,7 @@ export const CareCalendarScreen: React.FC = () => {
                 onPress={() => navigatePeriod(-1)}
                 style={styles.calendarNavBtn}
                 accessibilityRole="button"
-                accessibilityLabel="Período anterior"
+                accessibilityLabel={t('Período anterior')}
               >
                 <Ionicons name="chevron-back" size={20} color={colors.primary} />
               </TouchableOpacity>
@@ -411,7 +429,7 @@ export const CareCalendarScreen: React.FC = () => {
                 onPress={() => navigatePeriod(1)}
                 style={styles.calendarNavBtn}
                 accessibilityRole="button"
-                accessibilityLabel="Período siguiente"
+                accessibilityLabel={t('Período siguiente')}
               >
                 <Ionicons name="chevron-forward" size={20} color={colors.primary} />
               </TouchableOpacity>
@@ -420,7 +438,7 @@ export const CareCalendarScreen: React.FC = () => {
             <View style={styles.weekLabelsRow}>
               {DAY_LABELS.map((label, idx) => (
                 <Text key={`${label}-${idx}`} style={[typography.caption2, styles.weekLabel, { color: colors.textTertiary }]}>
-                  {label}
+                  {t(label)}
                 </Text>
               ))}
             </View>
@@ -440,7 +458,11 @@ export const CareCalendarScreen: React.FC = () => {
                       setSelectedDay((prev) => (prev && isSameDay(prev, day) ? null : day));
                     }}
                     accessibilityRole="button"
-                    accessibilityLabel={`Día ${day.getDate()}${dayTasks.length ? `, ${dayTasks.length} tareas` : ''}`}
+                    accessibilityLabel={
+                      dayTasks.length
+                        ? t('Día {dia}, {n} tareas', { dia: day.getDate(), n: dayTasks.length })
+                        : t('Día {dia}', { dia: day.getDate() })
+                    }
                     accessibilityState={{ selected: isSelected }}
                   >
                     <Text
@@ -469,10 +491,10 @@ export const CareCalendarScreen: React.FC = () => {
                 onPress={() => setSelectedDay(null)}
                 style={styles.clearDayChip}
                 accessibilityRole="button"
-                accessibilityLabel="Quitar filtro de día"
+                accessibilityLabel={t('Quitar filtro de día')}
               >
                 <Text style={[typography.caption1, { color: colors.primary, fontWeight: '600' }]}>
-                  {selectedDay.getDate()}/{selectedDay.getMonth() + 1} · Quitar filtro de día ✕
+                  {selectedDay.getDate()}/{selectedDay.getMonth() + 1} · {t('Quitar filtro de día')} ✕
                 </Text>
               </TouchableOpacity>
             )}
@@ -480,7 +502,7 @@ export const CareCalendarScreen: React.FC = () => {
 
           {/* FILTROS DE TIPO DE TAREA - PILLS HIG */}
           <Text style={[typography.headline, { color: colors.textPrimary, marginBottom: spacing.sm }]}>
-            Tareas Pendientes
+            {t('Tareas Pendientes')}
           </Text>
           <ScrollView
             horizontal
@@ -490,11 +512,11 @@ export const CareCalendarScreen: React.FC = () => {
             {(['todos', 'riego', 'fertilizante', 'poda', 'trasplante'] as FilterTaskType[]).map((type) => {
               const isActive = filterType === type;
               const labels: Record<FilterTaskType, string> = {
-                todos: '🌿 Todas',
-                riego: '💧 Riego',
-                fertilizante: '🌱 Fertilizante',
-                poda: '✂️ Poda',
-                trasplante: '🪴 Trasplante',
+                todos: t('🌿 Todas'),
+                riego: t('💧 Riego'),
+                fertilizante: t('🌱 Fertilizante'),
+                poda: t('✂️ Poda'),
+                trasplante: t('🪴 Trasplante'),
               };
 
               return (
@@ -513,7 +535,7 @@ export const CareCalendarScreen: React.FC = () => {
                   ]}
                   accessibilityRole="tab"
                   accessibilityState={{ selected: isActive }}
-                  accessibilityLabel={`Filtrar por ${labels[type]}`}
+                  accessibilityLabel={t('Filtrar por {filtro}', { filtro: labels[type] })}
                 >
                   <Text
                     style={[
@@ -541,11 +563,11 @@ export const CareCalendarScreen: React.FC = () => {
           ) : pendingTasks.length === 0 ? (
             <EmptyState
               iconName="checkmark-circle-outline"
-              title="¡Todo al día!"
+              title={t('¡Todo al día!')}
               description={
                 selectedDay
-                  ? 'No hay tareas pendientes para el día seleccionado. Toca de nuevo el día o quita el filtro para ver el resto.'
-                  : 'No hay tareas pendientes con el filtro seleccionado. ¡Tu jardín está perfectamente cuidado!'
+                  ? t('No hay tareas pendientes para el día seleccionado. Toca de nuevo el día o quita el filtro para ver el resto.')
+                  : t('No hay tareas pendientes con el filtro seleccionado. ¡Tu jardín está perfectamente cuidado!')
               }
             />
           ) : (
@@ -561,7 +583,7 @@ export const CareCalendarScreen: React.FC = () => {
           {completedTasks.length > 0 && (
             <View style={{ marginTop: spacing.lg }}>
               <Text style={[typography.headline, { color: colors.textPrimary, marginBottom: spacing.sm }]}>
-                Completadas Recientemente ✓
+                {t('Completadas Recientemente ✓')}
               </Text>
               <FlatList
                 data={completedTasks}
@@ -574,7 +596,7 @@ export const CareCalendarScreen: React.FC = () => {
 
           {/* RECORDATORIOS RÁPIDOS POR PLANTA */}
           <Text style={[typography.headline, { color: colors.textPrimary, marginTop: spacing.xl, marginBottom: spacing.sm }]}>
-            Programar Recordatorios
+            {t('Programar Recordatorios')}
           </Text>
 
           {plants.slice(0, 4).map((plant) => (
@@ -586,7 +608,7 @@ export const CareCalendarScreen: React.FC = () => {
                     {plant.name}
                   </Text>
                   <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-                    Riego cada {plant.wateringFrequencyDays} días
+                    {t('Riego cada {dias} días', { dias: plant.wateringFrequencyDays })}
                   </Text>
                 </View>
                 <TouchableOpacity
@@ -600,7 +622,7 @@ export const CareCalendarScreen: React.FC = () => {
                   ]}
                   onPress={() => handleScheduleWatering(plant.name, plant.wateringFrequencyDays)}
                   accessibilityRole="button"
-                  accessibilityLabel={`Programar recordatorio de riego para ${plant.name}`}
+                  accessibilityLabel={t('Programar recordatorio de riego para {nombre}', { nombre: plant.name })}
                 >
                   <Ionicons name="notifications" size={18} color={colors.primary} />
                 </TouchableOpacity>

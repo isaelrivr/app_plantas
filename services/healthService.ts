@@ -11,6 +11,7 @@
 
 import { ApiError, postJson, shouldUseMocks } from './apiClient';
 import { compressImages } from './imageCompression';
+import { t } from '../i18n';
 
 export type HealthSeverity = 'leve' | 'moderada' | 'grave';
 export type HealthCategory = 'Plaga' | 'Hongo' | 'Bacteriosis' | 'Estrés Hídrico' | 'Saludable';
@@ -67,7 +68,7 @@ export const HEALTH_DISCLAIMER =
 /** La imagen no contiene una planta analizable. */
 export class HealthNoPlantError extends Error {
   constructor(
-    message = 'La imagen no parece contener hojas, tallos ni partes de una planta analizables.'
+    message = t('La imagen no parece contener hojas, tallos ni partes de una planta analizables.')
   ) {
     super(message);
     this.name = 'HealthNoPlantError';
@@ -455,12 +456,53 @@ function hashString(input: string): number {
   return Math.abs(hash);
 }
 
+/**
+ * Localiza (traduce al idioma activo) los textos visibles de un diagnóstico en
+ * el momento de construir el resultado. No traduce los campos usados por la
+ * lógica interna (`category`, `severity`).
+ */
+function localizeDiagnosis(
+  diagnosis: Omit<HealthDiagnosisResult, 'source'>,
+  source: HealthSource
+): HealthDiagnosisResult {
+  return {
+    ...diagnosis,
+    name: t(diagnosis.name),
+    scientificName: t(diagnosis.scientificName),
+    symptoms: diagnosis.symptoms.map((symptom) => t(symptom)),
+    description: t(diagnosis.description),
+    treatment: {
+      organicOption: {
+        title: t(diagnosis.treatment.organicOption.title),
+        products: t(diagnosis.treatment.organicOption.products),
+        dosage: t(diagnosis.treatment.organicOption.dosage),
+        instructions: t(diagnosis.treatment.organicOption.instructions),
+      },
+      chemicalOption: {
+        title: t(diagnosis.treatment.chemicalOption.title),
+        products: t(diagnosis.treatment.chemicalOption.products),
+        dosage: t(diagnosis.treatment.chemicalOption.dosage),
+        instructions: t(diagnosis.treatment.chemicalOption.instructions),
+      },
+      frequency: t(diagnosis.treatment.frequency),
+      recoveryDays: t(diagnosis.treatment.recoveryDays),
+      prevention: t(diagnosis.treatment.prevention),
+      safetyAlert: {
+        ...diagnosis.treatment.safetyAlert,
+        text: t(diagnosis.treatment.safetyAlert.text),
+      },
+    },
+    disclaimer: t(diagnosis.disclaimer),
+    source,
+  };
+}
+
 /** Diagnóstico simulado determinista, a partir del contenido de la imagen. */
 function mockDiagnosis(seedKey: string): HealthDiagnosisResult {
   // Excluimos "saludable" del muestreo para que la demo siempre muestre un plan.
   const pool = HEALTH_CATALOG.length > 1 ? HEALTH_CATALOG.slice(0, -1) : HEALTH_CATALOG;
   const chosen = pool[hashString(seedKey) % pool.length];
-  return { ...chosen, disclaimer: HEALTH_DISCLAIMER, source: 'mock' };
+  return localizeDiagnosis({ ...chosen, disclaimer: HEALTH_DISCLAIMER }, 'mock');
 }
 
 /**
@@ -478,7 +520,7 @@ export async function diagnosePlantHealth(
   if (compressed.length === 0) {
     throw new ApiError(
       'NO_IMAGE',
-      'No se pudo procesar la imagen. Vuelve a tomar la foto con buena iluminación.',
+      t('No se pudo procesar la imagen. Vuelve a tomar la foto con buena iluminación.'),
       0
     );
   }
@@ -498,25 +540,27 @@ export async function diagnosePlantHealth(
   }
 
   const issueKey = response.issueKey || 'problema';
-  return {
-    id: issueKey,
-    issueKey,
-    name: response.name || 'Problema detectado',
-    scientificName: response.scientificName || 'Agente causal no confirmado',
-    category: response.category ?? 'Saludable',
-    severity: response.severity ?? 'leve',
-    confidence: typeof response.confidence === 'number' ? response.confidence : 0,
-    symptoms: Array.isArray(response.symptoms) ? response.symptoms : [],
-    description: response.description || '',
-    referenceImages: Array.isArray(response.referenceImages) ? response.referenceImages : [],
-    treatment: response.treatment,
-    disclaimer: response.disclaimer || HEALTH_DISCLAIMER,
-    source: response.source ?? 'ai-real',
-  };
+  return localizeDiagnosis(
+    {
+      id: issueKey,
+      issueKey,
+      name: response.name || 'Problema detectado',
+      scientificName: response.scientificName || 'Agente causal no confirmado',
+      category: response.category ?? 'Saludable',
+      severity: response.severity ?? 'leve',
+      confidence: typeof response.confidence === 'number' ? response.confidence : 0,
+      symptoms: Array.isArray(response.symptoms) ? response.symptoms : [],
+      description: response.description || '',
+      referenceImages: Array.isArray(response.referenceImages) ? response.referenceImages : [],
+      treatment: response.treatment,
+      disclaimer: response.disclaimer || HEALTH_DISCLAIMER,
+    },
+    response.source ?? 'ai-real'
+  );
 }
 
 /** Obtiene un diagnóstico de demostración por clave (solo para `__DEV__`). */
 export function getDiagnosisByKey(key: string): HealthDiagnosisResult | undefined {
   const found = HEALTH_CATALOG.find((d) => d.issueKey === key);
-  return found ? { ...found, disclaimer: HEALTH_DISCLAIMER, source: 'mock' } : undefined;
+  return found ? localizeDiagnosis({ ...found, disclaimer: HEALTH_DISCLAIMER }, 'mock') : undefined;
 }

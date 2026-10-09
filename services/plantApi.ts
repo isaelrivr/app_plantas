@@ -15,6 +15,7 @@
  */
 
 import { ApiError, postJson, shouldUseMocks } from './apiClient';
+import { t } from '../i18n';
 import { compressImages } from './imageCompression';
 import type { BotanicalCareSheet, BotanicalCareLevels } from './plantCareCache';
 import {
@@ -686,7 +687,7 @@ export async function identifyWithRealApi(
 ): Promise<RealPlantIdResponse> {
   const compressed = await compressImages(imageUris, { max: 4 });
   if (compressed.length === 0) {
-    return { success: false, isPlant: false, candidates: [], error: 'No se pudo procesar ninguna imagen' };
+    return { success: false, isPlant: false, candidates: [], error: t('No se pudo procesar ninguna imagen') };
   }
   try {
     const response = await postJson<RealPlantIdResponse>('/identifyPlantReal', {
@@ -698,7 +699,7 @@ export async function identifyWithRealApi(
     if (error instanceof ApiError) {
       return { success: false, isPlant: false, candidates: [], error: error.message };
     }
-    return { success: false, isPlant: false, candidates: [], error: 'Error al contactar el servicio de identificacion' };
+    return { success: false, isPlant: false, candidates: [], error: t('Error al contactar el servicio de identificacion') };
   }
 }
 
@@ -708,7 +709,7 @@ async function mockIdentifyPlants(imageUris: string[], seed: number): Promise<Pl
   const second = plants[(seed + 5) % plants.length];
   const matchQuality = seed % 100;
   if (matchQuality < 30) {
-    return { candidates: [], isPlant: false, imageQuality: { note: "No pude identificarla" }, confidence: 0, source: "mock", imageUri: imageUris[0] };
+    return { candidates: [], isPlant: false, imageQuality: { note: t('No pude identificarla') }, confidence: 0, source: "mock", imageUri: imageUris[0] };
   }
   const topConfidence = 72 + (seed % 24);
   const candidateA = mockCandidateFromCatalog(first, topConfidence, "mock");
@@ -730,7 +731,7 @@ export async function identifyPlants(imageUris: string[]): Promise<PlantIdentifi
   if (compressed.length === 0) {
     throw new ApiError(
       'NO_IMAGE',
-      'No se pudo procesar ninguna imagen. Vuelve a tomar la foto con buena iluminación.',
+      t('No se pudo procesar ninguna imagen. Vuelve a tomar la foto con buena iluminación.'),
       0
     );
   }
@@ -807,6 +808,25 @@ export async function fetchCareSheet(commonName: string, scientificName = ''): P
 }
 
 /**
+ * Devuelve una copia de la especie con los textos de UI de su ficha en el
+ * idioma activo. Los nombres común y científico, la familia y las regiones se
+ * mantienen intactos por ser nombres propios o taxonómicos.
+ */
+function localizeCatalogPlant(plant: CatalogPlant): CatalogPlant {
+  return {
+    ...plant,
+    watering: t(plant.watering),
+    light: t(plant.light),
+    temperature: t(plant.temperature),
+    humidity: t(plant.humidity),
+    difficulty: t(plant.difficulty) as CatalogPlant['difficulty'],
+    commonProblems: plant.commonProblems.map((problem) => t(problem)),
+    climateTip: t(plant.climateTip),
+    habitatSummary: t(plant.habitatSummary),
+  };
+}
+
+/**
  * Resuelve la ficha completa de una planta para la pantalla de detalle:
  * catálogo local si existe, o ficha generada por IA a partir de su nombre.
  */
@@ -818,13 +838,13 @@ export async function resolvePlantForDetail(
 ): Promise<CatalogPlant | null> {
   const catalog = getPlantById(plantId);
   if (catalog) {
-    return { ...catalog, confidence: confidence ?? catalog.confidence };
+    return localizeCatalogPlant({ ...catalog, confidence: confidence ?? catalog.confidence });
   }
 
   const speciesName = (plantName || scientificName || '').trim();
   if (!speciesName) return null;
 
   const sheet = await fetchCareSheet(speciesName, scientificName);
-  return careSheetToCatalogPlant(sheet, plantId, confidence);
+  return localizeCatalogPlant(careSheetToCatalogPlant(sheet, plantId, confidence));
 }
 

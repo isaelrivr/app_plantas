@@ -13,6 +13,7 @@ import {
   BOTANICAL_KNOWLEDGE_BASE,
   getPlantById,
 } from './plantApi';
+import { t } from '../i18n';
 import { isPetSafe } from './toxicityService';
 
 export type LightFilter = 'all' | 'low' | 'medium' | 'bright';
@@ -96,9 +97,14 @@ const matchesEnvironment = (
   return value === env || value === 'both';
 };
 
+/** Aplica el idioma activo a los textos de UI de una especie (sin tocar nombres). */
+function localizeSpeciesText(plant: CatalogPlant): CatalogPlant {
+  return { ...plant, difficulty: t(plant.difficulty) as CatalogPlant['difficulty'] };
+}
+
 export function searchEncyclopedia(filters: EncyclopediaFilters): CatalogPlant[] {
   const q = filters.query.toLowerCase().trim();
-  return BOTANICAL_KNOWLEDGE_BASE.filter((plant) => {
+  const results = BOTANICAL_KNOWLEDGE_BASE.filter((plant) => {
     if (q) {
       const haystack = `${plant.name} ${plant.scientificName} ${plant.family}`.toLowerCase();
       if (!haystack.includes(q)) return false;
@@ -109,13 +115,15 @@ export function searchEncyclopedia(filters: EncyclopediaFilters): CatalogPlant[]
     if (filters.pets === 'petSafe' && !isPetSafe(plant.id)) return false;
     return true;
   });
+  return results.map(localizeSpeciesText);
 }
 
 /** Plantas guardadas disponibles sin conexión (offline). */
 export function getPlantsByIds(ids: string[]): CatalogPlant[] {
   return ids
     .map((id) => getPlantById(id))
-    .filter((p): p is CatalogPlant => Boolean(p));
+    .filter((p): p is CatalogPlant => Boolean(p))
+    .map(localizeSpeciesText);
 }
 
 export function countActiveFilters(filters: EncyclopediaFilters): number {

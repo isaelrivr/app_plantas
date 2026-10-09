@@ -32,6 +32,7 @@ import {
 } from '../services/encyclopediaService';
 import { isPetSafe } from '../services/toxicityService';
 import { resolveSpeciesId } from '../services/plantApi';
+import { useTranslation } from '../i18n';
 
 const environmentLabel: Record<ReturnType<typeof getEnvironment>, string> = {
   interior: 'Interior',
@@ -43,6 +44,7 @@ export const EncyclopediaScreen: React.FC = () => {
   const { colors, layout, spacing, typography } = useAppTheme();
   const navigation = useNavigation<any>();
   const { plants } = useGarden();
+  const { t } = useTranslation();
 
   const [filters, setFilters] = useState<EncyclopediaFilters>(DEFAULT_FILTERS);
   const [offlineOnly, setOfflineOnly] = useState(false);
@@ -90,13 +92,13 @@ export const EncyclopediaScreen: React.FC = () => {
           onPress={() => navigation.goBack()}
           style={styles.backButton}
           accessibilityRole="button"
-          accessibilityLabel="Volver"
+          accessibilityLabel={t('Volver')}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <Ionicons name="chevron-back" size={26} color={colors.primary} />
-          <Text style={[typography.body, { color: colors.primary, fontWeight: '600' }]}>Atrás</Text>
+          <Text style={[typography.body, { color: colors.primary, fontWeight: '600' }]}>{t('Atrás')}</Text>
         </TouchableOpacity>
-        <Text style={[typography.headline, { color: colors.textPrimary }]}>Enciclopedia</Text>
+        <Text style={[typography.headline, { color: colors.textPrimary }]}>{t('Enciclopedia')}</Text>
         <View style={styles.actionHeaderBtn} />
       </View>
 
@@ -111,13 +113,13 @@ export const EncyclopediaScreen: React.FC = () => {
           <TextInput
             value={filters.query}
             onChangeText={(text) => update('query', text)}
-            placeholder="Buscar por nombre o familia..."
+            placeholder={t('Buscar por nombre o familia...')}
             placeholderTextColor={colors.textTertiary}
             style={[styles.searchInput, { color: colors.textPrimary }]}
-            accessibilityLabel="Buscar plantas"
+            accessibilityLabel={t('Buscar plantas')}
           />
           {filters.query.length > 0 ? (
-            <TouchableOpacity onPress={() => update('query', '')} accessibilityLabel="Borrar búsqueda">
+            <TouchableOpacity onPress={() => update('query', '')} accessibilityLabel={t('Borrar búsqueda')}>
               <Ionicons name="close-circle" size={18} color={colors.textTertiary} />
             </TouchableOpacity>
           ) : null}
@@ -128,7 +130,7 @@ export const EncyclopediaScreen: React.FC = () => {
           activeOpacity={0.7}
           accessibilityRole="switch"
           accessibilityState={{ checked: offlineOnly }}
-          accessibilityLabel="Modo sin conexión: solo mis plantas guardadas"
+          accessibilityLabel={t('Modo sin conexión: solo mis plantas guardadas')}
           style={[
             styles.offlineRow,
             {
@@ -144,7 +146,7 @@ export const EncyclopediaScreen: React.FC = () => {
             color={offlineOnly ? colors.primary : colors.textSecondary}
           />
           <Text style={[typography.footnote, { color: offlineOnly ? colors.primary : colors.textSecondary, marginLeft: 8, fontWeight: '600' }]}>
-            Sin conexión · mis plantas guardadas ({savedSpeciesIds.length})
+            {t('Sin conexión · mis plantas guardadas ({total})', { total: savedSpeciesIds.length })}
           </Text>
         </TouchableOpacity>
 
@@ -154,7 +156,7 @@ export const EncyclopediaScreen: React.FC = () => {
               {lightFilters.map((f) => (
                 <FilterChip
                   key={f.key}
-                  label={f.label}
+                  label={t(f.label)}
                   selected={filters.light === f.key}
                   onPress={() => update('light', f.key as LightFilter)}
                 />
@@ -162,7 +164,7 @@ export const EncyclopediaScreen: React.FC = () => {
               {difficultyFilters.map((f) => (
                 <FilterChip
                   key={f.key}
-                  label={f.label}
+                  label={t(f.label)}
                   selected={filters.difficulty === f.key}
                   onPress={() => update('difficulty', f.key as DifficultyFilter)}
                 />
@@ -170,13 +172,13 @@ export const EncyclopediaScreen: React.FC = () => {
               {environmentFilters.map((f) => (
                 <FilterChip
                   key={f.key}
-                  label={f.label}
+                  label={t(f.label)}
                   selected={filters.environment === f.key}
                   onPress={() => update('environment', f.key as EnvironmentFilter)}
                 />
               ))}
               <FilterChip
-                label="Segura para mascotas"
+                label={t('Segura para mascotas')}
                 icon="paw"
                 selected={filters.pets === 'petSafe'}
                 onPress={() => update('pets', filters.pets === 'petSafe' ? 'all' : 'petSafe')}
@@ -187,12 +189,14 @@ export const EncyclopediaScreen: React.FC = () => {
 
         <View style={styles.resultsHeader}>
           <Text style={[typography.footnote, { color: colors.textSecondary }]}>
-            {results.length} {results.length === 1 ? 'especie' : 'especies'}
+            {results.length === 1
+              ? t('{total} especie', { total: results.length })
+              : t('{total} especies', { total: results.length })}
           </Text>
           {activeFilters > 0 && !offlineOnly ? (
-            <TouchableOpacity onPress={() => setFilters(DEFAULT_FILTERS)} accessibilityRole="button" accessibilityLabel="Limpiar filtros">
+            <TouchableOpacity onPress={() => setFilters(DEFAULT_FILTERS)} accessibilityRole="button" accessibilityLabel={t('Limpiar filtros')}>
               <Text style={[typography.footnote, { color: colors.primary, fontWeight: '600' }]}>
-                Limpiar ({activeFilters})
+                {t('Limpiar ({total})', { total: activeFilters })}
               </Text>
             </TouchableOpacity>
           ) : null}
@@ -203,8 +207,8 @@ export const EncyclopediaScreen: React.FC = () => {
         {results.length === 0 ? (
           <EmptyState
             iconName="search-outline"
-            title="Sin resultados"
-            description={offlineOnly ? 'Aún no has guardado plantas en Mi Jardín.' : 'Prueba con otros términos o ajusta los filtros.'}
+            title={t('Sin resultados')}
+            description={offlineOnly ? t('Aún no has guardado plantas en Mi Jardín.') : t('Prueba con otros términos o ajusta los filtros.')}
           />
         ) : (
           results.map((plant) => (
@@ -233,8 +237,8 @@ export const EncyclopediaScreen: React.FC = () => {
                     </Text>
                     <View style={styles.badgeRow}>
                       <Badge label={plant.difficulty} variant="info" />
-                      <Badge label={environmentLabel[getEnvironment(plant.id)]} variant="neutral" />
-                      {isPetSafe(plant.id) ? <Badge label="Mascotas ✓" variant="success" /> : null}
+                      <Badge label={t(environmentLabel[getEnvironment(plant.id)])} variant="neutral" />
+                      {isPetSafe(plant.id) ? <Badge label={t('Mascotas ✓')} variant="success" /> : null}
                     </View>
                   </View>
                   <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />

@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useEffect, useMemo, useState, ReactNode } from 'react';
 import { useColorScheme } from 'react-native';
 import { loadJSON, saveJSON, STORAGE_KEYS } from '../services/storage';
+import { setI18nLanguage } from '../i18n/core';
+import type { AppLanguage } from '../i18n/types';
 
 /**
  * SettingsContext
@@ -16,7 +18,7 @@ import { loadJSON, saveJSON, STORAGE_KEYS } from '../services/storage';
  */
 
 export type ThemePreference = 'system' | 'light' | 'dark';
-export type AppLanguage = 'es' | 'en';
+export type { AppLanguage } from '../i18n/types';
 
 export const LANGUAGES: { code: AppLanguage; label: string }[] = [
   { code: 'es', label: 'Español' },
@@ -90,6 +92,11 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       hasOnboarded,
     });
   }, [isHydrated, themePreference, language, notificationsEnabled, hasOnboarded]);
+
+  // Mantiene el traductor global (servicios, alertas) en sintonía con el idioma.
+  useEffect(() => {
+    setI18nLanguage(language);
+  }, [language]);
 
   const resolvedScheme: 'light' | 'dark' =
     themePreference === 'system' ? (systemScheme === 'dark' ? 'dark' : 'light') : themePreference;

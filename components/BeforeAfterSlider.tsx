@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '../theme';
+import { useTranslation } from '../i18n';
 
 interface BeforeAfterSliderProps {
   beforeUri: string;
@@ -32,12 +33,15 @@ const clamp = (value: number, min: number, max: number) => Math.min(max, Math.ma
 export const BeforeAfterSlider: React.FC<BeforeAfterSliderProps> = ({
   beforeUri,
   afterUri,
-  beforeLabel = 'Antes',
-  afterLabel = 'Después',
+  beforeLabel,
+  afterLabel,
   height = 240,
   style,
 }) => {
   const { colors, layout, typography } = useAppTheme();
+  const { t } = useTranslation();
+  const beforeText = beforeLabel ?? t('Antes');
+  const afterText = afterLabel ?? t('Después');
   const [clipWidth] = useState(() => new Animated.Value(0));
   const clipRef = useRef(clipWidth);
   const widthRef = useRef(0);
@@ -94,7 +98,10 @@ export const BeforeAfterSlider: React.FC<BeforeAfterSliderProps> = ({
       onLayout={onLayout}
       accessible
       accessibilityRole="adjustable"
-      accessibilityLabel={`Comparador de crecimiento. ${beforeLabel} y ${afterLabel}.`}
+      accessibilityLabel={t('Comparador de crecimiento. {before} y {after}.', {
+        before: beforeText,
+        after: afterText,
+      })}
       accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
       onAccessibilityAction={(event) => {
         if (event.nativeEvent.actionName === 'increment') setFraction(fractionRef.current + 0.1);
@@ -108,12 +115,12 @@ export const BeforeAfterSlider: React.FC<BeforeAfterSliderProps> = ({
 
       <View style={[styles.labelPill, styles.labelLeft, { backgroundColor: colors.surface + 'E6' }]}>
         <Text style={[typography.caption1, { color: colors.textPrimary, fontWeight: '600' }]}>
-          {afterLabel}
+          {afterText}
         </Text>
       </View>
       <View style={[styles.labelPill, styles.labelRight, { backgroundColor: colors.surface + 'E6' }]}>
         <Text style={[typography.caption1, { color: colors.textPrimary, fontWeight: '600' }]}>
-          {beforeLabel}
+          {beforeText}
         </Text>
       </View>
 

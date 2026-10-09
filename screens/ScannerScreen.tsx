@@ -34,6 +34,7 @@ import { useGarden } from '../context/GardenContext';
 import { usePlanLimits, FREE_IDENTIFICATION_LIMIT } from '../hooks/usePlanLimits';
 import { SkeletonBox } from '../components/SkeletonLoader';
 import { EmptyState } from '../components/EmptyState';
+import { useTranslation } from '../i18n';
 
 const MAX_PHOTOS = 4;
 /** Por debajo de este umbral pedimos confirmación manual al usuario. */
@@ -41,6 +42,7 @@ const LOW_CONFIDENCE_THRESHOLD = 60;
 
 export const ScannerScreen: React.FC = () => {
   const { colors, spacing, typography } = useAppTheme();
+  const { t } = useTranslation();
   const { plants, addPlant, registerIdentification } = useGarden();
   const limits = usePlanLimits();
   const navigation = useNavigation<any>();
@@ -56,7 +58,7 @@ export const ScannerScreen: React.FC = () => {
 
   // Estados del flujo de escaneo
   const [isIdentifying, setIsIdentifying] = useState<boolean>(false);
-  const [scanStepText, setScanStepText] = useState<string>('Analizando patrones...');
+  const [scanStepText, setScanStepText] = useState<string>(t('Analizando patrones...'));
   const [identificationResult, setIdentificationResult] = useState<PlantIdentificationResult | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -92,11 +94,11 @@ export const ScannerScreen: React.FC = () => {
       scanLoop.current.start();
 
       const timer1 = setTimeout(() => {
-        setScanStepText('Analizando forma y nervadura foliar...');
+        setScanStepText(t('Analizando forma y nervadura foliar...'));
       }, 400);
 
       const timer2 = setTimeout(() => {
-        setScanStepText('Consultando el proveedor botánico...');
+        setScanStepText(t('Consultando el proveedor botánico...'));
       }, 900);
 
       return () => {
@@ -110,7 +112,7 @@ export const ScannerScreen: React.FC = () => {
       scanLoop.current?.stop();
       scanLoop.current = null;
     }
-  }, [isIdentifying, scanLineAnim]);
+  }, [isIdentifying, scanLineAnim, t]);
 
   // 1. PANTALLA PREVIA DE PERMISO DE CÁMARA
   if (!permission) {
@@ -118,7 +120,7 @@ export const ScannerScreen: React.FC = () => {
       <View
         style={[styles.permissionContainer, { backgroundColor: colors.background, padding: spacing.xl }]}
         accessible={true}
-        accessibilityLabel="Cargando cámara y reconocimiento botánico"
+        accessibilityLabel={t('Cargando cámara y reconocimiento botánico')}
       >
         <SkeletonBox width={90} height={90} borderRadius={45} />
         <View style={{ marginTop: spacing.lg, width: '80%' }}>
@@ -158,7 +160,7 @@ export const ScannerScreen: React.FC = () => {
             { color: colors.textPrimary, textAlign: 'center', marginBottom: spacing.sm, fontWeight: '700' },
           ]}
         >
-          Reconocimiento Botánico
+          {t('Reconocimiento Botánico')}
         </Text>
 
         <Text
@@ -167,11 +169,11 @@ export const ScannerScreen: React.FC = () => {
             { color: colors.textSecondary, textAlign: 'center', marginBottom: spacing.xl, lineHeight: 24 },
           ]}
         >
-          Apunta la cámara a cualquier hoja o flor para identificar su especie, origen biológico en el mapa mundial y guía de cuidados.
+          {t('Apunta la cámara a cualquier hoja o flor para identificar su especie, origen biológico en el mapa mundial y guía de cuidados.')}
         </Text>
 
         <Button
-          title="Permitir cámara"
+          title={t('Permitir cámara')}
           onPress={requestPermission}
           variant="primary"
           size="lg"
@@ -186,8 +188,8 @@ export const ScannerScreen: React.FC = () => {
     setPhotos((prev) => {
       if (prev.length >= MAX_PHOTOS) {
         Alert.alert(
-          'Máximo de fotos',
-          `Puedes analizar hasta ${MAX_PHOTOS} fotos de la misma planta. Elimina alguna para añadir otra.`
+          t('Máximo de fotos'),
+          t('Puedes analizar hasta {max} fotos de la misma planta. Elimina alguna para añadir otra.', { max: MAX_PHOTOS })
         );
         return prev;
       }
@@ -198,8 +200,8 @@ export const ScannerScreen: React.FC = () => {
   const handleCapture = async () => {
     if (photos.length >= MAX_PHOTOS) {
       Alert.alert(
-        'Máximo de fotos',
-        `Puedes analizar hasta ${MAX_PHOTOS} fotos de la misma planta. Pulsa "Analizar" o elimina alguna.`
+        t('Máximo de fotos'),
+        t('Puedes analizar hasta {max} fotos de la misma planta. Pulsa "Analizar" o elimina alguna.', { max: MAX_PHOTOS })
       );
       return;
     }
@@ -210,7 +212,7 @@ export const ScannerScreen: React.FC = () => {
         if (photo?.uri) addPhoto(photo.uri);
       }
     } catch {
-      Alert.alert('Error', 'No se pudo capturar la imagen. Intenta de nuevo.');
+      Alert.alert(t('Error'), t('No se pudo capturar la imagen. Intenta de nuevo.'));
     }
   };
 
@@ -227,7 +229,7 @@ export const ScannerScreen: React.FC = () => {
         addPhoto(pickerResult.assets[0].uri);
       }
     } catch {
-      Alert.alert('Galería', 'No se pudo acceder a las fotos.');
+      Alert.alert(t('Galería'), t('No se pudo acceder a las fotos.'));
     }
   };
 
@@ -264,11 +266,11 @@ export const ScannerScreen: React.FC = () => {
     // Límite free de UX (el servidor aplica el suyo de 3/día).
     if (!limits.isPremium && limits.identificationsToday >= limits.identificationLimit) {
       Alert.alert(
-        'Límite gratuito alcanzado',
-        `Usaste tus ${limits.identificationLimit} identificaciones gratuitas de hoy. Con Plantae Pro escaneas sin límites.`,
+        t('Límite gratuito alcanzado'),
+        t('Usaste tus {limite} identificaciones gratuitas de hoy. Con Plantae Pro escaneas sin límites.', { limite: limits.identificationLimit }),
         [
-          { text: 'Ahora no', style: 'cancel' },
-          { text: 'Ver Pro', onPress: () => navigation.navigate('Paywall') },
+          { text: t('Ahora no'), style: 'cancel' },
+          { text: t('Ver Pro'), onPress: () => navigation.navigate('Paywall') },
         ]
       );
       return;
@@ -279,7 +281,7 @@ export const ScannerScreen: React.FC = () => {
     setSelectedIndex(0);
     setIsSavedToGarden(false);
     setIsIdentifying(true);
-    setScanStepText('Enfocando patrones foliares...');
+    setScanStepText(t('Enfocando patrones foliares...'));
 
     try {
       const result = await identifyPlants(photos);
@@ -293,18 +295,18 @@ export const ScannerScreen: React.FC = () => {
     } catch (err) {
       if (err instanceof ApiError && err.status === 429) {
         const retry = err.retryAfterSeconds
-          ? ` Podrás volver a intentarlo en ${Math.ceil(err.retryAfterSeconds / 60)} min.`
+          ? t(' Podrás volver a intentarlo en {min} min.', { min: Math.ceil(err.retryAfterSeconds / 60) })
           : '';
-        Alert.alert('Límite de identificaciones', `${err.message}${retry}`, [
-          { text: 'Entendido', style: 'cancel' },
-          { text: 'Ver Pro', onPress: () => navigation.navigate('Paywall') },
+        Alert.alert(t('Límite de identificaciones'), `${err.message}${retry}`, [
+          { text: t('Entendido'), style: 'cancel' },
+          { text: t('Ver Pro'), onPress: () => navigation.navigate('Paywall') },
         ]);
         setErrorMessage(err.message);
       } else {
         const msg =
           err instanceof Error
             ? err.message
-            : 'No se pudo identificar la planta. Intenta con mejor iluminación.';
+            : t('No se pudo identificar la planta. Intenta con mejor iluminación.');
         setErrorMessage(msg);
       }
     } finally {
@@ -341,11 +343,11 @@ export const ScannerScreen: React.FC = () => {
     // Límite free de plantas en Mi Jardín (máx. 5)
     if (!limits.isPremium && plants.length >= limits.plantLimit) {
       Alert.alert(
-        'Jardín gratuito lleno',
-        `El plan gratuito permite ${limits.plantLimit} plantas. Con Plantae Pro guardas las que quieras.`,
+        t('Jardín gratuito lleno'),
+        t('El plan gratuito permite {limite} plantas. Con Plantae Pro guardas las que quieras.', { limite: limits.plantLimit }),
         [
-          { text: 'Ahora no', style: 'cancel' },
-          { text: 'Ver Pro', onPress: () => navigation.navigate('Paywall') },
+          { text: t('Ahora no'), style: 'cancel' },
+          { text: t('Ver Pro'), onPress: () => navigation.navigate('Paywall') },
         ]
       );
       return;
@@ -370,13 +372,13 @@ export const ScannerScreen: React.FC = () => {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       } catch {}
       setIsSavedToGarden(true);
-      Alert.alert('Añadida a Mi Jardín', `${candidate.name} se guardó junto a su ficha de cuidados.`);
+      Alert.alert(t('Añadida a Mi Jardín'), t('{nombre} se guardó junto a su ficha de cuidados.', { nombre: candidate.name }));
     } catch (err) {
       const msg =
         err instanceof ApiError && err.status === 429
           ? err.message
-          : 'No se pudo guardar la planta. Revisa tu conexión e inténtalo de nuevo.';
-      Alert.alert('No se pudo guardar', msg);
+          : t('No se pudo guardar la planta. Revisa tu conexión e inténtalo de nuevo.');
+      Alert.alert(t('No se pudo guardar'), msg);
     } finally {
       setIsSaving(false);
     }
@@ -431,12 +433,12 @@ export const ScannerScreen: React.FC = () => {
         <ScreenHeader
           title={
             isIdentifying
-              ? 'Analizando Planta'
+              ? t('Analizando Planta')
               : identificationResult
-              ? 'Planta Identificada'
-              : 'Vista Previa'
+              ? t('Planta Identificada')
+              : t('Vista Previa')
           }
-          subtitle="Reconocimiento Inteligente"
+          subtitle={t('Reconocimiento Inteligente')}
         />
 
         {/* Tarjeta con foto y visor láser animado */}
@@ -445,7 +447,7 @@ export const ScannerScreen: React.FC = () => {
             source={{ uri: photos[0] }}
             style={styles.previewImage}
             resizeMode="cover"
-            accessibilityLabel="Foto de la planta que estás analizando"
+            accessibilityLabel={t('Foto de la planta que estás analizando')}
           />
 
           {isIdentifying && (
@@ -497,14 +499,14 @@ export const ScannerScreen: React.FC = () => {
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.xs }}>
               <Ionicons name="alert-circle" size={24} color={colors.error} />
               <Text style={[typography.headline, { color: colors.error, marginLeft: spacing.xs }]}>
-                No pudimos reconocer la planta
+                {t('No pudimos reconocer la planta')}
               </Text>
             </View>
             <Text style={[typography.body, { color: colors.textPrimary, marginBottom: spacing.md }]}>
               {errorMessage}
             </Text>
             <Button
-              title="Tomar otras fotos"
+              title={t('Tomar otras fotos')}
               onPress={handleRetake}
               variant="primary"
               icon={<Ionicons name="camera-reverse" size={18} color="#FFFFFF" />}
@@ -533,13 +535,13 @@ export const ScannerScreen: React.FC = () => {
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                   <Ionicons name="help-circle" size={26} color={colors.warning} />
                   <Text style={[typography.headline, { color: colors.textPrimary, marginLeft: 8 }]}>
-                    No estoy seguro
+                    {t('No estoy seguro')}
                   </Text>
                 </View>
                 <Text style={[typography.body, { color: colors.textSecondary, marginTop: 6, lineHeight: 21 }]}>
                   {!identificationResult.isPlant
-                    ? 'No detectamos una planta en las fotos. Acércate a las hojas o tallos, evita fondos muy cargados y prueba con mejor luz.'
-                    : `La coincidencia es baja (${identificationResult.confidence}%). Revisa las opciones o vuelve a fotografiar la planta desde varios ángulos.`}
+                    ? t('No detectamos una planta en las fotos. Acércate a las hojas o tallos, evita fondos muy cargados y prueba con mejor luz.')
+                    : t('La coincidencia es baja ({confianza}%). Revisa las opciones o vuelve a fotografiar la planta desde varios ángulos.', { confianza: identificationResult.confidence })}
                 </Text>
               </Card>
             )}
@@ -549,11 +551,11 @@ export const ScannerScreen: React.FC = () => {
                 <View style={styles.resultHeader}>
                   <View style={{ flex: 1 }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4, flexWrap: 'wrap' }}>
-                      <Badge label={`Familia ${selectedCandidate?.family ?? '—'}`} variant="primary" />
+                      <Badge label={t('Familia {familia}', { familia: selectedCandidate?.family ?? '—' })} variant="primary" />
                       {identificationResult.source === 'mock' ? (
-                        <Badge label="Demo" variant="neutral" />
+                        <Badge label={t('Demo')} variant="neutral" />
                       ) : (
-                        <Badge label="IA real" variant="success" />
+                        <Badge label={t('IA real')} variant="success" />
                       )}
                     </View>
 
@@ -570,7 +572,7 @@ export const ScannerScreen: React.FC = () => {
                     size={64}
                     strokeWidth={6}
                     colorVariant="primary"
-                    label="Certeza"
+                    label={t('Certeza')}
                   />
                 </View>
 
@@ -584,7 +586,7 @@ export const ScannerScreen: React.FC = () => {
                 {identificationResult.candidates.length > 1 && (
                   <View style={{ marginTop: spacing.md }}>
                     <Text style={[typography.caption1, { color: colors.textTertiary, fontWeight: '600', marginBottom: 8 }]}>
-                      ¿Otra opción? Elige la correcta:
+                      {t('¿Otra opción? Elige la correcta:')}
                     </Text>
                     <View style={styles.candidateWrap}>
                       {identificationResult.candidates.map((candidate, index) => {
@@ -602,7 +604,7 @@ export const ScannerScreen: React.FC = () => {
                             ]}
                             accessibilityRole="radio"
                             accessibilityState={{ selected: active }}
-                            accessibilityLabel={`Elegir ${candidate.name}, ${candidate.confidence} por ciento de certeza`}
+                            accessibilityLabel={t('Elegir {nombre}, {confianza} por ciento de certeza', { nombre: candidate.name, confianza: candidate.confidence })}
                           >
                             <Text
                               style={[
@@ -624,7 +626,7 @@ export const ScannerScreen: React.FC = () => {
                 {(selectedCandidate?.referenceImages?.length ?? 0) > 0 && (
                   <View style={{ marginTop: spacing.md }}>
                     <Text style={[typography.caption1, { color: colors.textTertiary, fontWeight: '600', marginBottom: 8 }]}>
-                      Fotos de referencia:
+                      {t('Fotos de referencia:')}
                     </Text>
                     <View style={styles.referenceRow}>
                       {selectedCandidate?.referenceImages.slice(0, 3).map((ref, index) => (
@@ -636,7 +638,7 @@ export const ScannerScreen: React.FC = () => {
                             source={{ uri: ref.small || ref.full }}
                             style={styles.referenceImage}
                             resizeMode="cover"
-                            accessibilityLabel={`Foto de referencia ${index + 1} de ${selectedCandidate?.name}`}
+                            accessibilityLabel={t('Foto de referencia {indice} de {nombre}', { indice: index + 1, nombre: selectedCandidate?.name })}
                           />
                         </View>
                       ))}
@@ -649,7 +651,7 @@ export const ScannerScreen: React.FC = () => {
                 {/* BOTONES PRINCIPALES */}
                 <View style={{ gap: 10 }}>
                   <Button
-                    title="Ver Mapa Mundial de Hábitat 🌍"
+                    title={t('Ver Mapa Mundial de Hábitat 🌍')}
                     onPress={handleOpenHabitatMap}
                     variant="primary"
                     size="lg"
@@ -657,7 +659,7 @@ export const ScannerScreen: React.FC = () => {
                   />
 
                   <Button
-                    title="Ver Ficha Completa de Cuidados"
+                    title={t('Ver Ficha Completa de Cuidados')}
                     onPress={handleOpenPlantDetail}
                     variant="secondary"
                     size="md"
@@ -665,7 +667,7 @@ export const ScannerScreen: React.FC = () => {
                   />
 
                   <Button
-                    title="Diagnosticar Salud de esta Hoja 🩺"
+                    title={t('Diagnosticar Salud de esta Hoja 🩺')}
                     onPress={handleOpenDiagnosis}
                     variant="secondary"
                     size="md"
@@ -681,11 +683,11 @@ export const ScannerScreen: React.FC = () => {
                     style={[styles.outlineBtn, { borderColor: colors.border }]}
                     onPress={handleRetake}
                     accessibilityRole="button"
-                    accessibilityLabel="Escanear otra planta"
+                    accessibilityLabel={t('Escanear otra planta')}
                   >
                     <Ionicons name="camera-outline" size={18} color={colors.textPrimary} />
                     <Text style={[typography.subheadline, { color: colors.textPrimary, fontWeight: '600', marginLeft: 6 }]}>
-                      Escanear otra
+                      {t('Escanear otra')}
                     </Text>
                   </TouchableOpacity>
 
@@ -703,8 +705,8 @@ export const ScannerScreen: React.FC = () => {
                     accessibilityRole="button"
                     accessibilityLabel={
                       isSavedToGarden
-                        ? 'Planta guardada en jardín'
-                        : `Guardar ${selectedCandidate?.name ?? 'la planta'} en Mi Jardín`
+                        ? t('Planta guardada en jardín')
+                        : t('Guardar {nombre} en Mi Jardín', { nombre: selectedCandidate?.name ?? t('la planta') })
                     }
                   >
                     {isSaving ? (
@@ -726,7 +728,7 @@ export const ScannerScreen: React.FC = () => {
                             },
                           ]}
                         >
-                          {isSavedToGarden ? 'En Mi Jardín ✓' : 'Guardar en Jardín'}
+                          {isSavedToGarden ? t('En Mi Jardín ✓') : t('Guardar en Jardín')}
                         </Text>
                       </>
                     )}
@@ -736,7 +738,10 @@ export const ScannerScreen: React.FC = () => {
                 {/* CONTADOR DE IDENTIFICACIONES GRATUITAS */}
                 {!limits.isPremium && (
                   <Text style={[typography.caption2, { color: colors.textTertiary, textAlign: 'center', marginTop: spacing.md }]}>
-                    Te quedan {Math.max(0, FREE_IDENTIFICATION_LIMIT - limits.identificationsToday)} de {FREE_IDENTIFICATION_LIMIT} identificaciones gratuitas hoy
+                    {t('Te quedan {restantes} de {total} identificaciones gratuitas hoy', {
+                      restantes: Math.max(0, FREE_IDENTIFICATION_LIMIT - limits.identificationsToday),
+                      total: FREE_IDENTIFICATION_LIMIT,
+                    })}
                   </Text>
                 )}
               </Card>
@@ -747,9 +752,9 @@ export const ScannerScreen: React.FC = () => {
               <Card style={{ marginTop: spacing.xs }}>
                 <EmptyState
                   iconName="leaf-outline"
-                  title="Sin coincidencias"
-                  description="Prueba a fotografiar la hoja completa con buena iluminación y un fondo sencillo."
-                  actionTitle="Tomar otras fotos"
+                  title={t('Sin coincidencias')}
+                  description={t('Prueba a fotografiar la hoja completa con buena iluminación y un fondo sencillo.')}
+                  actionTitle={t('Tomar otras fotos')}
                   onActionPress={handleRetake}
                 />
               </Card>
@@ -783,10 +788,10 @@ export const ScannerScreen: React.FC = () => {
           <Ionicons name="scan" size={16} color="#FFFFFF" />
           <Text style={styles.guidanceText}>
             {photos.length === 0
-              ? 'Encuadra la hoja o flor en el centro'
+              ? t('Encuadra la hoja o flor en el centro')
               : photos.length < MAX_PHOTOS
-              ? 'Añade otra foto desde otro ángulo (opcional)'
-              : 'Listo: pulsa Analizar'}
+              ? t('Añade otra foto desde otro ángulo (opcional)')
+              : t('Listo: pulsa Analizar')}
           </Text>
         </View>
       </View>
@@ -797,7 +802,7 @@ export const ScannerScreen: React.FC = () => {
           style={[styles.topControlBtn, { backgroundColor: colors.surface }]}
           onPress={toggleFacing}
           accessibilityRole="button"
-          accessibilityLabel="Cambiar de cámara"
+          accessibilityLabel={t('Cambiar de cámara')}
         >
           <Ionicons name="camera-reverse" size={20} color={colors.textPrimary} />
         </TouchableOpacity>
@@ -806,7 +811,7 @@ export const ScannerScreen: React.FC = () => {
           style={[styles.topControlBtn, { backgroundColor: colors.surface }]}
           onPress={toggleTorch}
           accessibilityRole="button"
-          accessibilityLabel={torchEnabled ? 'Apagar la linterna' : 'Encender la linterna'}
+          accessibilityLabel={torchEnabled ? t('Apagar la linterna') : t('Encender la linterna')}
         >
           <Ionicons name={torchEnabled ? 'flash' : 'flash-off'} size={20} color={torchEnabled ? colors.warning : colors.textPrimary} />
         </TouchableOpacity>
@@ -817,11 +822,11 @@ export const ScannerScreen: React.FC = () => {
         style={[styles.floatingDiagnosisBtn, { backgroundColor: colors.surface }]}
         onPress={() => navigation.navigate('HealthDiagnosis')}
         accessibilityRole="button"
-        accessibilityLabel="Diagnosticar salud y plagas"
+        accessibilityLabel={t('Diagnosticar salud y plagas')}
       >
         <Ionicons name="medkit" size={20} color={colors.primary} />
         <Text style={[typography.caption1, { color: colors.textPrimary, fontWeight: '700', marginLeft: 6 }]}>
-          Diagnosticar salud
+          {t('Diagnosticar salud')}
         </Text>
       </TouchableOpacity>
 
@@ -830,15 +835,15 @@ export const ScannerScreen: React.FC = () => {
         <View style={[styles.captureTray, { backgroundColor: colors.surface }]}>
           <View style={styles.trayHeader}>
             <Text style={[typography.caption1, { color: colors.textSecondary, fontWeight: '600' }]}>
-              {photos.length}/{MAX_PHOTOS} fotos · misma planta
+              {t('{actual}/{total} fotos · misma planta', { actual: photos.length, total: MAX_PHOTOS })}
             </Text>
             <TouchableOpacity
               onPress={handleClearPhotos}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               accessibilityRole="button"
-              accessibilityLabel="Eliminar todas las fotos"
+              accessibilityLabel={t('Eliminar todas las fotos')}
             >
-              <Text style={[typography.caption1, { color: colors.error, fontWeight: '600' }]}>Limpiar</Text>
+              <Text style={[typography.caption1, { color: colors.error, fontWeight: '600' }]}>{t('Limpiar')}</Text>
             </TouchableOpacity>
           </View>
 
@@ -850,7 +855,7 @@ export const ScannerScreen: React.FC = () => {
                   style={styles.removeBadge}
                   onPress={() => handleRemovePhoto(index)}
                   accessibilityRole="button"
-                  accessibilityLabel={`Eliminar foto ${index + 1}`}
+                  accessibilityLabel={t('Eliminar foto {indice}', { indice: index + 1 })}
                   hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                 >
                   <Ionicons name="close" size={12} color="#FFFFFF" />
@@ -863,7 +868,10 @@ export const ScannerScreen: React.FC = () => {
             style={[styles.analyzeBtn, { backgroundColor: colors.primary }]}
             onPress={handleAnalyze}
             accessibilityRole="button"
-            accessibilityLabel={`Analizar ${photos.length} ${photos.length === 1 ? 'foto' : 'fotos'}`}
+            accessibilityLabel={t('Analizar {cantidad} {unidad}', {
+              cantidad: photos.length,
+              unidad: photos.length === 1 ? t('foto') : t('fotos'),
+            })}
           >
             <Ionicons name="sparkles" size={18} color="#FFFFFF" />
             <Text style={[typography.subheadline, { color: '#FFFFFF', fontWeight: '700', marginLeft: 6 }]}>
@@ -879,7 +887,7 @@ export const ScannerScreen: React.FC = () => {
           style={styles.auxControlButton}
           onPress={handlePickFromGallery}
           accessibilityRole="button"
-          accessibilityLabel="Abrir galería de fotos"
+          accessibilityLabel={t('Abrir galería de fotos')}
         >
           <Ionicons name="images" size={26} color="#FFFFFF" />
         </TouchableOpacity>
@@ -889,7 +897,7 @@ export const ScannerScreen: React.FC = () => {
           style={[styles.shutterButtonOuter, { borderColor: '#FFFFFF' }]}
           onPress={handleCapture}
           accessibilityRole="button"
-          accessibilityLabel="Capturar foto de la planta"
+          accessibilityLabel={t('Capturar foto de la planta')}
         >
           <View style={[styles.shutterButtonInner, { backgroundColor: colors.primary }]} />
         </TouchableOpacity>
@@ -899,7 +907,7 @@ export const ScannerScreen: React.FC = () => {
             style={styles.auxControlButton}
             onPress={handleUseMockSample}
             accessibilityRole="button"
-            accessibilityLabel="Usar foto de prueba (solo desarrollo)"
+            accessibilityLabel={t('Usar foto de prueba (solo desarrollo)')}
           >
             <Ionicons name="sparkles" size={24} color="#FFFFFF" />
           </TouchableOpacity>
@@ -913,11 +921,17 @@ export const ScannerScreen: React.FC = () => {
         <View
           style={styles.freeCounter}
           accessible
-          accessibilityLabel={`Te quedan ${Math.max(0, FREE_IDENTIFICATION_LIMIT - limits.identificationsToday)} de ${FREE_IDENTIFICATION_LIMIT} identificaciones gratuitas hoy`}
+          accessibilityLabel={t('Te quedan {restantes} de {total} identificaciones gratuitas hoy', {
+            restantes: Math.max(0, FREE_IDENTIFICATION_LIMIT - limits.identificationsToday),
+            total: FREE_IDENTIFICATION_LIMIT,
+          })}
         >
           <Ionicons name="sparkles-outline" size={13} color="#FFD54F" />
           <Text style={[typography.caption1, { color: '#FFFFFF', fontWeight: '600', marginLeft: 5 }]}>
-            {Math.max(0, FREE_IDENTIFICATION_LIMIT - limits.identificationsToday)}/{FREE_IDENTIFICATION_LIMIT} gratis hoy
+            {t('{restantes}/{total} gratis hoy', {
+              restantes: Math.max(0, FREE_IDENTIFICATION_LIMIT - limits.identificationsToday),
+              total: FREE_IDENTIFICATION_LIMIT,
+            })}
           </Text>
         </View>
       )}
