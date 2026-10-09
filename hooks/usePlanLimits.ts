@@ -1,4 +1,3 @@
-import { usePremium } from '../context/PremiumContext';
 import { useGarden } from '../context/GardenContext';
 
 /**
@@ -17,11 +16,7 @@ export type PremiumFeature =
   | 'assistant';
 
 /** Funciones que requieren Premium (según spec Free vs Premium). */
-export const LOCKED_FEATURES: PremiumFeature[] = [
-  'animatedMap',
-  'pestDiagnosis',
-  'personalizedClimate',
-];
+export const LOCKED_FEATURES: PremiumFeature[] = [];
 
 export const FEATURE_LABELS: Record<PremiumFeature, { title: string; description: string; icon: string }> = {
   animatedMap: {
@@ -65,27 +60,22 @@ export interface PlanLimits {
 }
 
 export function usePlanLimits(): PlanLimits {
-  const { isPremium } = usePremium();
   const { plants, stats } = useGarden();
 
   const identificationsToday = stats.identificationsToday;
-  const identificationsRemaining = isPremium
-    ? Number.POSITIVE_INFINITY
-    : Math.max(0, FREE_IDENTIFICATION_LIMIT - identificationsToday);
-  const plantsRemaining = isPremium
-    ? Number.POSITIVE_INFINITY
-    : Math.max(0, FREE_PLANT_LIMIT - plants.length);
+  const identificationsRemaining = Number.POSITIVE_INFINITY;
+  const plantsRemaining = Number.POSITIVE_INFINITY;
 
   return {
-    isPremium,
+    isPremium: true,
     identificationLimit: FREE_IDENTIFICATION_LIMIT,
     identificationsToday,
-    identificationsRemaining,
-    canIdentify: isPremium || identificationsToday < FREE_IDENTIFICATION_LIMIT,
+    identificationsRemaining: Number.POSITIVE_INFINITY,
+    canIdentify: true,
     plantLimit: FREE_PLANT_LIMIT,
     plantsCount: plants.length,
-    plantsRemaining,
-    canAddPlant: isPremium || plants.length < FREE_PLANT_LIMIT,
-    isFeatureLocked: (feature: PremiumFeature) => !isPremium && LOCKED_FEATURES.includes(feature),
+    plantsRemaining: Number.POSITIVE_INFINITY,
+    canAddPlant: true,
+    isFeatureLocked: (_feature: PremiumFeature) => false,
   };
 }

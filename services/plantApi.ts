@@ -664,28 +664,58 @@ function mockCandidateFromCatalog(
 }
 
 /** Identificación simulada, determinista a partir del contenido de la imagen. */
+/**
+ * Interfaz para API real (Pl@ntNet o Plant.id) via Cloud Function.
+ */
+export interface RealPlantIdRequest {
+  images: string[];
+  options?: { provider?: 'plantnet' | 'plantid' | 'auto'; includeReferenceImages?: boolean; };
+}
+export interface RealPlantIdResponse {
+  success: boolean;
+  isPlant: boolean;
+  candidates: IdentificationCandidate[];
+  imageQuality?: ImageQualityFlags;
+  error?: string;
+}
+export async function identifyWithRealApi(
+  imageUris: string[],
+  options?: RealPlantIdRequest['options']
+): Promise<RealPlantIdResponse> {
+  const compressed = await compressImages(imageUris, { max: 4 });
+  if (compressed.length === 0) {
+    return { success: false, isPlant: false, candidates: [], error: 'No se pudo procesar ninguna imagen' };
+  }
+  try {
+    const response = await postJson<RealPlantIdResponse>('/identifyPlantReal', {
+      images: compressed.map((c) => c.base64),
+      options,
+    });
+    return response;
+  } catch (error) {
+    if (error instanceof ApiError) {
+      return { success: false, isPlant: false, candidates: [], error: error.message };
+    }
+    return { success: false, isPlant: false, candidates: [], error: 'Error al contactar el servicio de identificacion' };
+  }
+}
+
 async function mockIdentifyPlants(imageUris: string[], seed: number): Promise<PlantIdentificationResult> {
   const plants = BOTANICAL_KNOWLEDGE_BASE;
   const first = plants[seed % plants.length];
   const second = plants[(seed + 5) % plants.length];
-  const topConfidence = 72 + (seed % 24); // 72 - 95
-
-  const candidateA = mockCandidateFromCatalog(first, topConfidence, 'mock');
-  const candidateB = mockCandidateFromCatalog(
-    second,
-    Math.max(3, 100 - topConfidence - 5),
-    'mock'
-  );
-  const candidates = first.id === second.id ? [candidateA] : [candidateA, candidateB];
-
-  return {
-    candidates,
-    isPlant: true,
-    imageQuality: {},
-    confidence: candidateA.confidence,
-    source: 'mock',
-    imageUri: imageUris[0],
-  };
+  const matchQuality = seed % 100;
+  if (matchQuality < 30) {
+    return { candidates: [], isPlant: false, imageQuality: { note: "No pude identificarla" }, confidence: 0, source: "mock", imageUri: imageUris[0] };
+  }
+  const topConfidence = 72 + (seed % 24);
+  const candidateA = mockCandidateFromCatalog(first, topConfidence, "mock");
+  let candidates = [candidateA];
+  if (first.id !== second.id && matchQuality > 70) {
+    const candidateB = mockCandidateFromCatalog(second, Math.max(3, 100 - topConfidence - 5), "mock");
+    candidates = [candidateA, candidateB];
+  }
+  return { candidates, isPlant: true, imageQuality: {}, confidence: candidateA.confidence, source: "mock", imageUri: imageUris[0] };
 }
 
 /**

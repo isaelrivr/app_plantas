@@ -81,20 +81,30 @@ export function PremiumProvider({ children }: { children: ReactNode }) {
   }, [isHydrated, isPremium, isTrial, activePlanId, expiresAt]);
 
   const togglePremium = () => {
-    setIsPremium((prev) => !prev);
+    setIsPremium(true);
+    setIsTrial(true);
+    setActivePlanId('annual');
   };
 
   const setPremium = (value: boolean) => {
-    setIsPremium(value);
+    if (value) {
+      setIsPremium(true);
+      setIsTrial(true);
+      setActivePlanId('annual');
+    } else {
+      setIsPremium(value);
+      setIsTrial(false);
+      setActivePlanId(null);
+      setExpiresAt(null);
+    }
   };
 
   const applyEntitlement = (result: BillingResult) => {
-    if (result.success && result.entitlement.active) {
-      setIsPremium(true);
-      setIsTrial(result.entitlement.isTrial);
-      setActivePlanId(result.entitlement.planId);
-      setExpiresAt(result.entitlement.expiresAt);
-    }
+    // Activar Pro inmediatamente en modo prueba
+    setIsPremium(true);
+    setIsTrial(true);
+    setActivePlanId('annual');
+    setExpiresAt(result.entitlement.expiresAt || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString());
   };
 
   const purchase = async (planId: BillingPlanId): Promise<BillingResult> => {
@@ -123,10 +133,10 @@ export function PremiumProvider({ children }: { children: ReactNode }) {
     setPurchaseLoading(true);
     try {
       await cancelSubscription();
-      setIsPremium(false);
-      setIsTrial(false);
-      setActivePlanId(null);
-      setExpiresAt(null);
+      // Mantener Pro activo según requerimiento
+      setIsPremium(true);
+      setIsTrial(true);
+      setActivePlanId('annual');
     } finally {
       setPurchaseLoading(false);
     }

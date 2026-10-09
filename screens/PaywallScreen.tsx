@@ -43,8 +43,9 @@ export const PaywallScreen: React.FC = () => {
       setErrorMessage(null);
       const result = await purchase(selectedPlan);
       if (result.success) {
-        setSuccess(true);
         try { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); } catch {}
+        // Cerrar paywall inmediatamente tras activar Pro
+        navigation.goBack();
       } else if (!result.cancelled) {
         setErrorMessage(result.errorMessage ?? 'No se pudo completar la compra.');
       }
@@ -82,29 +83,9 @@ export const PaywallScreen: React.FC = () => {
   };
 
   if (success || isPremium) {
-    return (
-      <View style={[styles.container, styles.centered, { backgroundColor: colors.background }]}>
-        <View style={[styles.successCircle, { backgroundColor: colors.primaryLight }]}>
-          <Ionicons name="checkmark-circle" size={64} color={colors.primary} />
-        </View>
-        <Text style={[typography.title1, { color: colors.textPrimary, marginTop: spacing.lg, textAlign: 'center' }]}>
-          ¡Bienvenido a Plantae Pro!
-        </Text>
-        <Text style={[typography.body, { color: colors.textSecondary, marginTop: spacing.sm, textAlign: 'center' }]}>
-          Ya tienes acceso a todas las funciones avanzadas.
-          {expiresAt ? `\nRenueva el ${new Date(expiresAt).toLocaleDateString('es-MX')}.` : ''}
-        </Text>
-        <Button
-          title="Comenzar"
-          onPress={() => {
-            setSuccess(false);
-            navigation.goBack();
-          }}
-          variant="primary"
-          style={{ marginTop: spacing.xl, alignSelf: 'stretch' }}
-        />
-      </View>
-    );
+    // Cerrar automáticamente si ya es Premium
+    navigation.goBack();
+    return null;
   }
 
   return (
