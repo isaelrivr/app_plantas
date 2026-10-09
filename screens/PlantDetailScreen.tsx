@@ -408,7 +408,7 @@ export const PlantDetailScreen: React.FC = () => {
           <View style={{ gap: spacing.md }}>
             <Card elevated>
               <Text style={[typography.headline, { color: colors.textPrimary, marginBottom: spacing.xs }]}>
-                Acerca de la especie
+                {t('Acerca de la especie')}
               </Text>
               <Text style={[typography.body, { color: colors.textSecondary, lineHeight: 22 }]}>
                 {plant.habitatSummary}
@@ -432,22 +432,22 @@ export const PlantDetailScreen: React.FC = () => {
 
             <Card elevated>
               <Text style={[typography.headline, { color: colors.textPrimary, marginBottom: spacing.sm }]}>
-                Clasificación Taxonómica
+                {t('Clasificación Taxonómica')}
               </Text>
               <View style={styles.taxRow}>
-                <Text style={[typography.subheadline, { color: colors.textTertiary }]}>Reino</Text>
+                <Text style={[typography.subheadline, { color: colors.textTertiary }]}>{t('Reino')}</Text>
                 <Text style={[typography.subheadline, { color: colors.textPrimary, fontWeight: '600' }]}>Plantae</Text>
               </View>
               <View style={[styles.separator, { backgroundColor: colors.border }]} />
               <View style={styles.taxRow}>
-                <Text style={[typography.subheadline, { color: colors.textTertiary }]}>Familia</Text>
+                <Text style={[typography.subheadline, { color: colors.textTertiary }]}>{t('Familia')}</Text>
                 <Text style={[typography.subheadline, { color: colors.textPrimary, fontWeight: '600' }]}>
                   {plant.family}
                 </Text>
               </View>
               <View style={[styles.separator, { backgroundColor: colors.border }]} />
               <View style={styles.taxRow}>
-                <Text style={[typography.subheadline, { color: colors.textTertiary }]}>Nombre Científico</Text>
+                <Text style={[typography.subheadline, { color: colors.textTertiary }]}>{t('Nombre Científico')}</Text>
                 <Text style={[typography.subheadline, { color: colors.textPrimary, fontStyle: 'italic', fontWeight: '600' }]}>
                   {plant.scientificName}
                 </Text>
@@ -459,10 +459,10 @@ export const PlantDetailScreen: React.FC = () => {
               <View style={styles.toxicityHeader}>
                 <View style={{ flex: 1 }}>
                   <Text style={[typography.headline, { color: colors.textPrimary }]}>
-                    Toxicidad en el hogar
+                    {t('Toxicidad en el hogar')}
                   </Text>
                   <Text style={[typography.footnote, { color: colors.textSecondary, marginTop: 2 }]}>
-                    Información clave si convives con mascotas o niños
+                    {t('Información clave si convives con mascotas o niños')}
                   </Text>
                 </View>
                 <Ionicons name="paw" size={24} color={colors.warning} />
