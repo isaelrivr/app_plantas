@@ -9,9 +9,8 @@ import type { AppLanguage } from '../i18n/types';
  *
  * Preferencias del usuario: tema, idioma, notificaciones y estado de onboarding.
  *
- * NOTA: la persistencia es en memoria (mock). Para persistir entre sesiones
- * instala @react-native-async-storage/async-storage y guarda/lee este objeto,
- * o sincronízalo con Firestore en users/{uid}/settings.
+ * Las preferencias se persisten localmente en AsyncStorage. La sincronización
+ * con una cuenta remota todavía no está implementada.
  *
  * IDIOMA: la preferencia se sincroniza con el módulo i18n (../i18n), que aplica
  * las traducciones al inglés (el español es el idioma fuente del código).

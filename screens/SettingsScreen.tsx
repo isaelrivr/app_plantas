@@ -37,8 +37,8 @@ export const SettingsScreen: React.FC = () => {
     resetOnboarding,
     resetSettings,
   } = useSettings();
-  const { isPremium, cancel } = usePremium();
-  const { clearGarden, resetStats } = useGarden();
+  const { isPremium, setPremium } = usePremium();
+  const { clearGarden } = useGarden();
   const { t } = useTranslation();
 
   const themeOptions: { key: ThemePreference; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
@@ -58,27 +58,24 @@ export const SettingsScreen: React.FC = () => {
 
   const handleDeleteData = () => {
     Alert.alert(
-      t('Eliminar cuenta y datos'),
-      t('Se borrarán tu jardín, estadísticas, ajustes y suscripción local de forma permanente. Esta acción no se puede deshacer.'),
+      t('Eliminar mis datos del dispositivo'),
+      t('Se borrarán de este dispositivo tu jardín, estadísticas, fotos, diario y ajustes. Esta acción no se puede deshacer.'),
       [
         { text: t('Cancelar'), style: 'cancel' },
         {
           text: t('Eliminar todo'),
           style: 'destructive',
           onPress: async () => {
-            try {
-              await cancel();
-            } catch {}
             // Borra también los datos persistidos en disco (no solo la memoria).
             clearGrowthDiary();
             await clearPersistedImages();
-            await clearAllAppData();
             clearGarden();
-            resetStats();
+            setPremium(false);
             resetSettings();
             resetOnboarding();
+            await clearAllAppData();
             try { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning); } catch {}
-            Alert.alert(t('Datos eliminados'), t('Tu cuenta y datos locales han sido eliminados.'));
+            Alert.alert(t('Datos eliminados'), t('Los datos locales de este dispositivo se han eliminado.'));
             navigation.goBack();
           },
         },
@@ -243,8 +240,8 @@ export const SettingsScreen: React.FC = () => {
             <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
           </TouchableOpacity>
           <View style={[styles.separator, { backgroundColor: colors.border }]} />
-          <TouchableOpacity onPress={handleDeleteData} accessibilityRole="button" accessibilityLabel={t('Eliminar cuenta y datos')} style={styles.rowTap}>
-            <Text style={[typography.body, { color: colors.error }]}>{t('Eliminar cuenta y datos')}</Text>
+          <TouchableOpacity onPress={handleDeleteData} accessibilityRole="button" accessibilityLabel={t('Eliminar mis datos del dispositivo')} style={styles.rowTap}>
+            <Text style={[typography.body, { color: colors.error }]}>{t('Eliminar mis datos del dispositivo')}</Text>
             <Ionicons name="trash-outline" size={20} color={colors.error} />
           </TouchableOpacity>
         </Card>

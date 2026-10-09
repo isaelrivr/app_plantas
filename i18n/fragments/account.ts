@@ -68,14 +68,16 @@ const fragment: Record<string, string> = {
   'Privacidad y datos': 'Privacy and data',
   'Política de privacidad': 'Privacy policy',
   'Ver introducción de nuevo': 'View introduction again',
-  'Eliminar cuenta y datos': 'Delete account and data',
+  'Eliminar mis datos del dispositivo': 'Delete my data from this device',
   'Plantae · Versión 1.0.0 (Expo SDK 57)': 'Plantae · Version 1.0.0 (Expo SDK 57)',
+  'Se borrarán de este dispositivo tu jardín, estadísticas, fotos, diario y ajustes. Esta acción no se puede deshacer.':
+    'Your garden, statistics, photos, diary and settings will be deleted from this device. This action cannot be undone.',
   'Se borrarán tu jardín, estadísticas, ajustes y suscripción local de forma permanente. Esta acción no se puede deshacer.':
     'Your garden, statistics, settings and local subscription will be permanently deleted. This action cannot be undone.',
   'Cancelar': 'Cancel',
   'Eliminar todo': 'Delete everything',
   'Datos eliminados': 'Data deleted',
-  'Tu cuenta y datos locales han sido eliminados.': 'Your account and local data have been deleted.',
+  'Los datos locales de este dispositivo se han eliminado.': 'The local data on this device has been deleted.',
   'Privacidad': 'Privacy',
   'En Plantae las fotos se procesan para identificar plantas. En producción, la identificación se realiza mediante Cloud Functions y no se almacenan imágenes sin tu consentimiento. Puedes eliminar todos tus datos en cualquier momento desde esta pantalla.\n\nPolítica completa: plantae.app/privacidad':
     'At Plantae photos are processed to identify plants. In production, identification is done through Cloud Functions and images are not stored without your consent. You can delete all your data at any time from this screen.\n\nFull policy: plantae.app/privacidad',

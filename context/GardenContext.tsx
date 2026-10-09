@@ -366,6 +366,8 @@ export function GardenProvider({ children }: { children: ReactNode }) {
 
   const clearGarden = () => {
     setPlants([]);
+    setRooms(DEFAULT_ROOMS);
+    setStatsState(INITIAL_STATS);
   };
 
   const stats = useMemo<GardenStats>(
