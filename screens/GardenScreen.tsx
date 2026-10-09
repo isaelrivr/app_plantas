@@ -222,7 +222,10 @@ export const GardenScreen: React.FC = () => {
                   typography.headline,
                   { color: colors.textPrimary, marginLeft: 6, fontWeight: '700' },
                 ]}
+<<<<<<< HEAD
               >
+=======
+>>>>>>> 7a9d4053c8f94b7a00027dab5aeb4f25da6b778b
                 {t('Recomendaciones por Clima y GPS')}
               </Text>
             </View>

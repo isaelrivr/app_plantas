@@ -1,4 +1,5 @@
 /** Traducciones al inglés: Logros. Clave = texto fuente en español. */
+<<<<<<< HEAD
 const fragment: Record<string, string> = {
   // Pantalla de Logros
   Volver: 'Back',
@@ -64,5 +65,8 @@ const fragment: Record<string, string> = {
   'En racha': 'On a streak',
   Iniciando: 'Starting',
 };
+=======
+const fragment: Record<string, string> = {};
+>>>>>>> 7a9d4053c8f94b7a00027dab5aeb4f25da6b778b
 
 export default fragment;

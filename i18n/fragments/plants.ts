@@ -47,10 +47,18 @@ const fragment: Record<string, string> = {
 
   // Pestaña Cuidados
   'Parámetros Botánicos de Nivel': 'Botanical Level Parameters',
+<<<<<<< HEAD
+=======
+  'Luz solar ': 'Sunlight',
+>>>>>>> 7a9d4053c8f94b7a00027dab5aeb4f25da6b778b
   'Frecuencia de Riego': 'Watering Frequency',
   'Humedad Ambiental': 'Environmental Humidity',
   'Temperatura Óptima': 'Optimal Temperature',
   '{min}°C a {max}°C': '{min}°C to {max}°C',
+<<<<<<< HEAD
+=======
+  'Cada {dias} días.': 'Every {dias} days.',
+>>>>>>> 7a9d4053c8f94b7a00027dab5aeb4f25da6b778b
   'Pauta Detallada de Riego': 'Detailed Watering Guide',
 
   // Pestaña de hábitat
@@ -72,6 +80,41 @@ const fragment: Record<string, string> = {
   Moderado: 'Moderate',
   Avanzado: 'Advanced',
 
+<<<<<<< HEAD
+=======
+  // Enciclopedia
+  Enciclopedia: 'Encyclopedia',
+  'Buscar por nombre o familia...': 'Search by name or family...',
+  'Buscar plantas': 'Search plants',
+  'Borrar búsqueda': 'Clear search',
+  'Modo sin conexión: solo mis plantas guardadas': 'Offline mode: only my saved plants',
+  'Sin conexión · mis plantas guardadas ({total})': 'Offline · my saved plants ({total})',
+  'Limpiar filtros': 'Clear filters',
+  'Limpiar ({total})': 'Clear ({total})',
+  'Segura para mascotas': 'Pet safe',
+  'Toda luz': 'Any light',
+  'Poca luz': 'Low light',
+  'Luz media': 'Medium light',
+  'Luz intensa': 'Bright light',
+  'Toda dificultad': 'Any difficulty',
+  'Interior y exterior': 'Indoor and outdoor',
+  Interior: 'Indoor',
+  Exterior: 'Outdoor',
+  'Interior/Exterior': 'Indoor/Outdoor',
+  'Mascotas ✓': 'Pets ✓',
+  'Sin resultados': 'No results',
+  'Aún no has guardado plantas en Mi Jardín.': 'You have not saved any plants in My Garden yet.',
+  'Prueba con otros términos o ajusta los filtros.': 'Try other terms or adjust the filters.',
+  '{total} especie': '{total} species',
+  '{total} especies': '{total} species',
+  'Ver ficha de {nombre}': 'View profile of {nombre}',
+
+  // Valores de dificultad de las fichas
+  'Fácil': 'Easy',
+  'Moderado': 'Moderate',
+  'Avanzado': 'Advanced',
+
+>>>>>>> 7a9d4053c8f94b7a00027dab5aeb4f25da6b778b
   // Mensajes de identificación
   'No se pudo procesar ninguna imagen': 'Could not process any image',
   'No se pudo procesar ninguna imagen. Vuelve a tomar la foto con buena iluminación.':

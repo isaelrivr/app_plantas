@@ -10,7 +10,10 @@ const fragment: Record<string, string> = {
   'Aún no hay registros': 'No entries yet',
   'Añade tu primera foto para empezar a documentar el crecimiento.':
     'Add your first photo to start documenting growth.',
+<<<<<<< HEAD
   'Nuevo registro de crecimiento.': 'New growth entry.',
+=======
+>>>>>>> 7a9d4053c8f94b7a00027dab5aeb4f25da6b778b
   '{dias} días de diferencia': '{dias} days apart',
   altura: 'height',
   hojas: 'leaves',

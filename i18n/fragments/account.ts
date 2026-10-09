@@ -1,4 +1,5 @@
 /** Traducciones al inglés: Perfil, ajustes, paywall y asistente. Clave = texto fuente en español. */
+<<<<<<< HEAD
 const fragment: Record<string, string> = {
   // Perfil
   'Perfil': 'Profile',
@@ -179,5 +180,8 @@ const fragment: Record<string, string> = {
   '¿Cómo aumento la humedad para mi calathea?': 'How do I increase humidity for my calathea?',
   '¿Cuándo debo trasplantar mi planta?': 'When should I repot my plant?',
 };
+=======
+const fragment: Record<string, string> = {};
+>>>>>>> 7a9d4053c8f94b7a00027dab5aeb4f25da6b778b
 
 export default fragment;

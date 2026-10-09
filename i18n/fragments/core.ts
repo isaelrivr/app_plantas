@@ -1,4 +1,5 @@
 /** Traducciones al inglés: navegación, contextos y hooks. Clave = texto fuente en español. */
+<<<<<<< HEAD
 const fragment: Record<string, string> = {
   // ── Navegación (AppNavigator) ──────────────────────────────────────
   'Escáner': 'Scanner',
@@ -81,5 +82,8 @@ const fragment: Record<string, string> = {
   'Pregunta lo que necesites sobre el cuidado de tus plantas.':
     'Ask anything you need about caring for your plants.',
 };
+=======
+const fragment: Record<string, string> = {};
+>>>>>>> 7a9d4053c8f94b7a00027dab5aeb4f25da6b778b
 
 export default fragment;

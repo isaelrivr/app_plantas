@@ -1,4 +1,5 @@
 /** Traducciones al inglés: núcleo, contextos y servicios. Clave = texto fuente en español. */
+<<<<<<< HEAD
 const fragment: Record<string, string> = {
   // Servicio meteorológico: alertas, consejos y descripciones del clima
   '❄️ Alerta de Frío y Heladas': '❄️ Cold and Frost Alert',
@@ -140,5 +141,8 @@ const fragment: Record<string, string> = {
   'Sin información específica de toxicidad; mantén mascotas y niños alejados.':
     'No specific toxicity information; keep pets and children away.',
 };
+=======
+const fragment: Record<string, string> = {};
+>>>>>>> 7a9d4053c8f94b7a00027dab5aeb4f25da6b778b
 
 export default fragment;

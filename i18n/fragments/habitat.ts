@@ -1,4 +1,5 @@
 /** Traducciones al inglés: Mapa de hábitat. Clave = texto fuente en español. */
+<<<<<<< HEAD
 const fragment: Record<string, string> = {
   // Pantalla Mapa de Hábitat
   'Volver a la pantalla anterior': 'Back to the previous screen',
@@ -415,5 +416,8 @@ const fragment: Record<string, string> = {
   'Recolección silvestre para aceites con alto contenido de alcanfor y cineol.':
     'Wild harvesting for oils with a high camphor and cineole content.',
 };
+=======
+const fragment: Record<string, string> = {};
+>>>>>>> 7a9d4053c8f94b7a00027dab5aeb4f25da6b778b
 
 export default fragment;
