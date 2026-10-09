@@ -12,13 +12,8 @@
 
 import { useCallback } from 'react';
 import { useSettings } from '../context/SettingsContext';
-<<<<<<< HEAD
 import { translate } from './core';
 import type { AppLanguage, TranslationParams } from './types';
-=======
-import { translate, type TranslationParams } from './core';
-import type { AppLanguage } from './types';
->>>>>>> 7a9d4053c8f94b7a00027dab5aeb4f25da6b778b
 
 export { t, translate, setI18nLanguage, getI18nLanguage } from './core';
 export type { AppLanguage, TranslationParams } from './types';
