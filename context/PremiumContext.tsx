@@ -133,10 +133,12 @@ export function PremiumProvider({ children }: { children: ReactNode }) {
     setPurchaseLoading(true);
     try {
       await cancelSubscription();
-      // Mantener Pro activo según requerimiento
-      setIsPremium(true);
-      setIsTrial(true);
-      setActivePlanId('annual');
+      // Cancelación real: desactivar premium al final del período actual
+      // (en el mock, cancelSubscription devuelve INACTIVE)
+      setIsPremium(false);
+      setIsTrial(false);
+      setActivePlanId(null);
+      setExpiresAt(null);
     } finally {
       setPurchaseLoading(false);
     }

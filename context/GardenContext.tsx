@@ -290,10 +290,9 @@ export function GardenProvider({ children }: { children: ReactNode }) {
   };
 
   const updatePlantHealth = (id: string, score: number, diagnosis: string) => {
-    const key = id.toLowerCase().replace(/[-_]/g, ' ');
     setPlants((prev) =>
       prev.map((p) => {
-        if (p.id === id || p.name.toLowerCase().includes(key)) {
+        if (p.id === id) {
           return { ...p, healthScore: score, lastDiagnosis: diagnosis };
         }
         return p;

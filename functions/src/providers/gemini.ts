@@ -7,7 +7,7 @@
  */
 
 import type { AppConfig } from '../config';
-import { upstreamError } from '../errors';
+import { ApiError, upstreamError } from '../errors';
 
 const GENERATIVE_BASE = 'https://generativelanguage.googleapis.com/v1beta';
 
@@ -103,20 +103,29 @@ async function generateJson(config: AppConfig, system: string, prompt: string, s
     }
   };
 
-  // Un reintento para errores transitorios (red / 5xx).
-  try {
-    const first = await attempt();
-    if (first !== null) return first;
-  } catch {
-    /* se reintenta una vez */
+  // Un reintento para errores transitorios (red / 5xx / timeout).
+  let lastError: Error | null = null;
+  for (let attemptNum = 0; attemptNum < 2; attemptNum++) {
+    try {
+      const result = await attempt();
+      if (result !== null) return result;
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error(String(err));
+      // No reintentamos errores de autenticación / cliente (4xx salvo 429).
+      if (err instanceof ApiError && err.status >= 400 && err.status < 500 && err.status !== 429) {
+        throw err;
+      }
+      // Si es el último intento, salimos del bucle para manejar el error abajo.
+      if (attemptNum === 1) break;
+      // Pequeña espera antes de reintentar.
+      await new Promise((r) => setTimeout(r, 300));
+    }
   }
-  try {
-    return await attempt();
-  } catch (err) {
-    if (err instanceof Error && err.name === 'ApiError') throw err;
-    console.warn('[plantae-functions] Gemini falló tras reintento:', err);
-    return null;
-  }
+
+  // Agotados los reintentos: si es ApiError la propagamos; si no, devolvemos null (fallback local).
+  if (lastError instanceof ApiError) throw lastError;
+  console.warn('[plantae-functions] Gemini falló tras reintentos:', lastError);
+  return null;
 }
 
 // ---------------------------------------------------------------------------

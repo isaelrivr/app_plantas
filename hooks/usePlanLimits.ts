@@ -1,4 +1,5 @@
 import { useGarden } from '../context/GardenContext';
+import { usePremium } from '../context/PremiumContext';
 
 /**
  * Límites del plan Free y desbloqueo de funciones Premium.
@@ -16,7 +17,13 @@ export type PremiumFeature =
   | 'assistant';
 
 /** Funciones que requieren Premium (según spec Free vs Premium). */
-export const LOCKED_FEATURES: PremiumFeature[] = [];
+export const LOCKED_FEATURES: PremiumFeature[] = [
+  'animatedMap',
+  'pestDiagnosis',
+  'personalizedClimate',
+  'growthDiary',
+  'assistant',
+];
 
 export const FEATURE_LABELS: Record<PremiumFeature, { title: string; description: string; icon: string }> = {
   animatedMap: {
@@ -61,21 +68,28 @@ export interface PlanLimits {
 
 export function usePlanLimits(): PlanLimits {
   const { plants, stats } = useGarden();
+  const { isPremium } = usePremium();
 
   const identificationsToday = stats.identificationsToday;
-  const identificationsRemaining = Number.POSITIVE_INFINITY;
-  const plantsRemaining = Number.POSITIVE_INFINITY;
+  const identificationLimit = isPremium ? Number.POSITIVE_INFINITY : FREE_IDENTIFICATION_LIMIT;
+  const identificationsRemaining = isPremium ? Number.POSITIVE_INFINITY : Math.max(0, identificationLimit - identificationsToday);
+  const canIdentify = isPremium || identificationsRemaining > 0;
+
+  const plantLimit = isPremium ? Number.POSITIVE_INFINITY : FREE_PLANT_LIMIT;
+  const plantsCount = plants.length;
+  const plantsRemaining = isPremium ? Number.POSITIVE_INFINITY : Math.max(0, plantLimit - plantsCount);
+  const canAddPlant = isPremium || plantsRemaining > 0;
 
   return {
-    isPremium: true,
-    identificationLimit: FREE_IDENTIFICATION_LIMIT,
+    isPremium,
+    identificationLimit,
     identificationsToday,
-    identificationsRemaining: Number.POSITIVE_INFINITY,
-    canIdentify: true,
-    plantLimit: FREE_PLANT_LIMIT,
-    plantsCount: plants.length,
-    plantsRemaining: Number.POSITIVE_INFINITY,
-    canAddPlant: true,
-    isFeatureLocked: (_feature: PremiumFeature) => false,
+    identificationsRemaining,
+    canIdentify,
+    plantLimit,
+    plantsCount,
+    plantsRemaining,
+    canAddPlant,
+    isFeatureLocked: (feature: PremiumFeature) => !isPremium && LOCKED_FEATURES.includes(feature),
   };
 }

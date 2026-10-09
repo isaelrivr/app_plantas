@@ -588,12 +588,14 @@ function normalizeCareSheet(
 ): BotanicalCareSheet {
   const fallback = buildFallbackCareSheet(commonName, scientificName);
   const levels: Partial<BotanicalCareLevels> = raw.careLevels ?? {};
-  const clampLevel = (value: unknown, def: number): number => {
+  const clampLevel = (value: unknown, def: number, min = 1, max = 5): number => {
     const parsed = typeof value === 'number' ? value : Number(value);
-    return Number.isFinite(parsed) ? Math.min(5, Math.max(1, Math.round(parsed))) : def;
+    return Number.isFinite(parsed) ? Math.min(max, Math.max(min, Math.round(parsed))) : def;
   };
-  const tempMin = Number(levels.tempMinC);
-  const tempMax = Number(levels.tempMaxC);
+  const clampTemp = (value: unknown, def: number): number => {
+    const parsed = typeof value === 'number' ? value : Number(value);
+    return Number.isFinite(parsed) ? Math.round(parsed) : def;
+  };
 
   return {
     commonName: raw.commonName?.trim() || fallback.commonName,
@@ -611,8 +613,8 @@ function normalizeCareSheet(
       lightLevel: clampLevel(levels.lightLevel, fallback.careLevels.lightLevel),
       wateringLevel: clampLevel(levels.wateringLevel, fallback.careLevels.wateringLevel),
       humidityLevel: clampLevel(levels.humidityLevel, fallback.careLevels.humidityLevel),
-      tempMinC: Number.isFinite(tempMin) ? Math.round(tempMin) : fallback.careLevels.tempMinC,
-      tempMaxC: Number.isFinite(tempMax) ? Math.round(tempMax) : fallback.careLevels.tempMaxC,
+      tempMinC: clampTemp(levels.tempMinC, fallback.careLevels.tempMinC),
+      tempMaxC: clampTemp(levels.tempMaxC, fallback.careLevels.tempMaxC),
     },
     difficulty:
       raw.difficulty === 'Moderado' || raw.difficulty === 'Avanzado' || raw.difficulty === 'Fácil'
