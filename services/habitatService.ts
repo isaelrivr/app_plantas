@@ -32,6 +32,8 @@ export type HabitatZoneType = 'native' | 'naturalized' | 'cultivated';
 
 export interface HabitatRegionDetail {
   countryName: string; // Coincide con properties.name en world-atlas
+  /** Numeric ISO-3166-1 identifier used by world-atlas. Filled during normalization. */
+  countryId?: string;
   zoneType: HabitatZoneType;
   climate: string;
   floweringSeason: string;
@@ -47,6 +49,36 @@ export interface PlantHabitatInfo {
   globalCoverage: string;
   regions: HabitatRegionDetail[];
   conservationStatus: string;
+}
+
+/** Numeric ISO-3166-1 ids used by world-atlas/countries-110m.json. */
+export const WORLD_ATLAS_COUNTRY_IDS: Readonly<Record<string, string>> = {
+  'angola': '024', 'bolivia': '068', 'brazil': '076', 'cameroon': '120',
+  'colombia': '170', 'costa rica': '188', 'dem. rep. congo': '180',
+  'ecuador': '218', 'french polynesia': '250', 'gabon': '266',
+  'greece': '300', 'guatemala': '320', 'indonesia': '360', 'italy': '380',
+  'mexico': '484', 'nigeria': '566', 'panama': '591', 'peru': '604',
+  'philippines': '608', 'spain': '724', 'taiwan': '158', 'tunisia': '788',
+  'turkey': '792', 'united states of america': '840', 'venezuela': '862',
+};
+
+export interface HabitatCountry {
+  id: string;
+  name: string;
+  region: HabitatRegionDetail;
+}
+
+export interface HabitatCoordinate {
+  countryId: string;
+  longitude: number;
+  latitude: number;
+}
+
+export interface HabitatBounds {
+  minLongitude: number;
+  minLatitude: number;
+  maxLongitude: number;
+  maxLatitude: number;
 }
 
 const HABITAT_DATABASE: Record<string, PlantHabitatInfo> = {
@@ -657,6 +689,7 @@ function localizeHabitat(source: PlantHabitatInfo): PlantHabitatInfo {
     conservationStatus: t(source.conservationStatus),
     regions: source.regions.map((region) => ({
       ...region,
+      countryId: region.countryId || WORLD_ATLAS_COUNTRY_IDS[region.countryName.toLowerCase()],
       climate: t(region.climate),
       floweringSeason: t(region.floweringSeason),
       biogeographicZone: t(region.biogeographicZone),
@@ -673,10 +706,75 @@ export async function getPlantHabitat(plantId: string): Promise<PlantHabitatInfo
   // Simulación realista con respuesta inmediata desde la base biogeográfica local
   return new Promise((resolve) => {
     setTimeout(() => {
-      const data = HABITAT_DATABASE[plantId] || HABITAT_DATABASE['monstera'];
+      const data = HABITAT_DATABASE[plantId] || {
+        plantId,
+        scientificName: '',
+        originSummary: '',
+        globalCoverage: '',
+        conservationStatus: '',
+        regions: [],
+      };
       resolve(localizeHabitat(data));
     }, 350);
   });
+}
+
+/** Returns all regions whose distribution is native, keyed by world-atlas id. */
+export function getNativeCountries(info: PlantHabitatInfo): HabitatCountry[] {
+  return info.regions
+    .filter((region) => region.zoneType === 'native')
+    .map((region) => {
+      const id = region.countryId || WORLD_ATLAS_COUNTRY_IDS[region.countryName.toLowerCase()];
+      return id ? { id, name: region.countryName, region } : null;
+    })
+    .filter((country): country is HabitatCountry => country !== null);
+}
+
+/** Returns every mapped country, including naturalized and cultivated regions. */
+export function getMappedCountries(info: PlantHabitatInfo): HabitatCountry[] {
+  return info.regions
+    .map((region) => {
+      const id = region.countryId || WORLD_ATLAS_COUNTRY_IDS[region.countryName.toLowerCase()];
+      return id ? { id, name: region.countryName, region } : null;
+    })
+    .filter((country): country is HabitatCountry => country !== null);
+}
+
+export function calculateHabitatCentroid(points: readonly HabitatCoordinate[]): [number, number] | null {
+  if (points.length === 0) return null;
+  const total = points.reduce(
+    (sum, point) => ({ longitude: sum.longitude + point.longitude, latitude: sum.latitude + point.latitude }),
+    { longitude: 0, latitude: 0 },
+  );
+  return [total.longitude / points.length, total.latitude / points.length];
+}
+
+export function calculateHabitatBounds(points: readonly HabitatCoordinate[]): HabitatBounds | null {
+  if (points.length === 0) return null;
+  return points.reduce<HabitatBounds>(
+    (bounds, point) => ({
+      minLongitude: Math.min(bounds.minLongitude, point.longitude),
+      minLatitude: Math.min(bounds.minLatitude, point.latitude),
+      maxLongitude: Math.max(bounds.maxLongitude, point.longitude),
+      maxLatitude: Math.max(bounds.maxLatitude, point.latitude),
+    }),
+    {
+      minLongitude: points[0].longitude,
+      minLatitude: points[0].latitude,
+      maxLongitude: points[0].longitude,
+      maxLatitude: points[0].latitude,
+    },
+  );
+}
+
+/** Validates that every mapped habitat country exists in the supplied atlas ids. */
+export function validateHabitatCountryIds(
+  info: PlantHabitatInfo,
+  atlasIds: ReadonlySet<string>,
+): string[] {
+  return getMappedCountries(info)
+    .map((country) => country.id)
+    .filter((id, index, ids) => !atlasIds.has(id) && ids.indexOf(id) === index);
 }
 
 /**
