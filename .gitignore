@@ -3,6 +3,9 @@
 # dependencies
 node_modules/
 
+# Local duplicate workspace snapshots
+/app_plantas/
+
 # Expo
 .expo/
 dist/
