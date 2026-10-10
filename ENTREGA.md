@@ -18,7 +18,7 @@ El primer arranque muestra el **Onboarding** (3 páginas). Al completarlo se ent
 ### Flujo de prueba recomendado
 1. **Escáner** (pestaña central): permite 3 identificaciones gratis al día. Al acumular 2+ fotos se guarda el **lote** con un solo botón. Al exceder el límite free ofrece ver el Paywall.
 2. **Enciclopedia**: busca y filtra por luz, dificultad, interior/exterior y mascotas. Abre una ficha (con escudo de toxicidad). El toggle *"Mis plantas"* muestra sólo lo guardado.
-3. **Ficha botánica**: pest-añas Resumen/Cuidados/Hábitat/Problemas. Escudo y panel de **toxicidad** para mascotas, botón de **Diario de crecimiento**, mapa mundial (Pro).
+3. **Ficha botánica**: pestañas Resumen/Cuidados/Hábitat/Problemas. Escudo y panel de **toxicidad** para mascotas, botón de **Diario de crecimiento**, mapa mundial (Pro).
 4. **Perfil → Pro**: abre el **Paywall** (planes mensual/anual, trial 7 días, restaurar compras). Activa Pro y vuelve al mapa o diagnóstico de plagas para desbloquear.
 5. **Ajustes**: tema claro/oscuro/sistema, idioma, notificaciones, reintroducción y borrado de datos.
 
@@ -42,7 +42,7 @@ npx expo-doctor             # diagnósticos de configuración
 |---|---|
 | 1. Escáner por IA (cámara/galería, 12 especies) | `screens/ScannerScreen.tsx`, `services/plantApi.ts` |
 | 2. Mi Jardín con clima premium | `screens/GardenScreen.tsx`, `services/weatherService.ts` |
-| 3. Almacenamiento en memoria + persistencia pendiente | `context/GardenContext.tsx` |
+| 3. Almacenamiento local persistente | `context/GardenContext.tsx`, `services/storage.ts` |
 
 ### FASE 2 — Fichas, mapa y diagnóstico
 | Punto | Dónde |
@@ -105,7 +105,7 @@ npx expo-doctor             # diagnósticos de configuración
 
 - **Persistencia local**: jardín, estadísticas, ajustes, diario y premium local se guardan con AsyncStorage; las fotos locales se copian a `expo-file-system`. Firebase Auth y sincronización entre dispositivos aún no están conectados.
 - **Modo Pro**: el adaptador de billing sigue siendo local y no verifica compras con RevenueCat. El botón de activación directa solo funciona en desarrollo.
-- **Expone**: para usar IA real se necesita desplegar las Cloud Functions y encender `USE_REMOTE_ASSISTANT=true`.
+- **Expo**: para usar IA real se necesita desplegar las Cloud Functions y encender `EXPO_PUBLIC_USE_REMOTE_ASSISTANT=true` junto con `EXPO_PUBLIC_ASSISTANT_ENDPOINT`.
 - **Expo Go**: funcionalidad completa de cámara/notificaciones disponible; para un build con RevenueCat se requiere dev build (`npx expo run:android`).
 - No hay `ios/`/`android/`: la app usa Continuous Native Generation (configurable vía `app.json`).
 

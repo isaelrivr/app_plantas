@@ -34,6 +34,7 @@ const fragment: Record<string, string> = {
   'completada': 'completed',
   'pendiente': 'pending',
   'Toca para marcar o desmarcar esta tarea': 'Tap to mark or unmark this task',
+  'Eliminar tarea "{tarea}"': 'Delete task "{tarea}"',
   'Volver a regar': 'Water again',
   'Marcar como regada hoy': 'Mark as watered today',
   'Regada': 'Watered',
