@@ -172,6 +172,7 @@ interface GardenContextType {
   removePlant: (id: string) => void;
   updatePlantHealth: (id: string, score: number, diagnosis: string) => void;
   toggleTaskCompleted: (plantId: string, taskId: string) => void;
+  removeCareTask: (plantId: string, taskId: string) => void;
   assignPlantToRoom: (plantId: string, roomId?: string) => void;
   createRoom: (name: string, icon?: Room['icon']) => Room;
   removeRoom: (roomId: string) => void;
@@ -327,6 +328,12 @@ export function GardenProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const removeCareTask = (plantId: string, taskId: string) => {
+    setPlants((prev) => prev.map((plant) => plant.id === plantId
+      ? { ...plant, careTasks: plant.careTasks?.filter((task) => task.id !== taskId) }
+      : plant));
+  };
+
   const assignPlantToRoom = (plantId: string, roomId?: string) => {
     setPlants((prev) => prev.map((p) => (p.id === plantId ? { ...p, roomId } : p)));
   };
@@ -403,6 +410,7 @@ export function GardenProvider({ children }: { children: ReactNode }) {
         removePlant,
         updatePlantHealth,
         toggleTaskCompleted,
+        removeCareTask,
         assignPlantToRoom,
         createRoom,
         removeRoom,

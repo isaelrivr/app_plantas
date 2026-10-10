@@ -77,7 +77,7 @@ const mondayIndex = (date: Date): number => (date.getDay() + 6) % 7;
 
 export const CareCalendarScreen: React.FC = () => {
   const { colors, isDark, spacing, typography, layout } = useAppTheme();
-  const { plants, waterPlantToday, toggleTaskCompleted } = useGarden();
+  const { plants, waterPlantToday, toggleTaskCompleted, removeCareTask } = useGarden();
   const navigation = useNavigation<any>();
   const { t } = useTranslation();
 
@@ -290,6 +290,14 @@ export const CareCalendarScreen: React.FC = () => {
               <Ionicons name="notifications-outline" size={22} color={colors.textSecondary} />
             </TouchableOpacity>
           )}
+          <TouchableOpacity
+            style={styles.checkButton}
+            onPress={() => removeCareTask(item.plantId, item.id)}
+            accessibilityRole="button"
+            accessibilityLabel={t('Eliminar tarea "{tarea}"', { tarea: t(item.title) })}
+          >
+            <Ionicons name="trash-outline" size={21} color={colors.error} />
+          </TouchableOpacity>
         </View>
       </Card>
     );

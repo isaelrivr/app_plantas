@@ -3,6 +3,18 @@
   "compilerOptions": {
     "strict": true
   },
+  "include": [
+    "App.tsx",
+    "index.ts",
+    "components/**/*.tsx",
+    "context/**/*.tsx",
+    "hooks/**/*.ts",
+    "i18n/**/*.ts",
+    "navigation/**/*.tsx",
+    "screens/**/*.tsx",
+    "services/**/*.ts",
+    "theme/**/*.ts"
+  ],
   "exclude": [
     "node_modules",
     "functions",
