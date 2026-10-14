@@ -66,9 +66,9 @@ export const ProfileScreen: React.FC = () => {
       icon: 'alarm' as const,
     },
     {
-      title: t('Soporte botánico prioritario'),
-      desc: t('Consulta directa con especialistas en jardinería.'),
-      icon: 'chatbubbles' as const,
+      title: t('Sin anuncios ni interrupciones'),
+      desc: t('Experiencia limpia y rápida para cuidar tus plantas tranquilamente.'),
+      icon: 'shield-checkmark' as const,
     },
   ];
 
@@ -362,15 +362,6 @@ export const ProfileScreen: React.FC = () => {
           <Text style={[typography.body, { color: colors.textPrimary }]}>{t('Versión')}</Text>
           <Text style={[typography.subheadline, { color: colors.textSecondary }]}>
             1.0.0
-          </Text>
-        </View>
-
-        <View style={[styles.separator, { backgroundColor: colors.border }]} />
-
-        <View style={styles.settingRow}>
-          <Text style={[typography.body, { color: colors.textPrimary }]}>{t('Base de datos botánica')}</Text>
-          <Text style={[typography.subheadline, { color: colors.textSecondary }]}>
-            {t('Catálogo integrado (sin conexión)')}
           </Text>
         </View>
       </Card>

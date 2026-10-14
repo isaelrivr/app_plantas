@@ -23,6 +23,7 @@ import { scheduleWateringReminder, scheduleCareTaskReminder } from '../services/
 import { announce } from '../services/accessibilityService';
 import { useTranslation } from '../i18n';
 import { useFeedback } from '../context/FeedbackContext';
+import { EditCareTaskModal } from '../components/calendar/EditCareTaskModal';
 
 type CalendarView = 'semana' | 'mes';
 type FilterTaskType = CareTaskType | 'todos';
@@ -79,7 +80,7 @@ const mondayIndex = (date: Date): number => (date.getDay() + 6) % 7;
 
 export const CareCalendarScreen: React.FC = () => {
   const { colors, isDark, spacing, typography, layout } = useAppTheme();
-  const { plants, waterPlantToday, toggleTaskCompleted, removeCareTask } = useGarden();
+  const { plants, waterPlantToday, toggleTaskCompleted, removeCareTask, updateCareTask } = useGarden();
   const { showToast } = useFeedback();
   const navigation = useNavigation<any>();
   const { t } = useTranslation();
@@ -90,6 +91,7 @@ export const CareCalendarScreen: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
   const [anchorDate, setAnchorDate] = useState<Date>(startOfDay(new Date()));
+  const [editingTask, setEditingTask] = useState<(CareTask & { plantId: string; plantName: string }) | null>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => setCalendarLoading(false), 800);
@@ -183,6 +185,26 @@ export const CareCalendarScreen: React.FC = () => {
         announce(t('Acción deshecha'));
       },
     });
+  };
+
+  const handleUpdateTask = (updates: { title?: string; dueDate?: string; repeatIntervalDays?: number }) => {
+    if (!editingTask) return;
+    updateCareTask(editingTask.plantId, editingTask.id, updates);
+    showToast({
+      message: t('Tarea actualizada con éxito'),
+      type: 'success',
+    });
+    setEditingTask(null);
+  };
+
+  const handleDeleteTask = () => {
+    if (!editingTask) return;
+    removeCareTask(editingTask.plantId, editingTask.id);
+    showToast({
+      message: t('Tarea desactivada'),
+      type: 'info',
+    });
+    setEditingTask(null);
   };
 
   // Rejilla de días: semana actual o mes del ancla
@@ -290,6 +312,17 @@ export const CareCalendarScreen: React.FC = () => {
               color={item.completed ? colors.primary : colors.textTertiary}
             />
           </TouchableOpacity>
+
+          {!item.completed && (
+            <TouchableOpacity
+              style={styles.checkButton}
+              onPress={() => setEditingTask(item)}
+              accessibilityRole="button"
+              accessibilityLabel={t('Editar tarea "{tarea}"', { tarea: t(item.title) })}
+            >
+              <Ionicons name="create-outline" size={21} color={colors.primary} />
+            </TouchableOpacity>
+          )}
 
           {!item.completed && (
             <TouchableOpacity
@@ -660,6 +693,14 @@ export const CareCalendarScreen: React.FC = () => {
           ))}
         </View>
       </ScrollView>
+
+      <EditCareTaskModal
+        visible={Boolean(editingTask)}
+        task={editingTask}
+        onClose={() => setEditingTask(null)}
+        onSave={handleUpdateTask}
+        onDelete={handleDeleteTask}
+      />
     </View>
   );
 };

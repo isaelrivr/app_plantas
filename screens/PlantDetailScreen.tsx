@@ -5,6 +5,7 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  Image,
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -13,28 +14,22 @@ import * as Haptics from 'expo-haptics';
 import { useAppTheme } from '../theme';
 import { useTranslation } from '../i18n';
 import { Card } from '../components/Card';
-import { Badge } from '../components/Badge';
 import { Button } from '../components/Button';
-import { ConfidenceRing } from '../components/ConfidenceRing';
-import { LevelBar } from '../components/LevelBar';
+import { SegmentedControl } from '../components/SegmentedControl';
+import { PrimaryActionBar } from '../components/PrimaryActionBar';
 import { EmptyState } from '../components/EmptyState';
 import { SkeletonBox } from '../components/SkeletonLoader';
+import { PlantToxicityBanner } from '../components/plant/PlantToxicityBanner';
+import { PlantTodayActionCard } from '../components/plant/PlantTodayActionCard';
 import { resolvePlantForDetail, CatalogPlant } from '../services/plantApi';
 import { useGarden } from '../context/GardenContext';
 import { useFeedback } from '../context/FeedbackContext';
 import { usePlanLimits } from '../hooks/usePlanLimits';
-import { ToxicityBadge, ToxicityPanel } from '../components/ToxicityBadge';
 
-type TabType = 'resumen' | 'cuidados' | 'habitat' | 'problemas';
-
-// Nivel 1-5 estimado para el rango térmico (12°C a 32°C como escala de referencia)
-const tempLevelFor = (tempMinC: number, tempMaxC: number): number => {
-  const mid = (tempMinC + tempMaxC) / 2;
-  return Math.max(1, Math.min(5, Math.round(((mid - 12) / (32 - 12)) * 5)));
-};
+type TabType = 'cuidados' | 'mas_info';
 
 export const PlantDetailScreen: React.FC = () => {
-  const { colors, isDark, spacing, typography } = useAppTheme();
+  const { colors, spacing, typography, layout } = useAppTheme();
   const { t } = useTranslation();
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
@@ -47,12 +42,11 @@ export const PlantDetailScreen: React.FC = () => {
   const scientificNameParam = route.params?.scientificName as string | undefined;
   const confidenceParam = route.params?.confidence as number | undefined;
 
-  const [activeTab, setActiveTab] = useState<TabType>('resumen');
+  const [activeTab, setActiveTab] = useState<TabType>('cuidados');
   const [plant, setPlant] = useState<CatalogPlant | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [isSaved, setIsSaved] = useState<boolean>(false);
 
-  // Resolución real: catálogo local o ficha generada por IA a partir del nombre.
   useEffect(() => {
     let active = true;
     setLoading(true);
@@ -78,19 +72,14 @@ export const PlantDetailScreen: React.FC = () => {
     setIsSaved(plants.some((p) => p.name.toLowerCase().includes(token)));
   }, [plant, plants]);
 
-  const handleTabChange = (tab: TabType) => {
-    try {
-      Haptics.selectionAsync();
-    } catch {}
-    setActiveTab(tab);
-  };
-
   const handleSaveToGarden = async () => {
     if (!plant) return;
     if (!limits.isPremium && plants.length >= limits.plantLimit) {
       const wantPro = await confirm({
         title: t('Jardín lleno'),
-        message: t('El plan gratuito permite {limite} plantas. Con EcoScan Pro guardas plantas ilimitadas.', { limite: limits.plantLimit }),
+        message: t('El plan gratuito permite {limite} plantas. Con EcoScan Pro guardas plantas ilimitadas.', {
+          limite: limits.plantLimit,
+        }),
         confirmText: t('Ver Pro'),
         cancelText: t('Ahora no'),
       });
@@ -121,10 +110,10 @@ export const PlantDetailScreen: React.FC = () => {
     if (!saved) return;
 
     const confirmed = await confirm({
-      title: t('¿Eliminar {nombre}?', { nombre: plant.name }),
-      message: t('Se eliminará de tu jardín junto con su historial de cuidados y notas.'),
-      confirmText: t('Eliminar planta'),
-      cancelText: t('Conservar'),
+      title: t('¿Eliminar de Mi Jardín?'),
+      message: t('Esta planta se quitará de tus cuidados y recordatorios.'),
+      confirmText: t('Eliminar'),
+      cancelText: t('Cancelar'),
       isDestructive: true,
     });
     if (!confirmed) return;
@@ -132,7 +121,7 @@ export const PlantDetailScreen: React.FC = () => {
     removePlant(saved.id);
     setIsSaved(false);
     showToast({
-      message: t('Eliminaste {nombre}', { nombre: plant.name }),
+      message: t('Planta eliminada del jardín'),
       actionLabel: t('Deshacer'),
       durationMs: 5000,
       onAction: () => {
@@ -142,99 +131,13 @@ export const PlantDetailScreen: React.FC = () => {
     });
   };
 
-  const handleOpenGrowthDiary = () => {
-    if (!plant) return;
-    try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    } catch {}
-    navigation.navigate('GrowthDiary', { plantId: plant.id });
-  };
-
-  const handleOpenHabitatMap = () => {
-    if (!plant) return;
-    try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    } catch {}
-    navigation.navigate('HabitatMap', { plantId: plant.id });
-  };
-
-  const handleOpenDiagnosis = () => {
-    if (!plant) return;
-    try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    } catch {}
-    navigation.navigate('HealthDiagnosis', {
-      plantId: plant.id,
-      plantName: plant.name,
-      scientificName: plant.scientificName,
-    });
-  };
-
-  // Estado de carga con esqueletos
   if (loading) {
     return (
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <View
-          style={[
-            styles.header,
-            {
-              backgroundColor: colors.surface,
-              borderBottomColor: colors.border,
-              paddingTop: Platform.OS === 'ios' ? 12 : 16,
-            },
-          ]}
-        >
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={styles.backButton}
-            accessibilityRole="button"
-            accessibilityLabel={t('Volver')}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <Ionicons name="chevron-back" size={26} color={colors.primary} />
-            <Text style={[typography.body, { color: colors.primary, fontWeight: '600' }]}>{t('Atrás')}</Text>
-          </TouchableOpacity>
-          <Text style={[typography.headline, { color: colors.textPrimary }]} numberOfLines={1}>
-            {t('Ficha Botánica')}
-          </Text>
-          <View style={styles.actionHeaderBtn} />
-        </View>
-
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ padding: spacing.md }}
-          accessibilityLabel={t('Cargando ficha botánica')}
-        >
-          <Card elevated style={{ marginBottom: spacing.md }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <SkeletonBox width={60} height={60} borderRadius={30} />
-              <View style={{ flex: 1, marginLeft: spacing.md }}>
-                <SkeletonBox width="30%" height={12} borderRadius={6} />
-                <SkeletonBox width="85%" height={20} borderRadius={6} style={{ marginTop: 8 }} />
-                <SkeletonBox width="55%" height={13} borderRadius={6} style={{ marginTop: 6 }} />
-              </View>
-              <SkeletonBox width={54} height={54} borderRadius={27} />
-            </View>
-            <View style={{ marginTop: spacing.lg, flexDirection: 'row', gap: 8 }}>
-              <SkeletonBox width="31%" height={44} borderRadius={10} />
-              <SkeletonBox width="31%" height={44} borderRadius={10} />
-              <SkeletonBox width="31%" height={44} borderRadius={10} />
-            </View>
-          </Card>
-
-          <View style={[styles.segmentedControl, { backgroundColor: isDark ? '#1C1C1E' : '#E5E5EA' }]}>
-            {[0, 1, 2, 3].map((i) => (
-              <SkeletonBox key={i} height={36} borderRadius={8} style={{ flex: 1, marginHorizontal: 2 }} />
-            ))}
-          </View>
-
-          <Card elevated style={{ marginTop: spacing.md }}>
-            <SkeletonBox width="45%" height={16} borderRadius={6} />
-            <SkeletonBox width="95%" height={14} borderRadius={6} style={{ marginTop: 12 }} />
-            <SkeletonBox width="90%" height={14} borderRadius={6} style={{ marginTop: 6 }} />
-            <SkeletonBox width="70%" height={14} borderRadius={6} style={{ marginTop: 6 }} />
-          </Card>
-        </ScrollView>
+      <View style={[styles.container, { backgroundColor: colors.background, padding: spacing.md }]}>
+        <SkeletonBox width="100%" height={260} borderRadius={18} style={{ marginTop: 40 }} />
+        <SkeletonBox width="70%" height={28} borderRadius={8} style={{ marginTop: 20 }} />
+        <SkeletonBox width="50%" height={18} borderRadius={6} style={{ marginTop: 8 }} />
+        <SkeletonBox width="100%" height={120} borderRadius={14} style={{ marginTop: 24 }} />
       </View>
     );
   }
@@ -242,35 +145,12 @@ export const PlantDetailScreen: React.FC = () => {
   if (!plant) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <View
-          style={[
-            styles.header,
-            {
-              backgroundColor: colors.surface,
-              borderBottomColor: colors.border,
-              paddingTop: Platform.OS === 'ios' ? 12 : 16,
-            },
-          ]}
-        >
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={styles.backButton}
-            accessibilityRole="button"
-            accessibilityLabel={t('Volver')}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <Ionicons name="chevron-back" size={26} color={colors.primary} />
-            <Text style={[typography.body, { color: colors.primary, fontWeight: '600' }]}>{t('Atrás')}</Text>
-          </TouchableOpacity>
-          <Text style={[typography.headline, { color: colors.textPrimary }]} numberOfLines={1}>
-            {t('Ficha Botánica')}
-          </Text>
-          <View style={styles.actionHeaderBtn} />
-        </View>
         <EmptyState
-          iconName="leaf-outline"
+          iconName="alert-circle-outline"
           title={t('Especie no encontrada')}
-          description={t('No pudimos recuperar la ficha de esta planta. Vuelve a escanearla o elige otra especie del catálogo.')}
+          description={t('No pudimos recuperar la ficha de esta planta. Vuelve a escanearla o búscala en la enciclopedia.')}
+          actionTitle={t('Volver')}
+          onActionPress={() => navigation.goBack()}
         />
       </View>
     );
@@ -278,14 +158,14 @@ export const PlantDetailScreen: React.FC = () => {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* HEADER DE NAVEGACIÓN HIG */}
+      {/* HEADER NAVEGACIÓN */}
       <View
         style={[
           styles.header,
           {
             backgroundColor: colors.surface,
             borderBottomColor: colors.border,
-            paddingTop: Platform.OS === 'ios' ? 12 : 16,
+            paddingTop: Platform.OS === 'ios' ? 44 : 16,
           },
         ]}
       >
@@ -294,555 +174,218 @@ export const PlantDetailScreen: React.FC = () => {
           style={styles.backButton}
           accessibilityRole="button"
           accessibilityLabel={t('Volver')}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
         >
           <Ionicons name="chevron-back" size={26} color={colors.primary} />
-          <Text style={[typography.body, { color: colors.primary, fontWeight: '600' }]}>{t('Atrás')}</Text>
+          <Text style={[typography.body, { color: colors.primary, fontWeight: '600' }]}>
+            {t('Atrás')}
+          </Text>
         </TouchableOpacity>
 
         <Text style={[typography.headline, { color: colors.textPrimary }]} numberOfLines={1}>
-          {t('Ficha Botánica')}
+          {plant.name}
         </Text>
 
-        <TouchableOpacity
-          onPress={handleSaveToGarden}
-          disabled={isSaved}
-          style={styles.actionHeaderBtn}
-          accessibilityRole="button"
-          accessibilityLabel={isSaved ? t('Ya en tu jardín') : t('Guardar en jardín')}
-        >
-          <Ionicons
-            name={isSaved ? 'bookmark' : 'bookmark-outline'}
-            size={22}
-            color={isSaved ? colors.primary : colors.textSecondary}
-          />
-        </TouchableOpacity>
+        <View style={{ width: 60 }} />
       </View>
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ padding: spacing.md, paddingBottom: 60 }}
-      >
-        {/* TARJETA PRINCIPAL CON AVATAR E INFORMACIÓN BOTÁNICA */}
-        <Card elevated style={{ marginBottom: spacing.md }} accessible={true} accessibilityLabel={t('Ficha de {nombre}, familia {familia}', { nombre: plant.name, familia: plant.family })}>
-          <View style={styles.topCardRow}>
-            {/* Avatar / Símbolo */}
-            <View
-              style={[
-                styles.avatarCircle,
-                { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : colors.primaryLight },
-              ]}
-            >
-              <Text style={styles.avatarEmoji}>{plant.avatarEmoji}</Text>
-            </View>
+      <ScrollView contentContainerStyle={{ padding: spacing.md, paddingBottom: 110 }}>
+        {/* FOTO HERO */}
+        {plant.imageUri ? (
+          <Image
+            source={{ uri: plant.imageUri }}
+            style={[styles.heroImage, { borderRadius: layout.borderRadius.xl }]}
+            accessible
+            accessibilityLabel={plant.name}
+          />
+        ) : null}
 
-            {/* Títulos e Identidad */}
-            <View style={{ flex: 1, marginLeft: spacing.md }}>
-              <Badge label={t('Familia {familia}', { familia: plant.family })} variant="primary" />
-              <Text style={[typography.title2, { color: colors.textPrimary, fontWeight: '700', marginTop: 4 }]}>
-                {plant.name}
-              </Text>
-              <Text style={[typography.footnote, { color: colors.textTertiary, fontStyle: 'italic', marginTop: 2 }]}>
-                {plant.scientificName}
-              </Text>
-            </View>
+        {/* TÍTULO BOTÁNICO */}
+        <Text style={[typography.title1, { color: colors.textPrimary, fontWeight: '800', marginTop: spacing.sm }]}>
+          {plant.name}
+        </Text>
+        <Text style={[typography.subheadline, { color: colors.textSecondary, fontStyle: 'italic', marginTop: 2 }]}>
+          {plant.scientificName}
+        </Text>
 
-            {/* Anillo de Confianza / Salud (solo si conocemos la precisión) */}
-            {plant.confidence != null ? (
-              <View style={{ alignItems: 'center' }}>
-                <ConfidenceRing score={plant.confidence} size={54} strokeWidth={5} colorVariant="primary" />
-                <Text style={[typography.caption2, { color: colors.textTertiary, marginTop: 4 }]}>{t('Precisión')}</Text>
-              </View>
-            ) : (
-              <View style={{ alignItems: 'center', width: 54 }}>
-                <Ionicons name="sparkles" size={22} color={colors.primary} />
-                <Text style={[typography.caption2, { color: colors.textTertiary, marginTop: 4 }]}>{t('IA')}</Text>
-              </View>
-            )}
-          </View>
+        {/* TOXICIDAD ARRIBA (SEGURIDAD PRIORITARIA) */}
+        <PlantToxicityBanner speciesId={plant.id} />
 
-          {/* CHIPS RÁPIDOS DE CUIDADO */}
-          <View style={[styles.quickInfoRow, { borderTopColor: colors.border }]}>
-            <View style={styles.quickInfoItem}>
-              <Ionicons name="water" size={16} color={colors.info} />
-              <Text style={[typography.caption1, { color: colors.textPrimary, fontWeight: '600', marginTop: 2 }]}>
-                {t('Cada {dias} días', { dias: plant.wateringFrequencyDays })}
-              </Text>
-              <Text style={[typography.caption2, { color: colors.textTertiary }]}>{t('Riego')}</Text>
-            </View>
+        {/* BLOQUE PRINCIPAL: QUÉ HACER HOY */}
+        <PlantTodayActionCard plant={plant} />
 
-            <View style={[styles.verticalDivider, { backgroundColor: colors.border }]} />
+        {/* PESTAÑAS: CUIDADOS vs MÁS INFORMACIÓN */}
+        <SegmentedControl<TabType>
+          options={[
+            { key: 'cuidados', label: t('Cuidados') },
+            { key: 'mas_info', label: t('Más información') },
+          ]}
+          selectedKey={activeTab}
+          onSelect={setActiveTab}
+          style={{ marginTop: spacing.lg, marginBottom: spacing.md }}
+        />
 
-            <View style={styles.quickInfoItem}>
-              <Ionicons name="sunny" size={16} color={colors.warning} />
-              <Text style={[typography.caption1, { color: colors.textPrimary, fontWeight: '600', marginTop: 2 }]}>
-                {t('Nivel {nivel}/5', { nivel: plant.careLevels.lightLevel })}
-              </Text>
-              <Text style={[typography.caption2, { color: colors.textTertiary }]}>{t('Luz solar')}</Text>
-            </View>
-
-            <View style={[styles.verticalDivider, { backgroundColor: colors.border }]} />
-
-            <View style={styles.quickInfoItem}>
-              <Ionicons name="shield-checkmark" size={16} color={colors.primary} />
-              <Text style={[typography.caption1, { color: colors.textPrimary, fontWeight: '600', marginTop: 2 }]}>
-                {plant.difficulty}
-              </Text>
-              <Text style={[typography.caption2, { color: colors.textTertiary }]}>{t('Dificultad')}</Text>
-            </View>
-          </View>
-        </Card>
-
-        {/* SELECTOR SEGMENTADO DE PESTAÑAS (APPLE HIG) */}
-        <View style={[styles.segmentedControl, { backgroundColor: isDark ? '#1C1C1E' : '#E5E5EA' }]}>
-          {(['resumen', 'cuidados', 'habitat', 'problemas'] as TabType[]).map((tab) => {
-            const isActive = activeTab === tab;
-            const labels: Record<TabType, string> = {
-              resumen: 'Resumen',
-              cuidados: 'Cuidados',
-              habitat: 'Hábitat',
-              problemas: 'Problemas',
-            };
-
-            return (
-              <TouchableOpacity
-                key={tab}
-                style={[
-                  styles.segmentButton,
-                  isActive && [styles.segmentActive, { backgroundColor: colors.surface }],
-                ]}
-                onPress={() => handleTabChange(tab)}
-                accessibilityRole="tab"
-                accessibilityState={{ selected: isActive }}
-                accessibilityLabel={t('Pestaña {pestaña}', { pestaña: t(labels[tab]) })}
-              >
-                <Text
-                  style={[
-                    typography.footnote,
-                    {
-                      color: isActive ? colors.textPrimary : colors.textSecondary,
-                      fontWeight: isActive ? '700' : '500',
-                    },
-                  ]}
-                >
-                  {t(labels[tab])}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-
-        {/* CONTENIDO SEGÚN LA PESTAÑA ACTIVA */}
-
-        {/* 1. RESUMEN */}
-        {activeTab === 'resumen' && (
+        {activeTab === 'cuidados' ? (
           <View style={{ gap: spacing.md }}>
-            <Card elevated>
-              <Text style={[typography.headline, { color: colors.textPrimary, marginBottom: spacing.xs }]}>
-                {t('Acerca de la especie')}
-              </Text>
-              <Text style={[typography.body, { color: colors.textSecondary, lineHeight: 22 }]}>
-                {plant.habitatSummary}
-              </Text>
-
-              <View
-                style={[
-                  styles.tipBox,
-                  {
-                    backgroundColor: isDark ? 'rgba(46, 125, 50, 0.15)' : colors.primaryLight,
-                    marginTop: spacing.md,
-                  },
-                ]}
-              >
-                <Ionicons name="sparkles" size={18} color={colors.primary} />
-                <Text style={[typography.footnote, { color: colors.textPrimary, flex: 1, marginLeft: 8 }]}>
-                  {plant.climateTip}
-                </Text>
-              </View>
-            </Card>
-
-            <Card elevated>
-              <Text style={[typography.headline, { color: colors.textPrimary, marginBottom: spacing.sm }]}>
-                {t('Clasificación Taxonómica')}
-              </Text>
-              <View style={styles.taxRow}>
-                <Text style={[typography.subheadline, { color: colors.textTertiary }]}>{t('Reino')}</Text>
-                <Text style={[typography.subheadline, { color: colors.textPrimary, fontWeight: '600' }]}>Plantae</Text>
-              </View>
-              <View style={[styles.separator, { backgroundColor: colors.border }]} />
-              <View style={styles.taxRow}>
-                <Text style={[typography.subheadline, { color: colors.textTertiary }]}>{t('Familia')}</Text>
-                <Text style={[typography.subheadline, { color: colors.textPrimary, fontWeight: '600' }]}>
-                  {plant.family}
-                </Text>
-              </View>
-              <View style={[styles.separator, { backgroundColor: colors.border }]} />
-              <View style={styles.taxRow}>
-                <Text style={[typography.subheadline, { color: colors.textTertiary }]}>{t('Nombre Científico')}</Text>
-                <Text style={[typography.subheadline, { color: colors.textPrimary, fontStyle: 'italic', fontWeight: '600' }]}>
-                  {plant.scientificName}
-                </Text>
-              </View>
-            </Card>
-
-            {/* TOXICIDAD PARA MASCOTAS Y NIÑOS (punto 10) */}
-            <Card elevated>
-              <View style={styles.toxicityHeader}>
-                <View style={{ flex: 1 }}>
-                  <Text style={[typography.headline, { color: colors.textPrimary }]}>
-                    {t('Toxicidad en el hogar')}
-                  </Text>
-                  <Text style={[typography.footnote, { color: colors.textSecondary, marginTop: 2 }]}>
-                    {t('Información clave si convives con mascotas o niños')}
-                  </Text>
-                </View>
-                <Ionicons name="paw" size={24} color={colors.warning} />
-              </View>
-              <ToxicityBadge speciesId={plant.id} compact style={{ marginTop: spacing.sm }} />
-              <View style={{ marginTop: spacing.md }}>
-                <ToxicityPanel speciesId={plant.id} />
-              </View>
-            </Card>
-          </View>
-        )}
-
-        {/* 2. CUIDADOS CON BARRAS VISUALES DE NIVEL HIG */}
-        {activeTab === 'cuidados' && (
-          <View style={{ gap: spacing.md }}>
-            <Card elevated>
-              <Text style={[typography.headline, { color: colors.textPrimary, marginBottom: spacing.md }]}>
-                {t('Parámetros Botánicos de Nivel')}
-              </Text>
-
-              {/* Barra de Luz */}
-              <LevelBar
-                label={t('Luz solar')}
-                level={plant.careLevels.lightLevel}
-                iconName="sunny"
-                valueDescription={plant.light}
-                tintColor={colors.warning}
-              />
-
-              {/* Barra de Riego */}
-              <LevelBar
-                label={t('Frecuencia de Riego')}
-                level={plant.careLevels.wateringLevel}
-                iconName="water"
-                valueDescription={t('Cada {dias} días', { dias: plant.wateringFrequencyDays })}
-                tintColor={colors.info}
-              />
-
-              {/* Barra de Humedad */}
-              <LevelBar
-                label={t('Humedad Ambiental')}
-                level={plant.careLevels.humidityLevel}
-                iconName="cloud"
-                valueDescription={plant.humidity}
-                tintColor={colors.accent}
-              />
-
-              {/* Rango de Temperatura */}
-              <LevelBar
-                label={t('Temperatura Óptima')}
-                level={tempLevelFor(plant.careLevels.tempMinC, plant.careLevels.tempMaxC)}
-                iconName="thermometer"
-                valueDescription={t('{min}°C a {max}°C', { min: plant.careLevels.tempMinC, max: plant.careLevels.tempMaxC })}
-                tintColor="#E91E63"
-              />
-            </Card>
-
-            <Card elevated>
-              <Text style={[typography.headline, { color: colors.textPrimary, marginBottom: spacing.xs }]}>
-                {t('Pauta Detallada de Riego')}
+            {/* PAUTAS DETALLADAS DE CUIDADO */}
+            <Card elevated style={{ backgroundColor: colors.surface }}>
+              <Text style={[typography.headline, { color: colors.textPrimary, marginBottom: 8 }]}>
+                {t('Pauta de Riego y Humedad')}
               </Text>
               <Text style={[typography.body, { color: colors.textSecondary, lineHeight: 22 }]}>
                 {plant.watering}
               </Text>
+              <View style={[styles.separator, { backgroundColor: colors.border }]} />
+              <Text style={[typography.headline, { color: colors.textPrimary, marginBottom: 8 }]}>
+                {t('Iluminación Recomendada')}
+              </Text>
+              <Text style={[typography.body, { color: colors.textSecondary, lineHeight: 22 }]}>
+                {plant.light}
+              </Text>
             </Card>
-          </View>
-        )}
 
-        {/* 3. HÁBITAT CON ENLACE AL MAPA MUNDIAL */}
-        {activeTab === 'habitat' && (
-          <View style={{ gap: spacing.md }}>
-            <Card elevated>
-              <View style={styles.habitatCardHeader}>
-                <View>
-                  <Badge label={t('Función Estrella')} variant="premium" />
-                  <Text style={[typography.title2, { color: colors.textPrimary, fontWeight: '700', marginTop: 4 }]}>
-                    {t('Distribución y Origen')}
+            {/* BOTÓN AL DIARIO DE CRECIMIENTO */}
+            <Card style={{ backgroundColor: colors.surface }}>
+              <View style={styles.actionCardRow}>
+                <View style={[styles.actionIconBox, { backgroundColor: colors.primaryLight }]}>
+                  <Ionicons name="images" size={24} color={colors.primary} />
+                </View>
+                <View style={{ flex: 1, marginLeft: spacing.md }}>
+                  <Text style={[typography.headline, { color: colors.textPrimary }]}>
+                    {t('Diario de Crecimiento')}
+                  </Text>
+                  <Text style={[typography.caption1, { color: colors.textSecondary, marginTop: 2 }]}>
+                    {t('Guarda fotos con fecha y compara antes vs. después')}
                   </Text>
                 </View>
-                <Ionicons name="earth" size={34} color={colors.primary} />
               </View>
-
-              <Text style={[typography.body, { color: colors.textSecondary, marginTop: spacing.xs, lineHeight: 22 }]}>
-                {t('Descubre en qué regiones del planeta habita esta especie de forma nativa, dónde ha sido naturalizada y sus zonas de cultivo global.')}
-              </Text>
-
-              <View style={[styles.regionsTeaser, { backgroundColor: isDark ? '#2C2C2E' : '#F1F3F4' }]}>
-                <Text style={[typography.subheadline, { color: colors.textPrimary, fontWeight: '600' }]}>
-                  {t('Países de Presencia Principal:')}
-                </Text>
-                <View style={styles.regionTagsWrap}>
-                  {plant.nativeRegions.map((reg) => (
-                    <View key={reg} style={[styles.regionTag, { backgroundColor: colors.primaryLight }]}>
-                      <Ionicons name="location" size={12} color={colors.primary} />
-                      <Text style={[typography.caption2, { color: colors.primary, fontWeight: '600', marginLeft: 4 }]}>
-                        {reg}
-                      </Text>
-                    </View>
-                  ))}
-                </View>
-              </View>
-
               <Button
-                title={t('Abrir mapa de origen')}
-                onPress={handleOpenHabitatMap}
-                variant="primary"
-                size="lg"
-                icon={<Ionicons name="earth" size={18} color="#FFFFFF" />}
+                title={t('Ver Diario de Crecimiento')}
+                onPress={() => navigation.navigate('GrowthDiary', { plantId: plant.id })}
+                variant="secondary"
+                size="md"
                 style={{ marginTop: spacing.md }}
               />
             </Card>
           </View>
-        )}
-
-        {/* 4. PROBLEMAS Y ACCESO A DIAGNÓSTICO */}
-        {activeTab === 'problemas' && (
+        ) : (
           <View style={{ gap: spacing.md }}>
-            <Card elevated>
-              <View style={styles.problemsHeader}>
-                <View style={{ flex: 1 }}>
+            {/* HÁBITAT Y ORIGEN */}
+            <Card elevated style={{ backgroundColor: colors.surface }}>
+              <View style={styles.actionCardRow}>
+                <View style={[styles.actionIconBox, { backgroundColor: '#E3F2FD' }]}>
+                  <Ionicons name="earth" size={24} color="#0D47A1" />
+                </View>
+                <View style={{ flex: 1, marginLeft: spacing.md }}>
+                  <Text style={[typography.headline, { color: colors.textPrimary }]}>
+                    {t('Origen y Hábitat')}
+                  </Text>
+                  <Text style={[typography.body, { color: colors.textSecondary, marginTop: 4, lineHeight: 22 }]}>
+                    {plant.habitatSummary}
+                  </Text>
+                </View>
+              </View>
+              <Button
+                title={t('Abrir Mapa de Hábitat')}
+                onPress={() => navigation.navigate('HabitatMap', { speciesId: plant.id, plantName: plant.name })}
+                variant="secondary"
+                size="md"
+                style={{ marginTop: spacing.md }}
+              />
+            </Card>
+
+            {/* PROBLEMAS FRECUENTES Y DIAGNÓSTICO */}
+            <Card elevated style={{ backgroundColor: colors.surface }}>
+              <View style={styles.actionCardRow}>
+                <View style={[styles.actionIconBox, { backgroundColor: '#FFF3E0' }]}>
+                  <Ionicons name="medkit" size={24} color="#E65100" />
+                </View>
+                <View style={{ flex: 1, marginLeft: spacing.md }}>
                   <Text style={[typography.headline, { color: colors.textPrimary }]}>
                     {t('Problemas Comunes')}
                   </Text>
-                  <Text style={[typography.footnote, { color: colors.textSecondary, marginTop: 2 }]}>
-                    {t('Síntomas frecuentes identificables en sus hojas')}
+                  <Text style={[typography.body, { color: colors.textSecondary, marginTop: 4, lineHeight: 22 }]}>
+                    {Array.isArray(plant.commonProblems) ? plant.commonProblems.join('\n') : plant.commonProblems}
                   </Text>
                 </View>
-                <Ionicons name="warning" size={24} color={colors.warning} />
               </View>
-
-              {plant.commonProblems.map((problem, idx) => (
-                <View key={idx} style={styles.problemItem}>
-                  <Ionicons name="ellipse" size={8} color={colors.warning} style={{ marginTop: 6 }} />
-                  <Text style={[typography.body, { color: colors.textSecondary, flex: 1, marginLeft: 10, lineHeight: 20 }]}>
-                    {problem}
-                  </Text>
-                </View>
-              ))}
-
               <Button
-                title={t('Revisar salud de la hoja')}
-                onPress={handleOpenDiagnosis}
+                title={t('Diagnosticar Salud')}
+                onPress={() => navigation.navigate('HealthDiagnosis', { plantId: plant.id, plantName: plant.name })}
                 variant="secondary"
                 size="md"
-                icon={<Ionicons name="medkit" size={18} color={colors.primary} />}
-                style={{ marginTop: spacing.lg }}
+                style={{ marginTop: spacing.md }}
               />
+            </Card>
+
+            {/* TAXONOMÍA */}
+            <Card style={{ backgroundColor: colors.surface }}>
+              <Text style={[typography.headline, { color: colors.textPrimary, marginBottom: 8 }]}>
+                {t('Clasificación Botánica')}
+              </Text>
+              <Text style={[typography.footnote, { color: colors.textSecondary }]}>
+                {t('Familia')}: <Text style={{ color: colors.textPrimary, fontWeight: '600' }}>{plant.family}</Text>
+              </Text>
+              <Text style={[typography.footnote, { color: colors.textSecondary, marginTop: 4 }]}>
+                {t('Nombre Científico')}: <Text style={{ color: colors.textPrimary, fontWeight: '600', fontStyle: 'italic' }}>{plant.scientificName}</Text>
+              </Text>
             </Card>
           </View>
         )}
-
-        {/* BOTÓN INFERIOR DE ACCIÓN */}
-        <View style={{ marginTop: spacing.xl, gap: spacing.sm }}>
-          <Button
-            title={t('Ver diario de crecimiento')}
-            onPress={handleOpenGrowthDiary}
-            variant="secondary"
-            size="md"
-            icon={<Ionicons name="images" size={18} color={colors.primary} />}
-          />
-          {isSaved ? (
-            <Button
-              title={t('Eliminar de Mi Jardín')}
-              onPress={handleRemoveFromGarden}
-              variant="secondary"
-              size="lg"
-              icon={<Ionicons name="trash-outline" size={18} color={colors.error} />}
-            />
-          ) : (
-            <Button
-              title={t('Guardar en Mi Jardín')}
-              onPress={handleSaveToGarden}
-              variant="primary"
-              size="lg"
-              icon={<Ionicons name="leaf" size={18} color="#FFFFFF" />}
-            />
-          )}
-        </View>
       </ScrollView>
 
-      {/* BOTÓN FLOTANTE: PREGÚNTALE A ECOSCAN */}
-      <TouchableOpacity
-        style={[
-          styles.floatingAssistantBtn,
-          {
-            backgroundColor: colors.primary,
-            shadowColor: colors.primary,
-          },
-        ]}
-        onPress={() => {
-          try { Haptics.selectionAsync(); } catch {}
-          navigation.navigate('Assistant', { plantName: plant.name });
-        }}
-        activeOpacity={0.88}
-        accessibilityRole="button"
-        accessibilityLabel={t('Preguntar sobre {nombre}', { nombre: plant.name })}
-      >
-        <Ionicons name="chatbubbles" size={20} color="#FFFFFF" />
-        <Text style={[typography.subheadline, { color: '#FFFFFF', fontWeight: '700', marginLeft: 8 }]}>
-          {t('Pregúntale a EcoSan')}
-        </Text>
-      </TouchableOpacity>
+      {/* BARRA INFERIOR DE ACCIÓN PRINCIPAL */}
+      <PrimaryActionBar
+        primaryTitle={isSaved ? t('Guardada en Mi Jardín') : t('Guardar en Mi Jardín')}
+        onPrimaryPress={handleSaveToGarden}
+        primaryDisabled={isSaved}
+        primaryIcon={
+          <Ionicons
+            name={isSaved ? 'checkmark-circle' : 'leaf'}
+            size={20}
+            color="#FFFFFF"
+          />
+        }
+        secondaryTitle={isSaved ? t('Eliminar de Mi Jardín') : undefined}
+        onSecondaryPress={isSaved ? handleRemoveFromGarden : undefined}
+      />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingBottom: 10,
+    paddingBottom: 12,
     borderBottomWidth: 1,
   },
   backButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    minWidth: 48,
-    minHeight: 48,
+    minHeight: 44,
+    minWidth: 44,
   },
-  floatingAssistantBtn: {
-    position: 'absolute',
-    bottom: 24,
-    right: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 18,
-    borderRadius: 28,
-    minHeight: 48,
-    elevation: 6,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 6,
-  },
-  actionHeaderBtn: {
-    width: 48,
-    height: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  topCardRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  avatarCircle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarEmoji: {
-    fontSize: 32,
-  },
-  quickInfoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
-    borderTopWidth: 1,
-    marginTop: 16,
-    paddingTop: 12,
-  },
-  quickInfoItem: {
-    alignItems: 'center',
-  },
-  verticalDivider: {
-    width: 1,
-    height: 28,
-  },
-  segmentedControl: {
-    flexDirection: 'row',
-    borderRadius: 10,
-    padding: 3,
-    marginBottom: 16,
-  },
-  segmentButton: {
-    flex: 1,
-    paddingVertical: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 8,
-    minHeight: 48,
-  },
-  segmentActive: {
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.12,
-    shadowRadius: 2,
-  },
-  tipBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    borderRadius: 10,
-  },
-  taxRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 10,
+  heroImage: {
+    width: '100%',
+    height: 240,
   },
   separator: {
     height: 1,
-    width: '100%',
+    marginVertical: 12,
   },
-  habitatCardHeader: {
+  actionCardRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'flex-start',
   },
-  regionsTeaser: {
-    padding: 12,
-    borderRadius: 10,
-    marginTop: 12,
-  },
-  regionTagsWrap: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    marginTop: 8,
-  },
-  regionTag: {
-    flexDirection: 'row',
+  actionIconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-problemsHeader: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    marginBottom: 4,
-  },
-  toxicityHeader: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    marginBottom: 4,
-  },
-  problemItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginVertical: 4,
+    justifyContent: 'center',
   },
 });

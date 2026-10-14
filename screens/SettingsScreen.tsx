@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,8 @@ import {
   TouchableOpacity,
   Switch,
   Platform,
+  Share,
+  Linking,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -25,6 +27,8 @@ import { clearPersistedImages } from '../services/mediaService';
 import { announce } from '../services/accessibilityService';
 import { useTranslation } from '../i18n';
 
+const NOTIFICATION_HOURS = ['08:00', '09:00', '10:00', '18:00', '20:00'];
+
 export const SettingsScreen: React.FC = () => {
   const { colors, layout, spacing, typography } = useAppTheme();
   const navigation = useNavigation<any>();
@@ -41,9 +45,11 @@ export const SettingsScreen: React.FC = () => {
     resetSettings,
   } = useSettings();
   const { isPremium, setPremium } = usePremium();
-  const { clearGarden } = useGarden();
+  const { plants, clearGarden } = useGarden();
   const { t } = useTranslation();
   const { showToast, confirm } = useFeedback();
+
+  const [notificationHour, setNotificationHour] = useState('09:00');
 
   const themeOptions: { key: ThemePreference; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
     { key: 'system', label: t('Sistema'), icon: 'phone-portrait-outline' },
@@ -56,7 +62,40 @@ export const SettingsScreen: React.FC = () => {
     if (value) {
       try {
         await requestNotificationPermissions();
+        showToast({
+          message: t('Recordatorios activados para las {hora}', { hora: notificationHour }),
+          type: 'success',
+        });
       } catch {}
+    }
+  };
+
+  const handleExportData = async () => {
+    try {
+      Haptics.selectionAsync();
+      const exportPayload = {
+        app: 'EcoScan',
+        version: '1.0.0',
+        exportDate: new Date().toISOString(),
+        totalPlants: plants.length,
+        plants: plants.map((p) => ({
+          name: p.name,
+          scientificName: p.scientificName,
+          wateringFrequencyDays: p.wateringFrequencyDays,
+          healthScore: p.healthScore,
+          careTasks: p.careTasks,
+        })),
+      };
+
+      await Share.share({
+        title: t('Copia de seguridad de mi jardín - EcoScan'),
+        message: JSON.stringify(exportPayload, null, 2),
+      });
+    } catch {
+      showToast({
+        message: t('No se pudo compartir la copia de seguridad'),
+        type: 'error',
+      });
     }
   };
 
@@ -70,7 +109,6 @@ export const SettingsScreen: React.FC = () => {
     });
     if (!confirmed) return;
 
-    // Borra también los datos persistidos en disco (no solo la memoria).
     clearGrowthDiary();
     await clearPersistedImages();
     clearGarden();
@@ -92,6 +130,16 @@ export const SettingsScreen: React.FC = () => {
       message: t('En EcoScan tus fotos solo se usan para reconocer tus plantas y revisar su salud. No guardamos imágenes sin tu permiso ni compartimos tus datos con terceros. Puedes borrar toda tu información en cualquier momento desde esta pantalla.\n\nSitio web: ecoscan.app/privacidad'),
       confirmText: t('Entendido'),
       cancelText: null,
+    });
+  };
+
+  const handleContactSupport = () => {
+    try { Haptics.selectionAsync(); } catch {}
+    Linking.openURL('mailto:soporte@ecoscan.app?subject=Ayuda%20con%20EcoScan').catch(() => {
+      showToast({
+        message: t('Escríbenos a soporte@ecoscan.app'),
+        type: 'info',
+      });
     });
   };
 
@@ -129,13 +177,14 @@ export const SettingsScreen: React.FC = () => {
       </View>
 
       <ScrollView contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxxl }}>
-        {renderSectionTitle(t('Accesibilidad'))}
+        {/* 1. MODO FÁCIL */}
+        {renderSectionTitle(t('Modo fácil'))}
         <Card style={{ marginBottom: spacing.sm }}>
           <View style={styles.row}>
             <View style={{ flex: 1, paddingRight: spacing.sm }}>
-              <Text style={[typography.headline, { color: colors.textPrimary }]}>{t('Modo fácil')}</Text>
+              <Text style={[typography.headline, { color: colors.textPrimary }]}>{t('Activar Modo fácil')}</Text>
               <Text style={[typography.subheadline, { color: colors.textSecondary, marginTop: 4, lineHeight: 20 }]}>
-                {t('Texto y botones más grandes, menos animaciones y navegación simplificada')}
+                {t('Texto y botones más grandes, navegación directa y explicaciones sencillas pensadas para toda la familia.')}
               </Text>
             </View>
             <Switch
@@ -154,6 +203,7 @@ export const SettingsScreen: React.FC = () => {
           </View>
         </Card>
 
+        {/* 2. APARIENCIA */}
         {renderSectionTitle(t('Apariencia'))}
         <Card>
           <View style={styles.row}>
@@ -194,6 +244,7 @@ export const SettingsScreen: React.FC = () => {
           </View>
         </Card>
 
+        {/* 3. IDIOMA */}
         {renderSectionTitle(t('Idioma'))}
         <Card>
           {LANGUAGES.map((lang, index) => {
@@ -219,25 +270,63 @@ export const SettingsScreen: React.FC = () => {
           })}
         </Card>
 
+        {/* 4. NOTIFICACIONES */}
         {renderSectionTitle(t('Notificaciones'))}
         <Card>
           <View style={styles.row}>
             <View style={{ flex: 1 }}>
-              <Text style={[typography.body, { color: colors.textPrimary }]}>{t('Recordatorios de cuidado')}</Text>
+              <Text style={[typography.body, { color: colors.textPrimary }]}>{t('Recordatorios de riego')}</Text>
               <Text style={[typography.caption1, { color: colors.textTertiary, marginTop: 2 }]}>
-                {t('Riego, abono y poda según cada planta')}
+                {t('Aviso diario cuando a tus plantas les falte agua')}
               </Text>
             </View>
             <Switch
               value={notificationsEnabled}
               onValueChange={handleToggleNotifications}
               trackColor={{ true: colors.primary, false: colors.border }}
-              accessibilityLabel={t('Activar recordatorios de cuidado')}
+              accessibilityLabel={t('Activar recordatorios de riego')}
             />
           </View>
+
+          {notificationsEnabled && (
+            <>
+              <View style={[styles.separator, { backgroundColor: colors.border, marginVertical: spacing.xs }]} />
+              <View style={styles.row}>
+                <Text style={[typography.subheadline, { color: colors.textPrimary }]}>{t('Hora habitual de aviso')}</Text>
+                <View style={styles.hourPillsRow}>
+                  {NOTIFICATION_HOURS.map((hour) => {
+                    const active = notificationHour === hour;
+                    return (
+                      <TouchableOpacity
+                        key={hour}
+                        onPress={() => {
+                          try { Haptics.selectionAsync(); } catch {}
+                          setNotificationHour(hour);
+                        }}
+                        style={[
+                          styles.hourPill,
+                          {
+                            backgroundColor: active ? colors.primary : colors.surfaceSecondary,
+                            borderColor: active ? colors.primary : colors.border,
+                          },
+                        ]}
+                        accessibilityRole="button"
+                        accessibilityState={{ selected: active }}
+                      >
+                        <Text style={[typography.caption1, { color: active ? '#FFFFFF' : colors.textPrimary, fontWeight: active ? '700' : '500' }]}>
+                          {hour}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+            </>
+          )}
         </Card>
 
-        {renderSectionTitle(t('Suscripción'))}
+        {/* 5. PLAN */}
+        {renderSectionTitle(t('Plan'))}
         <Card>
           <TouchableOpacity
             onPress={() => navigation.navigate('Paywall')}
@@ -246,19 +335,30 @@ export const SettingsScreen: React.FC = () => {
             style={styles.rowTap}
           >
             <View style={{ flex: 1 }}>
-              <Text style={[typography.body, { color: colors.textPrimary }]}>
-                {isPremium ? t('EcoScan Pro activo') : t('Mejorar a EcoScan Pro')}
+              <Text style={[typography.body, { color: colors.textPrimary, fontWeight: '600' }]}>
+                {isPremium ? t('EcoScan Pro activo') : t('EcoScan Free (Gratis)')}
               </Text>
               <Text style={[typography.caption1, { color: colors.textTertiary, marginTop: 2 }]}>
-                {isPremium ? t('Gestiona tu plan y facturación') : t('Desbloquea todas las funciones')}
+                {isPremium ? t('Disfrutas de análisis y diagnósticos ilimitados') : t('Toca para conocer las ventajas de Pro')}
               </Text>
             </View>
             {isPremium ? <Badge label="PRO" variant="premium" /> : <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />}
           </TouchableOpacity>
         </Card>
 
+        {/* 6. PRIVACIDAD Y DATOS */}
         {renderSectionTitle(t('Privacidad y datos'))}
         <Card>
+          <TouchableOpacity onPress={handleExportData} accessibilityRole="button" accessibilityLabel={t('Exportar copia de mi jardín')} style={styles.rowTap}>
+            <View style={{ flex: 1 }}>
+              <Text style={[typography.body, { color: colors.textPrimary }]}>{t('Exportar copia de mi jardín')}</Text>
+              <Text style={[typography.caption1, { color: colors.textTertiary, marginTop: 2 }]}>
+                {t('Guarda o comparte tu lista de plantas en formato JSON')}
+              </Text>
+            </View>
+            <Ionicons name="share-outline" size={20} color={colors.primary} />
+          </TouchableOpacity>
+          <View style={[styles.separator, { backgroundColor: colors.border }]} />
           <TouchableOpacity onPress={handlePrivacy} accessibilityRole="button" accessibilityLabel={t('Política de privacidad')} style={styles.rowTap}>
             <Text style={[typography.body, { color: colors.textPrimary }]}>{t('Política de privacidad')}</Text>
             <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
@@ -275,9 +375,34 @@ export const SettingsScreen: React.FC = () => {
           </TouchableOpacity>
         </Card>
 
-        <Text style={[typography.caption2, { color: colors.textTertiary, textAlign: 'center', marginTop: spacing.xl }]}>
-          {t('EcoScan · Versión 1.0.0')}
-        </Text>
+        {/* 7. AYUDA Y CONTACTO */}
+        {renderSectionTitle(t('Ayuda y contacto'))}
+        <Card>
+          <TouchableOpacity onPress={handleContactSupport} accessibilityRole="button" accessibilityLabel={t('Contactar por correo')} style={styles.rowTap}>
+            <View style={{ flex: 1 }}>
+              <Text style={[typography.body, { color: colors.textPrimary }]}>{t('Contactar con soporte')}</Text>
+              <Text style={[typography.caption1, { color: colors.textTertiary, marginTop: 2 }]}>
+                soporte@ecoscan.app
+              </Text>
+            </View>
+            <Ionicons name="mail-outline" size={20} color={colors.primary} />
+          </TouchableOpacity>
+        </Card>
+
+        {/* 8. ACERCA DE */}
+        {renderSectionTitle(t('Acerca de'))}
+        <Card style={{ marginBottom: spacing.xl }}>
+          <View style={styles.row}>
+            <Text style={[typography.body, { color: colors.textPrimary }]}>{t('Versión de EcoScan')}</Text>
+            <Text style={[typography.subheadline, { color: colors.textSecondary }]}>1.0.0</Text>
+          </View>
+          <View style={[styles.separator, { backgroundColor: colors.border }]} />
+          <View style={styles.row}>
+            <Text style={[typography.subheadline, { color: colors.textSecondary, lineHeight: 20 }]}>
+              {t('EcoScan · Creado con cariño para ayudarte a cuidar tus plantas de forma fácil y natural.')}
+            </Text>
+          </View>
+        </Card>
       </ScrollView>
     </View>
   );
@@ -320,4 +445,18 @@ const styles = StyleSheet.create({
     minWidth: 48,
   },
   separator: { height: 1, width: '100%' },
+  hourPillsRow: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  hourPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    minHeight: 36,
+    minWidth: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });

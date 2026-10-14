@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -11,95 +11,83 @@ import {
   NativeScrollEvent,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAppTheme } from '../theme';
 import { Button } from '../components/Button';
 import { useTranslation } from '../i18n';
-import { requestNotificationPermissions } from '../services/notificationService';
-
-interface Page {
-  icon: keyof typeof Ionicons.glyphMap;
-  title: string;
-  description: string;
-  accent: 'primary' | 'accent' | 'premiumGold';
-}
-
-const PAGES: Page[] = [
-  {
-    icon: 'leaf',
-    title: 'Bienvenido a EcoScan',
-    description: 'Tu compañero inteligente para mantener cada planta sana y radiante, sin necesidad de ser experto.',
-    accent: 'primary',
-  },
-  {
-    icon: 'camera',
-    title: 'Identifica al instante',
-    description: 'Escanea cualquier planta con la cámara y descubre su especie, cuidados, luz ideal, riego y toxicidad.',
-    accent: 'accent',
-  },
-  {
-    icon: 'notifications',
-    title: 'Nunca olvides un cuidado',
-    description: 'Recibe recordatorios de riego, abonos y podas, sigue tu racha de cuidados y mira crecer tus plantas.',
-    accent: 'premiumGold',
-  },
-];
+import { useSettings, UserGoal, LANGUAGES } from '../context/SettingsContext';
 
 interface OnboardingScreenProps {
   onComplete: () => void;
 }
 
 export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }) => {
-  const { colors, motion, spacing, typography } = useAppTheme();
+  const { colors, layout, motion, spacing, typography } = useAppTheme();
+  const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const { t } = useTranslation();
+  const { language, setLanguage, userGoal, setUserGoal } = useSettings();
   const scrollRef = useRef<ScrollView>(null);
   const [index, setIndex] = useState(0);
-  const [welcomeScale] = useState(() => new Animated.Value(motion.isReduced ? 1 : 0.6));
-  const [welcomeOpacity] = useState(() => new Animated.Value(motion.isReduced ? 1 : 0));
 
-  useEffect(() => {
-    if (motion.isReduced) {
-      welcomeScale.setValue(1);
-      welcomeOpacity.setValue(1);
-      return;
-    }
-    Animated.parallel([
-      Animated.spring(welcomeScale, { toValue: 1, damping: 12, stiffness: 140, useNativeDriver: true }),
-      Animated.timing(welcomeOpacity, { toValue: 1, duration: 500, useNativeDriver: true }),
-    ]).start();
-  }, [welcomeScale, welcomeOpacity, motion.isReduced]);
-
-  const getAccent = (accent: Page['accent']) => colors[accent];
+  const GOALS: { key: UserGoal; title: string; subtitle: string; icon: keyof typeof Ionicons.glyphMap }[] = [
+    {
+      key: 'identify',
+      title: t('Identificar mis plantas'),
+      subtitle: t('Escanea con la cámara para saber qué especie tienes'),
+      icon: 'camera',
+    },
+    {
+      key: 'watering',
+      title: t('No olvidar el riego'),
+      subtitle: t('Recordatorios claros según el clima y cada especie'),
+      icon: 'water',
+    },
+    {
+      key: 'cure',
+      title: t('Curar una planta enferma'),
+      subtitle: t('Diagnostica hojas amarillas, manchas y plagas'),
+      icon: 'medkit',
+    },
+  ];
 
   const handleMomentumEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const newIndex = Math.round(event.nativeEvent.contentOffset.x / Math.max(width, 1));
     setIndex(newIndex);
   };
 
-  const handleNext = async () => {
-    if (index < PAGES.length - 1) {
-      scrollRef.current?.scrollTo({ x: width * (index + 1), animated: !motion.isReduced });
-      setIndex(index + 1);
-      return;
+  const goToStep = (step: number) => {
+    scrollRef.current?.scrollTo({ x: width * step, animated: !motion.isReduced });
+    setIndex(step);
+  };
+
+  const handleNext = () => {
+    if (index < 2) {
+      goToStep(index + 1);
+    } else {
+      onComplete();
     }
-    try {
-      await requestNotificationPermissions();
-    } catch {}
-    onComplete();
   };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <TouchableOpacity
-        onPress={onComplete}
-        accessibilityRole="button"
-        accessibilityLabel={t('Saltar introducción')}
-        accessibilityHint={t('Pasa directamente a la pantalla principal')}
-        hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-        style={styles.skipButton}
-      >
-        <Text style={[typography.subheadline, { color: colors.textSecondary, fontWeight: '600' }]}>{t('Saltar')}</Text>
-      </TouchableOpacity>
+      {/* Botón Omitir siempre visible */}
+      <View style={[styles.topBar, { paddingTop: Math.max(insets.top, 16) }]}>
+        <View style={{ flex: 1 }} />
+        <TouchableOpacity
+          onPress={onComplete}
+          accessibilityRole="button"
+          accessibilityLabel={t('Omitir')}
+          accessibilityHint={t('Pasa directamente a la pantalla principal')}
+          hitSlop={{ top: 12, bottom: 12, left: 16, right: 16 }}
+          style={styles.skipButton}
+        >
+          <Text style={[typography.body, { color: colors.textSecondary, fontWeight: '600' }]}>
+            {t('Omitir')}
+          </Text>
+        </TouchableOpacity>
+      </View>
 
       <ScrollView
         ref={scrollRef}
@@ -109,44 +97,161 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
         onMomentumScrollEnd={handleMomentumEnd}
         style={{ flex: 1 }}
       >
-        {PAGES.map((page, i) => {
-          const accent = getAccent(page.accent);
-          const isWelcome = i === 0;
-          return (
-            <View key={page.title} style={[styles.page, { width }]}>
-              <Animated.View
-                style={[
-                  styles.iconCircle,
-                  {
-                    backgroundColor: accent + '22',
-                    transform: [{ scale: isWelcome ? welcomeScale : 1 }],
-                    opacity: isWelcome ? welcomeOpacity : 1,
-                  },
-                ]}
-              >
-                <Ionicons name={page.icon} size={72} color={accent} />
-              </Animated.View>
-              <Text style={[typography.largeTitle, { color: colors.textPrimary, textAlign: 'center', marginTop: spacing.xl }]}>
-                {t(page.title)}
-              </Text>
-              <Text
-                style={[
-                  typography.body,
-                  { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.md, paddingHorizontal: spacing.lg, lineHeight: 26 },
-                ]}
-              >
-                {t(page.description)}
-              </Text>
-            </View>
-          );
-        })}
+        {/* PASO 1: Bienvenida e Idioma */}
+        <View style={[styles.page, { width }]}>
+          <View style={[styles.iconCircle, { backgroundColor: colors.primaryLight }]}>
+            <Ionicons name="leaf" size={64} color={colors.primary} />
+          </View>
+          <Text style={[typography.title1, styles.title, { color: colors.textPrimary }]}>
+            {t('Bienvenido a EcoScan')}
+          </Text>
+          <Text style={[typography.subheadline, styles.subtitle, { color: colors.textSecondary }]}>
+            {t('Elige tu idioma para comenzar')}
+          </Text>
+
+          <View style={styles.languageOptions}>
+            {LANGUAGES.map((lang) => {
+              const selected = language === lang.code;
+              return (
+                <TouchableOpacity
+                  key={lang.code}
+                  onPress={() => {
+                    try {
+                      Haptics.selectionAsync();
+                    } catch {}
+                    setLanguage(lang.code);
+                  }}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected }}
+                  accessibilityLabel={lang.label}
+                  style={[
+                    styles.langCard,
+                    {
+                      borderColor: selected ? colors.primary : colors.border,
+                      backgroundColor: selected ? colors.primaryLight : colors.surface,
+                      borderRadius: layout.borderRadius.lg,
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      typography.headline,
+                      { color: selected ? colors.primaryDark : colors.textPrimary },
+                    ]}
+                  >
+                    {lang.label}
+                  </Text>
+                  {selected ? (
+                    <Ionicons name="checkmark-circle" size={24} color={colors.primary} />
+                  ) : (
+                    <View style={[styles.radioCircle, { borderColor: colors.border }]} />
+                  )}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+
+        {/* PASO 2: ¿Qué quieres lograr? */}
+        <View style={[styles.page, { width }]}>
+          <Text style={[typography.title1, styles.title, { color: colors.textPrimary, marginTop: 10 }]}>
+            {t('¿Qué quieres lograr?')}
+          </Text>
+          <Text style={[typography.subheadline, styles.subtitle, { color: colors.textSecondary, marginBottom: spacing.lg }]}>
+            {t('Adaptaremos tus cuidados y recordatorios a tu prioridad')}
+          </Text>
+
+          <View style={styles.goalsList}>
+            {GOALS.map((goal) => {
+              const selected = userGoal === goal.key;
+              return (
+                <TouchableOpacity
+                  key={goal.key}
+                  onPress={() => {
+                    try {
+                      Haptics.selectionAsync();
+                    } catch {}
+                    setUserGoal(goal.key);
+                  }}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected }}
+                  accessibilityLabel={`${goal.title}. ${goal.subtitle}`}
+                  style={[
+                    styles.goalCard,
+                    {
+                      borderColor: selected ? colors.primary : colors.border,
+                      backgroundColor: selected ? colors.primaryLight : colors.surface,
+                      borderRadius: layout.borderRadius.lg,
+                    },
+                  ]}
+                >
+                  <View
+                    style={[
+                      styles.goalIconBox,
+                      {
+                        backgroundColor: selected ? colors.primary : colors.surfaceSecondary,
+                      },
+                    ]}
+                  >
+                    <Ionicons
+                      name={goal.icon}
+                      size={24}
+                      color={selected ? '#FFFFFF' : colors.textSecondary}
+                    />
+                  </View>
+                  <View style={{ flex: 1, marginLeft: spacing.md, marginRight: spacing.xs }}>
+                    <Text
+                      style={[
+                        typography.headline,
+                        { color: selected ? colors.primaryDark : colors.textPrimary },
+                      ]}
+                    >
+                      {goal.title}
+                    </Text>
+                    <Text
+                      style={[
+                        typography.caption1,
+                        { color: colors.textSecondary, marginTop: 2, lineHeight: 18 },
+                      ]}
+                    >
+                      {goal.subtitle}
+                    </Text>
+                  </View>
+                  {selected ? (
+                    <Ionicons name="checkmark-circle" size={22} color={colors.primary} />
+                  ) : null}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+
+        {/* PASO 3: Tu jardín inteligente */}
+        <View style={[styles.page, { width }]}>
+          <View style={[styles.iconCircle, { backgroundColor: colors.accent + '22' }]}>
+            <Ionicons name="sparkles" size={64} color={colors.primary} />
+          </View>
+          <Text style={[typography.title1, styles.title, { color: colors.textPrimary }]}>
+            {t('Tu jardín en tus manos')}
+          </Text>
+          <Text
+            style={[
+              typography.body,
+              styles.subtitle,
+              { color: colors.textSecondary, paddingHorizontal: spacing.md, lineHeight: 26 },
+            ]}
+          >
+            {t('Cuidados sencillos, recordatorios oportunos y fichas claras para que tus plantas crezcan felices.')}
+          </Text>
+        </View>
       </ScrollView>
 
-      <View style={styles.footer}>
+      {/* FOOTER: Indicador de 3 pasos y botón de acción */}
+      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 24) }]}>
         <View style={styles.dots} accessibilityRole="none">
-          {PAGES.map((page, i) => (
+          {[0, 1, 2].map((i) => (
             <View
-              key={page.title}
+              key={i}
               style={[
                 styles.dot,
                 {
@@ -159,14 +264,12 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
         </View>
 
         <Button
-          title={index < PAGES.length - 1 ? t('Siguiente') : t('Comenzar')}
+          title={index < 2 ? t('Siguiente') : t('Empezar')}
           onPress={handleNext}
           variant="primary"
           size="lg"
           style={{ marginTop: spacing.lg, alignSelf: 'stretch' }}
-          icon={
-            index < PAGES.length - 1 ? undefined : <Ionicons name="checkmark" size={20} color="#FFFFFF" />
-          }
+          icon={index < 2 ? undefined : <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />}
         />
       </View>
     </View>
@@ -175,14 +278,19 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    zIndex: 10,
+  },
   skipButton: {
-    alignSelf: 'flex-end',
-    paddingHorizontal: 24,
-    paddingTop: 56,
-    paddingBottom: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     minHeight: 48,
     minWidth: 48,
     justifyContent: 'center',
+    alignItems: 'center',
   },
   page: {
     flex: 1,
@@ -191,15 +299,62 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   iconCircle: {
-    width: 160,
-    height: 160,
-    borderRadius: 80,
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
+  title: {
+    textAlign: 'center',
+    fontWeight: '800',
+  },
+  subtitle: {
+    textAlign: 'center',
+    marginTop: 8,
+    paddingHorizontal: 12,
+  },
+  languageOptions: {
+    width: '100%',
+    marginTop: 28,
+    gap: 12,
+  },
+  langCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 18,
+    borderWidth: 2,
+    minHeight: 64,
+  },
+  radioCircle: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 2,
+  },
+  goalsList: {
+    width: '100%',
+    gap: 12,
+  },
+  goalCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderWidth: 2,
+    minHeight: 76,
+  },
+  goalIconBox: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
   },
   footer: {
     paddingHorizontal: 24,
-    paddingBottom: 40,
     alignItems: 'center',
   },
   dots: {

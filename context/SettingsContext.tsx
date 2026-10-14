@@ -14,6 +14,7 @@ import type { AppLanguage } from '../i18n/types';
  */
 
 export type ThemePreference = 'system' | 'light' | 'dark';
+export type UserGoal = 'identify' | 'watering' | 'cure';
 export type { AppLanguage } from '../i18n/types';
 
 export const LANGUAGES: { code: AppLanguage; label: string }[] = [
@@ -27,6 +28,7 @@ interface SettingsContextType {
   notificationsEnabled: boolean;
   hasOnboarded: boolean;
   easyMode: boolean;
+  userGoal?: UserGoal;
   resolvedScheme: 'light' | 'dark';
   /** `true` cuando las preferencias persistidas ya se cargaron desde disco. */
   isHydrated: boolean;
@@ -34,6 +36,7 @@ interface SettingsContextType {
   setLanguage: (value: AppLanguage) => void;
   setNotificationsEnabled: (value: boolean) => void;
   setEasyMode: (value: boolean) => void;
+  setUserGoal: (value: UserGoal) => void;
   completeOnboarding: () => void;
   resetOnboarding: () => void;
   resetSettings: () => void;
@@ -47,6 +50,7 @@ interface PersistedSettings {
   notificationsEnabled: boolean;
   hasOnboarded: boolean;
   easyMode?: boolean;
+  userGoal?: UserGoal;
 }
 
 const DEFAULT_SETTINGS: PersistedSettings = {
@@ -55,6 +59,7 @@ const DEFAULT_SETTINGS: PersistedSettings = {
   notificationsEnabled: true,
   hasOnboarded: false,
   easyMode: false,
+  userGoal: 'watering',
 };
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
@@ -64,6 +69,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(true);
   const [hasOnboarded, setHasOnboarded] = useState<boolean>(false);
   const [easyMode, setEasyMode] = useState<boolean>(false);
+  const [userGoal, setUserGoal] = useState<UserGoal>('watering');
   const [isHydrated, setIsHydrated] = useState<boolean>(false);
 
   // Hidratación desde disco.
@@ -77,6 +83,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       setNotificationsEnabled(stored.notificationsEnabled ?? true);
       setHasOnboarded(stored.hasOnboarded ?? false);
       setEasyMode(Boolean(stored.easyMode));
+      setUserGoal(stored.userGoal ?? 'watering');
       setIsHydrated(true);
     })();
     return () => {
@@ -93,8 +100,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       notificationsEnabled,
       hasOnboarded,
       easyMode,
+      userGoal,
     });
-  }, [isHydrated, themePreference, language, notificationsEnabled, hasOnboarded, easyMode]);
+  }, [isHydrated, themePreference, language, notificationsEnabled, hasOnboarded, easyMode, userGoal]);
 
   // Mantiene el traductor global (servicios, alertas) en sintonía con el idioma.
   useEffect(() => {
@@ -111,12 +119,14 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       notificationsEnabled,
       hasOnboarded,
       easyMode,
+      userGoal,
       resolvedScheme,
       isHydrated,
       setThemePreference,
       setLanguage,
       setNotificationsEnabled,
       setEasyMode,
+      setUserGoal,
       completeOnboarding: () => setHasOnboarded(true),
       resetOnboarding: () => setHasOnboarded(false),
       resetSettings: () => {
@@ -124,9 +134,10 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         setLanguage('es');
         setNotificationsEnabled(true);
         setEasyMode(false);
+        setUserGoal('watering');
       },
     }),
-    [themePreference, language, notificationsEnabled, hasOnboarded, easyMode, resolvedScheme, isHydrated]
+    [themePreference, language, notificationsEnabled, hasOnboarded, easyMode, userGoal, resolvedScheme, isHydrated]
   );
 
   return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>;
@@ -144,12 +155,14 @@ export function useSettings(): SettingsContextType {
       notificationsEnabled: true,
       hasOnboarded: false,
       easyMode: false,
+      userGoal: 'watering',
       resolvedScheme: fallbackScheme,
       isHydrated: false,
       setThemePreference: () => {},
       setLanguage: () => {},
       setNotificationsEnabled: () => {},
       setEasyMode: () => {},
+      setUserGoal: () => {},
       completeOnboarding: () => {},
       resetOnboarding: () => {},
       resetSettings: () => {},

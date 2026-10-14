@@ -97,16 +97,21 @@ const matchesEnvironment = (
   return value === env || value === 'both';
 };
 
+import { normalizeDiacritics } from '../utils/textUtils';
+export { normalizeDiacritics };
+
 /** Aplica el idioma activo a los textos de UI de una especie (sin tocar nombres). */
 function localizeSpeciesText(plant: CatalogPlant): CatalogPlant {
   return { ...plant, difficulty: t(plant.difficulty) as CatalogPlant['difficulty'] };
 }
 
 export function searchEncyclopedia(filters: EncyclopediaFilters): CatalogPlant[] {
-  const q = filters.query.toLowerCase().trim();
+  const q = normalizeDiacritics(filters.query);
   const results = BOTANICAL_KNOWLEDGE_BASE.filter((plant) => {
     if (q) {
-      const haystack = `${plant.name} ${plant.scientificName} ${plant.family}`.toLowerCase();
+      const haystack = normalizeDiacritics(
+        `${plant.name} ${plant.scientificName} ${plant.family}`
+      );
       if (!haystack.includes(q)) return false;
     }
     if (filters.difficulty !== 'all' && plant.difficulty !== filters.difficulty) return false;

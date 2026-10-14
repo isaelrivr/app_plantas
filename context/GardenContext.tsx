@@ -12,6 +12,7 @@ export interface CareTask {
   title: string;
   dueDate: string;
   completed: boolean;
+  repeatIntervalDays?: number;
 }
 
 export interface Room {
@@ -175,7 +176,10 @@ interface GardenContextType {
   updatePlantHealth: (id: string, score: number, diagnosis: string) => void;
   toggleTaskCompleted: (plantId: string, taskId: string) => void;
   setTaskCompletion: (plantId: string, taskId: string, completed: boolean) => void;
+  updateCareTask: (plantId: string, taskId: string, updates: Partial<CareTask>) => void;
+  addCareTask: (plantId: string, task: Omit<CareTask, 'id' | 'completed'>) => void;
   removeCareTask: (plantId: string, taskId: string) => void;
+  addCustomPlant: (name: string, options?: { wateringFrequencyDays?: number; light?: string; roomId?: string; scientificName?: string }) => string;
   assignPlantToRoom: (plantId: string, roomId?: string) => void;
   createRoom: (name: string, icon?: Room['icon']) => Room;
   removeRoom: (roomId: string) => void;
@@ -371,6 +375,64 @@ export function GardenProvider({ children }: { children: ReactNode }) {
       : plant));
   };
 
+  const updateCareTask = (plantId: string, taskId: string, updates: Partial<CareTask>) => {
+    setPlants((prev) =>
+      prev.map((plant) => {
+        if (plant.id !== plantId) return plant;
+        return {
+          ...plant,
+          careTasks: plant.careTasks?.map((task) =>
+            task.id === taskId ? { ...task, ...updates } : task
+          ),
+        };
+      })
+    );
+  };
+
+  const addCareTask = (plantId: string, task: Omit<CareTask, 'id' | 'completed'>) => {
+    const newTask: CareTask = {
+      ...task,
+      id: `task-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      completed: false,
+    };
+    setPlants((prev) =>
+      prev.map((plant) => {
+        if (plant.id !== plantId) return plant;
+        return {
+          ...plant,
+          careTasks: [...(plant.careTasks ?? []), newTask],
+        };
+      })
+    );
+  };
+
+  const addCustomPlant = (
+    name: string,
+    options?: { wateringFrequencyDays?: number; light?: string; roomId?: string; scientificName?: string }
+  ): string => {
+    const days = options?.wateringFrequencyDays ?? 7;
+    const stamp = Date.now();
+    const input: NewPlantInput = {
+      name: name.trim(),
+      scientificName: options?.scientificName || `${name.trim()} sp.`,
+      wateringFrequencyDays: days,
+      light: options?.light || t('Luz indirecta'),
+      avatarEmoji: '🌿',
+      roomId: options?.roomId,
+      careTasks: [
+        {
+          id: `task-${stamp}-1`,
+          type: 'riego',
+          title: t('Riego regular'),
+          dueDate: t('En {dias} días', { dias: days }),
+          completed: false,
+          repeatIntervalDays: days,
+        },
+      ],
+    };
+    return addPlant(input, options?.roomId);
+  };
+
   const assignPlantToRoom = (plantId: string, roomId?: string) => {
     setPlants((prev) => prev.map((p) => (p.id === plantId ? { ...p, roomId } : p)));
   };
@@ -450,7 +512,10 @@ export function GardenProvider({ children }: { children: ReactNode }) {
         updatePlantHealth,
         toggleTaskCompleted,
         setTaskCompletion,
+        updateCareTask,
+        addCareTask,
         removeCareTask,
+        addCustomPlant,
         assignPlantToRoom,
         createRoom,
         removeRoom,
