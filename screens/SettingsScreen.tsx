@@ -26,6 +26,12 @@ import { clearGrowthDiary } from '../services/growthDiaryService';
 import { clearPersistedImages } from '../services/mediaService';
 import { announce } from '../services/accessibilityService';
 import { useTranslation } from '../i18n';
+import {
+  SUPPORTED_CITIES,
+  getManualCity,
+  setManualCity,
+  ManualCity,
+} from '../services/weatherService';
 
 const NOTIFICATION_HOURS = ['08:00', '09:00', '10:00', '18:00', '20:00'];
 
@@ -41,6 +47,8 @@ export const SettingsScreen: React.FC = () => {
     setNotificationsEnabled,
     easyMode,
     setEasyMode,
+    analyticsConsent,
+    setAnalyticsConsent,
     resetOnboarding,
     resetSettings,
   } = useSettings();
@@ -50,6 +58,11 @@ export const SettingsScreen: React.FC = () => {
   const { showToast, confirm } = useFeedback();
 
   const [notificationHour, setNotificationHour] = useState('09:00');
+  const [currentCityName, setCurrentCityName] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    getManualCity().then((city) => setCurrentCityName(city));
+  }, []);
 
   const themeOptions: { key: ThemePreference; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
     { key: 'system', label: t('Sistema'), icon: 'phone-portrait-outline' },
@@ -325,6 +338,72 @@ export const SettingsScreen: React.FC = () => {
           )}
         </Card>
 
+        {/* UBICACIÓN DEL CLIMA */}
+        {renderSectionTitle(t('Ubicación para el clima'))}
+        <Card>
+          <View style={styles.row}>
+            <View style={{ flex: 1 }}>
+              <Text style={[typography.body, { color: colors.textPrimary }]}>{t('Ciudad para el pronóstico')}</Text>
+              <Text style={[typography.caption1, { color: colors.textTertiary, marginTop: 2 }]}>
+                {currentCityName ? currentCityName : t('Automática (usando tu ubicación)')}
+              </Text>
+            </View>
+          </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingVertical: 8 }}>
+            <TouchableOpacity
+              onPress={() => {
+                try { Haptics.selectionAsync(); } catch {}
+                setManualCity(null);
+                setCurrentCityName(null);
+                showToast({ message: t('Ubicación fijada en automática'), type: 'success' });
+              }}
+              style={[
+                styles.cityPill,
+                {
+                  backgroundColor: !currentCityName ? colors.primary : colors.surfaceSecondary,
+                  borderColor: !currentCityName ? colors.primary : colors.border,
+                },
+              ]}
+              accessibilityRole="button"
+              accessibilityState={{ selected: !currentCityName }}
+              accessibilityLabel={t('Ubicación automática por GPS')}
+            >
+              <Ionicons name="navigate-outline" size={16} color={!currentCityName ? '#FFFFFF' : colors.textPrimary} style={{ marginRight: 4 }} />
+              <Text style={[typography.caption1, { color: !currentCityName ? '#FFFFFF' : colors.textPrimary, fontWeight: !currentCityName ? '700' : '500' }]}>
+                {t('Automática')}
+              </Text>
+            </TouchableOpacity>
+            {SUPPORTED_CITIES.map((c) => {
+              const isSelected = currentCityName?.toLowerCase() === c.name.toLowerCase();
+              return (
+                <TouchableOpacity
+                  key={c.name}
+                  onPress={() => {
+                    try { Haptics.selectionAsync(); } catch {}
+                    setManualCity(c.name);
+                    setCurrentCityName(c.name);
+                    showToast({ message: t('Ubicación fijada en {ciudad}', { ciudad: c.name }), type: 'success' });
+                  }}
+                  style={[
+                    styles.cityPill,
+                    {
+                      backgroundColor: isSelected ? colors.primary : colors.surfaceSecondary,
+                      borderColor: isSelected ? colors.primary : colors.border,
+                    },
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: isSelected }}
+                  accessibilityLabel={t('Fijar ciudad en {ciudad}', { ciudad: c.name })}
+                >
+                  <Text style={[typography.caption1, { color: isSelected ? '#FFFFFF' : colors.textPrimary, fontWeight: isSelected ? '700' : '500' }]}>
+                    {c.name}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </Card>
+
         {/* 5. PLAN */}
         {renderSectionTitle(t('Plan'))}
         <Card>
@@ -349,6 +428,25 @@ export const SettingsScreen: React.FC = () => {
         {/* 6. PRIVACIDAD Y DATOS */}
         {renderSectionTitle(t('Privacidad y datos'))}
         <Card>
+          <View style={styles.row}>
+            <View style={{ flex: 1, paddingRight: spacing.sm }}>
+              <Text style={[typography.body, { color: colors.textPrimary }]}>{t('Compartir datos de uso anónimos')}</Text>
+              <Text style={[typography.caption1, { color: colors.textTertiary, marginTop: 2, lineHeight: 18 }]}>
+                {t('Nos ayuda a mejorar la app y detectar fallos. Nunca enviamos fotos, nombres ni datos personales.')}
+              </Text>
+            </View>
+            <Switch
+              value={analyticsConsent}
+              onValueChange={(val) => {
+                try { Haptics.selectionAsync(); } catch {}
+                setAnalyticsConsent(val);
+                announce(val ? t('Analítica anónima activada') : t('Analítica anónima desactivada'));
+              }}
+              trackColor={{ true: colors.primary, false: colors.border }}
+              accessibilityLabel={t('Compartir datos de uso anónimos')}
+            />
+          </View>
+          <View style={[styles.separator, { backgroundColor: colors.border }]} />
           <TouchableOpacity onPress={handleExportData} accessibilityRole="button" accessibilityLabel={t('Exportar copia de mi jardín')} style={styles.rowTap}>
             <View style={{ flex: 1 }}>
               <Text style={[typography.body, { color: colors.textPrimary }]}>{t('Exportar copia de mi jardín')}</Text>
@@ -359,8 +457,13 @@ export const SettingsScreen: React.FC = () => {
             <Ionicons name="share-outline" size={20} color={colors.primary} />
           </TouchableOpacity>
           <View style={[styles.separator, { backgroundColor: colors.border }]} />
-          <TouchableOpacity onPress={handlePrivacy} accessibilityRole="button" accessibilityLabel={t('Política de privacidad')} style={styles.rowTap}>
+          <TouchableOpacity onPress={() => navigation.navigate('PrivacyPolicy')} accessibilityRole="button" accessibilityLabel={t('Política de privacidad')} style={styles.rowTap}>
             <Text style={[typography.body, { color: colors.textPrimary }]}>{t('Política de privacidad')}</Text>
+            <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
+          </TouchableOpacity>
+          <View style={[styles.separator, { backgroundColor: colors.border }]} />
+          <TouchableOpacity onPress={() => navigation.navigate('TermsOfService')} accessibilityRole="button" accessibilityLabel={t('Términos y condiciones')} style={styles.rowTap}>
+            <Text style={[typography.body, { color: colors.textPrimary }]}>{t('Términos y condiciones')}</Text>
             <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
           </TouchableOpacity>
           <View style={[styles.separator, { backgroundColor: colors.border }]} />
@@ -378,6 +481,16 @@ export const SettingsScreen: React.FC = () => {
         {/* 7. AYUDA Y CONTACTO */}
         {renderSectionTitle(t('Ayuda y contacto'))}
         <Card>
+          <TouchableOpacity onPress={() => navigation.navigate('Help')} accessibilityRole="button" accessibilityLabel={t('Centro de ayuda y preguntas frecuentes')} style={styles.rowTap}>
+            <View style={{ flex: 1 }}>
+              <Text style={[typography.body, { color: colors.textPrimary }]}>{t('Centro de ayuda')}</Text>
+              <Text style={[typography.caption1, { color: colors.textTertiary, marginTop: 2 }]}>
+                {t('Preguntas frecuentes, guía y reportar un problema')}
+              </Text>
+            </View>
+            <Ionicons name="help-circle-outline" size={22} color={colors.primary} />
+          </TouchableOpacity>
+          <View style={[styles.separator, { backgroundColor: colors.border }]} />
           <TouchableOpacity onPress={handleContactSupport} accessibilityRole="button" accessibilityLabel={t('Contactar por correo')} style={styles.rowTap}>
             <View style={{ flex: 1 }}>
               <Text style={[typography.body, { color: colors.textPrimary }]}>{t('Contactar con soporte')}</Text>
@@ -458,5 +571,14 @@ const styles = StyleSheet.create({
     minWidth: 40,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  cityPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    minHeight: 40,
   },
 });

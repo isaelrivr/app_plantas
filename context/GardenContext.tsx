@@ -1,8 +1,18 @@
 import React, { createContext, useContext, useEffect, useMemo, useState, ReactNode } from 'react';
+import { AppState } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { loadJSON, saveJSON, STORAGE_KEYS } from '../services/storage';
+import { loadJSON, saveJSON, STORAGE_KEYS, validateGardenData } from '../services/storage';
 import { t } from '../i18n';
 import { deleteGrowthEntriesForPlant } from '../services/growthDiaryService';
+import {
+  checkNewAchievements,
+  loadUnlockedAchievements,
+  saveUnlockedAchievements,
+  UnlockedAchievementsMap,
+  Achievement,
+} from '../services/gamificationService';
+import { deleteImage, reconcileOrphanImages } from '../services/mediaService';
+import { AchievementCelebrationModal } from '../components/AchievementCelebrationModal';
 
 export type CareTaskType = 'riego' | 'fertilizante' | 'poda' | 'trasplante';
 
@@ -165,6 +175,7 @@ interface GardenContextType {
   plants: GardenPlant[];
   rooms: Room[];
   stats: GardenStats;
+  unlockedAchievements: UnlockedAchievementsMap;
   /** `true` cuando el estado persistido ya se cargó desde disco. */
   isHydrated: boolean;
   waterPlantToday: (id: string) => void;
@@ -214,20 +225,26 @@ export function GardenProvider({ children }: { children: ReactNode }) {
   const [plants, setPlants] = useState<GardenPlant[]>([]);
   const [rooms, setRooms] = useState<Room[]>(DEFAULT_ROOMS);
   const [statsState, setStatsState] = useState<StatsState>(INITIAL_STATS);
+  const [unlockedAchievements, setUnlockedAchievements] = useState<UnlockedAchievementsMap>({});
+  const [celebratingAchievement, setCelebratingAchievement] = useState<Achievement | null>(null);
   const [isHydrated, setIsHydrated] = useState<boolean>(false);
 
-  // Hidratación: lee el jardín persistido una sola vez al iniciar.
+  // Hidratación: lee el jardín y logros persistidos una sola vez al iniciar.
   useEffect(() => {
     let active = true;
     (async () => {
-      const stored = await loadJSON<PersistedGarden | null>(STORAGE_KEYS.garden, null);
+      const stored = await loadJSON<PersistedGarden | null>(STORAGE_KEYS.garden, null, validateGardenData);
+      const storedAchievements = await loadUnlockedAchievements();
       if (!active) return;
+      setUnlockedAchievements(storedAchievements);
       if (stored) {
         setPlants(Array.isArray(stored.plants) ? stored.plants : []);
         setRooms(stored.rooms && stored.rooms.length > 0 ? stored.rooms : DEFAULT_ROOMS);
         const persistedStats = { ...INITIAL_STATS, ...(stored.stats ?? {}) };
-        if (persistedStats.lastIdentificationDate !== dateKey()) {
+        const today = dateKey();
+        if (persistedStats.lastIdentificationDate !== today) {
           persistedStats.identificationsToday = 0;
+          persistedStats.lastIdentificationDate = today;
         }
         setStatsState(persistedStats);
       } else if (__DEV__) {
@@ -235,11 +252,50 @@ export function GardenProvider({ children }: { children: ReactNode }) {
         setPlants(INITIAL_PLANTS);
       }
       setIsHydrated(true);
+
+      // Reconciliación de fotos huérfanas en segundo plano
+      try {
+        const plantPhotos = (stored?.plants ?? []).map((p) => p.imageUri).filter(Boolean) as string[];
+        void reconcileOrphanImages(plantPhotos);
+      } catch {}
     })();
     return () => {
       active = false;
     };
   }, []);
+
+  // Normalizar el contador de identificaciones al cambiar de día (cuando la app vuelve a primer plano)
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        const today = dateKey();
+        setStatsState((prev) => {
+          if (prev.lastIdentificationDate !== today) {
+            return { ...prev, identificationsToday: 0, lastIdentificationDate: today };
+          }
+          return prev;
+        });
+      }
+    });
+    return () => sub.remove();
+  }, []);
+
+  // Comprobar y celebrar logros al ganar nuevas estadísticas
+  useEffect(() => {
+    if (!isHydrated) return;
+    const { newAchievements, updatedMap } = checkNewAchievements(
+      {
+        ...statsState,
+        totalPlants: plants.length,
+      },
+      unlockedAchievements
+    );
+    if (newAchievements.length > 0) {
+      setUnlockedAchievements(updatedMap);
+      void saveUnlockedAchievements(updatedMap);
+      setCelebratingAchievement(newAchievements[0]);
+    }
+  }, [isHydrated, statsState, plants.length, unlockedAchievements]);
 
   // Persistencia: guarda en disco tras cada cambio, pero nunca antes de hidratar.
   useEffect(() => {
@@ -315,8 +371,12 @@ export function GardenProvider({ children }: { children: ReactNode }) {
   };
 
   const removePlant = (id: string) => {
+    const target = plants.find((p) => p.id === id);
     setPlants((prev) => prev.filter((p) => p.id !== id));
     deleteGrowthEntriesForPlant(id);
+    if (target?.imageUri) {
+      void deleteImage(target.imageUri);
+    }
   };
 
   const restorePlant = (plant: GardenPlant) => {
@@ -502,6 +562,7 @@ export function GardenProvider({ children }: { children: ReactNode }) {
         plants,
         rooms,
         stats,
+        unlockedAchievements,
         isHydrated,
         waterPlantToday,
         undoWaterPlant,
@@ -527,6 +588,10 @@ export function GardenProvider({ children }: { children: ReactNode }) {
       }}
     >
       {children}
+      <AchievementCelebrationModal
+        achievement={celebratingAchievement}
+        onDismiss={() => setCelebratingAchievement(null)}
+      />
     </GardenContext.Provider>
   );
 }

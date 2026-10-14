@@ -6,8 +6,8 @@
  * Firestore). Sin dependencias externas.
  */
 
-import { Ionicons } from '@expo/vector-icons';
-import { t } from '../i18n';
+import type { Ionicons } from '@expo/vector-icons';
+import { loadJSON, saveJSON, STORAGE_KEYS, validateAchievementsData } from './storage.ts';
 
 export type AchievementMetric =
   | 'streak'
@@ -43,6 +43,9 @@ export interface GamificationStats {
   totalDiagnoses: number;
   tasksCompleted: number;
 }
+
+// Helper para strings de logros (las pantallas traducen con useTranslation)
+const t = (text: string): string => text;
 
 export const ACHIEVEMENTS: AchievementDefinition[] = [
   {
@@ -128,6 +131,8 @@ export const ACHIEVEMENTS: AchievementDefinition[] = [
   },
 ];
 
+export const SUPPORTED_ACHIEVEMENTS = ACHIEVEMENTS;
+
 const metricValue = (stats: GamificationStats, metric: AchievementMetric): number => {
   switch (metric) {
     case 'streak':
@@ -147,18 +152,72 @@ const metricValue = (stats: GamificationStats, metric: AchievementMetric): numbe
   }
 };
 
-export function getAchievements(stats: GamificationStats): Achievement[] {
+export type UnlockedAchievementsMap = Record<string, string>; // id -> unlockedAt ISO string
+
+export async function loadUnlockedAchievements(): Promise<UnlockedAchievementsMap> {
+  return loadJSON<UnlockedAchievementsMap>(
+    STORAGE_KEYS.achievements,
+    {},
+    validateAchievementsData
+  );
+}
+
+export async function saveUnlockedAchievements(data: UnlockedAchievementsMap): Promise<boolean> {
+  return saveJSON(STORAGE_KEYS.achievements, data);
+}
+
+export function getAchievements(
+  stats: GamificationStats,
+  unlockedMap: UnlockedAchievementsMap = {}
+): Achievement[] {
   return ACHIEVEMENTS.map((def) => {
     const progress = Math.min(def.target, metricValue(stats, def.metric));
+    const isStored = Boolean(unlockedMap[def.id]);
+    const isUnlocked = isStored || progress >= def.target;
     return {
       ...def,
       title: t(def.title),
       description: t(def.description),
       reward: t(def.reward),
       progress,
-      unlocked: progress >= def.target,
+      unlocked: isUnlocked,
+      unlockedAt: unlockedMap[def.id],
     };
   });
+}
+
+/**
+ * Comprueba si con las nuevas estadísticas se ha alcanzado algún logro que
+ * aún no estuviera en `unlockedMap`. Devuelve los logros recién ganados y el
+ * nuevo mapa actualizado.
+ */
+export function checkNewAchievements(
+  stats: GamificationStats,
+  currentUnlockedMap: UnlockedAchievementsMap
+): { newAchievements: Achievement[]; updatedMap: UnlockedAchievementsMap } {
+  const newAchievements: Achievement[] = [];
+  const updatedMap: UnlockedAchievementsMap = { ...currentUnlockedMap };
+  const now = new Date().toISOString();
+
+  for (const def of ACHIEVEMENTS) {
+    if (!updatedMap[def.id]) {
+      const progress = metricValue(stats, def.metric);
+      if (progress >= def.target) {
+        updatedMap[def.id] = now;
+        newAchievements.push({
+          ...def,
+          title: t(def.title),
+          description: t(def.description),
+          reward: t(def.reward),
+          progress: def.target,
+          unlocked: true,
+          unlockedAt: now,
+        });
+      }
+    }
+  }
+
+  return { newAchievements, updatedMap };
 }
 
 export interface WeeklySummary {

@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-nati
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '../theme';
 import { useTranslation, t as tGlobal } from '../i18n';
+import { captureException } from '../services/crashReportingService';
 import { ErrorBanner } from './ErrorBanner';
 
 interface ErrorBoundaryProps {
@@ -84,8 +85,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
   }
 
   componentDidCatch(error: unknown, info: React.ErrorInfo): void {
-    // En Fase 6 este punto se conectará con Sentry.
-    console.error('[ErrorBoundary] Error no controlado:', error, info.componentStack);
+    captureException(error, { componentStack: info.componentStack ?? undefined });
   }
 
   handleRetry = (): void => {

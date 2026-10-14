@@ -81,3 +81,39 @@ export async function clearPersistedImages(): Promise<void> {
     console.warn('[media] No se pudieron borrar las imágenes persistidas.', error);
   }
 }
+
+/**
+ * Reconcilia y elimina imágenes huérfanas en el almacenamiento local.
+ * Compara los archivos físicos con la lista de `activeUris` facilitada
+ * por el jardín y el diario. Devuelve el número de archivos eliminados.
+ */
+export async function reconcileOrphanImages(activeUris: string[]): Promise<number> {
+  const activeSet = new Set(activeUris.filter((u) => u && u.startsWith('file://')));
+  let deletedCount = 0;
+
+  try {
+    const root = new Directory(Paths.document, MEDIA_ROOT);
+    if (!root.exists) return 0;
+
+    const subDirs = ['plants', 'growth'];
+    for (const sub of subDirs) {
+      const folder = new Directory(root, sub);
+      if (folder.exists) {
+        const entries = folder.list();
+        for (const entry of entries) {
+          if (entry instanceof File && !activeSet.has(entry.uri)) {
+            try {
+              entry.delete();
+              deletedCount++;
+            } catch {}
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.warn('[media] Error durante la reconciliación de fotos huérfanas.', error);
+  }
+
+  return deletedCount;
+}
+

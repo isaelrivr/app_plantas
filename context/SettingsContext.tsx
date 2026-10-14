@@ -1,16 +1,17 @@
 import React, { createContext, useContext, useEffect, useMemo, useState, ReactNode } from 'react';
 import { useColorScheme } from 'react-native';
-import { loadJSON, saveJSON, STORAGE_KEYS } from '../services/storage';
+import { loadJSON, saveJSON, STORAGE_KEYS, validateSettingsData } from '../services/storage';
 import { setI18nLanguage } from '../i18n/core';
 import type { AppLanguage } from '../i18n/types';
+import { setAnalyticsConsent as setServiceAnalyticsConsent, initAnalytics } from '../services/analyticsService';
 
 /**
  * SettingsContext
  *
  * Preferencias del usuario: tema, idioma, modo fácil (accesibilidad para adultos mayores),
- * notificaciones y estado de onboarding.
+ * notificaciones, consentimiento de analítica y estado de onboarding.
  *
- * Las preferencias se persisten localmente en AsyncStorage.
+ * Las preferencias se persisten localmente en AsyncStorage con validación en tiempo de ejecución.
  */
 
 export type ThemePreference = 'system' | 'light' | 'dark';
@@ -29,6 +30,7 @@ interface SettingsContextType {
   hasOnboarded: boolean;
   easyMode: boolean;
   userGoal?: UserGoal;
+  analyticsConsent: boolean;
   resolvedScheme: 'light' | 'dark';
   /** `true` cuando las preferencias persistidas ya se cargaron desde disco. */
   isHydrated: boolean;
@@ -37,6 +39,7 @@ interface SettingsContextType {
   setNotificationsEnabled: (value: boolean) => void;
   setEasyMode: (value: boolean) => void;
   setUserGoal: (value: UserGoal) => void;
+  setAnalyticsConsent: (value: boolean) => void;
   completeOnboarding: () => void;
   resetOnboarding: () => void;
   resetSettings: () => void;
@@ -51,6 +54,7 @@ interface PersistedSettings {
   hasOnboarded: boolean;
   easyMode?: boolean;
   userGoal?: UserGoal;
+  analyticsConsent?: boolean;
 }
 
 const DEFAULT_SETTINGS: PersistedSettings = {
@@ -60,6 +64,7 @@ const DEFAULT_SETTINGS: PersistedSettings = {
   hasOnboarded: false,
   easyMode: false,
   userGoal: 'watering',
+  analyticsConsent: false,
 };
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
@@ -70,13 +75,18 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [hasOnboarded, setHasOnboarded] = useState<boolean>(false);
   const [easyMode, setEasyMode] = useState<boolean>(false);
   const [userGoal, setUserGoal] = useState<UserGoal>('watering');
+  const [analyticsConsent, setAnalyticsConsentState] = useState<boolean>(false);
   const [isHydrated, setIsHydrated] = useState<boolean>(false);
 
-  // Hidratación desde disco.
+  // Hidratación desde disco con validación
   useEffect(() => {
     let active = true;
     (async () => {
-      const stored = await loadJSON<PersistedSettings>(STORAGE_KEYS.settings, DEFAULT_SETTINGS);
+      const stored = await loadJSON<PersistedSettings>(
+        STORAGE_KEYS.settings,
+        DEFAULT_SETTINGS,
+        validateSettingsData
+      );
       if (!active) return;
       setThemePreference(stored.themePreference ?? 'system');
       setLanguage(stored.language ?? 'es');
@@ -84,12 +94,20 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       setHasOnboarded(stored.hasOnboarded ?? false);
       setEasyMode(Boolean(stored.easyMode));
       setUserGoal(stored.userGoal ?? 'watering');
+
+      const consent = await initAnalytics();
+      setAnalyticsConsentState(consent || Boolean(stored.analyticsConsent));
       setIsHydrated(true);
     })();
     return () => {
       active = false;
     };
   }, []);
+
+  const handleSetAnalyticsConsent = (val: boolean) => {
+    setAnalyticsConsentState(val);
+    void setServiceAnalyticsConsent(val);
+  };
 
   // Persistencia tras cada cambio (nunca antes de hidratar).
   useEffect(() => {
@@ -101,10 +119,11 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       hasOnboarded,
       easyMode,
       userGoal,
+      analyticsConsent,
     });
-  }, [isHydrated, themePreference, language, notificationsEnabled, hasOnboarded, easyMode, userGoal]);
+  }, [isHydrated, themePreference, language, notificationsEnabled, hasOnboarded, easyMode, userGoal, analyticsConsent]);
 
-  // Mantiene el traductor global (servicios, alertas) en sintonía con el idioma.
+  // Mantiene el traductor global en sintonía con el idioma.
   useEffect(() => {
     setI18nLanguage(language);
   }, [language]);
@@ -120,6 +139,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       hasOnboarded,
       easyMode,
       userGoal,
+      analyticsConsent,
       resolvedScheme,
       isHydrated,
       setThemePreference,
@@ -127,6 +147,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       setNotificationsEnabled,
       setEasyMode,
       setUserGoal,
+      setAnalyticsConsent: handleSetAnalyticsConsent,
       completeOnboarding: () => setHasOnboarded(true),
       resetOnboarding: () => setHasOnboarded(false),
       resetSettings: () => {
@@ -135,9 +156,10 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         setNotificationsEnabled(true);
         setEasyMode(false);
         setUserGoal('watering');
+        handleSetAnalyticsConsent(false);
       },
     }),
-    [themePreference, language, notificationsEnabled, hasOnboarded, easyMode, userGoal, resolvedScheme, isHydrated]
+    [themePreference, language, notificationsEnabled, hasOnboarded, easyMode, userGoal, analyticsConsent, resolvedScheme, isHydrated]
   );
 
   return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>;
@@ -156,6 +178,7 @@ export function useSettings(): SettingsContextType {
       hasOnboarded: false,
       easyMode: false,
       userGoal: 'watering',
+      analyticsConsent: false,
       resolvedScheme: fallbackScheme,
       isHydrated: false,
       setThemePreference: () => {},
@@ -163,6 +186,7 @@ export function useSettings(): SettingsContextType {
       setNotificationsEnabled: () => {},
       setEasyMode: () => {},
       setUserGoal: () => {},
+      setAnalyticsConsent: () => {},
       completeOnboarding: () => {},
       resetOnboarding: () => {},
       resetSettings: () => {},

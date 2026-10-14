@@ -18,6 +18,9 @@ import { EncyclopediaScreen } from '../screens/EncyclopediaScreen';
 import { AchievementsScreen } from '../screens/AchievementsScreen';
 import { PaywallScreen } from '../screens/PaywallScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
+import { PrivacyPolicyScreen } from '../screens/PrivacyPolicyScreen';
+import { TermsOfServiceScreen } from '../screens/TermsOfServiceScreen';
+import { HelpScreen } from '../screens/HelpScreen';
 import { useAppTheme } from '../theme';
 import { usePremium } from '../context/PremiumContext';
 import { useTranslation } from '../i18n';
@@ -47,6 +50,9 @@ export type RootStackParamList = {
   Achievements: undefined;
   Paywall: undefined;
   Settings: undefined;
+  PrivacyPolicy: undefined;
+  TermsOfService: undefined;
+  Help: undefined;
 };
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
@@ -231,6 +237,9 @@ export const AppNavigator: React.FC = () => {
         options={{ animation: 'slide_from_bottom', presentation: 'modal' }}
       />
       <Stack.Screen name="Settings" component={SettingsScreen} options={{ animation: 'slide_from_right' }} />
+      <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} options={{ animation: 'slide_from_right' }} />
+      <Stack.Screen name="TermsOfService" component={TermsOfServiceScreen} options={{ animation: 'slide_from_right' }} />
+      <Stack.Screen name="Help" component={HelpScreen} options={{ animation: 'slide_from_right' }} />
     </Stack.Navigator>
   );
 };

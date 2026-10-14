@@ -14,7 +14,7 @@ export const AchievementsScreen: React.FC = () => {
   const { colors, layout, spacing, typography } = useAppTheme();
   const { t } = useTranslation();
   const navigation = useNavigation<any>();
-  const { stats } = useGarden();
+  const { stats, unlockedAchievements } = useGarden();
 
   const [loading, setLoading] = useState(true);
   const [flameScale] = useState(() => new Animated.Value(1));
@@ -35,7 +35,7 @@ export const AchievementsScreen: React.FC = () => {
     return () => loop.stop();
   }, [flameScale]);
 
-  const achievements = getAchievements(stats);
+  const achievements = getAchievements(stats, unlockedAchievements);
   const unlockedCount = achievements.filter((a) => a.unlocked).length;
   const summary = getWeeklySummary(stats);
   const tier = streakTier(stats.currentStreak);

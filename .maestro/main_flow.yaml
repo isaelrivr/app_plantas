@@ -1,0 +1,81 @@
+appId: com.ecoscan.app
+---
+# Flujo Principal E2E de EcoScan:
+# 1. Abrir app
+# 2. Onboarding (si está presente)
+# 3. Explorar/Buscar planta ("Monstera")
+# 4. Guardar en Mi Jardín
+# 5. Volver a Hoy y registrar riego ("Ya la regué")
+
+- launchApp:
+    clearState: false
+
+# 1. Onboarding (opcional si es primera vez)
+- runFlow:
+    when:
+      visible: "Omitir"
+    commands:
+      - tapOn: "Omitir"
+
+# 2. Navegar a Hoy o validar pantalla de inicio
+- assertVisible:
+    text: "Hoy"
+    optional: true
+
+# 3. Flujo de Añadir Planta: Tocar en Buscar por nombre o botón de añadir
+- runFlow:
+    when:
+      visible: "o búscala por nombre"
+    commands:
+      - tapOn: "o búscala por nombre"
+
+# Si ya hay plantas, ir a Mi Jardín y pulsar Añadir
+- runFlow:
+    when:
+      notVisible: "o búscala por nombre"
+    commands:
+      - tapOn: "Mi Jardín"
+      - tapOn:
+          id: "btn-add-plant"
+          optional: true
+
+# 4. Buscar planta en catálogo
+- tapOn:
+    id: "search-input"
+    optional: true
+- inputText: "Monstera"
+
+# 5. Seleccionar la planta encontrada y guardarla
+- tapOn:
+    text: "Monstera Deliciosa"
+    optional: true
+
+- assertVisible:
+    text: "Añadir a mi jardín"
+    optional: true
+
+- tapOn:
+    text: "Añadir a mi jardín"
+    optional: true
+
+# Confirmar guardado
+- assertVisible:
+    text: "Guardada en tu jardín"
+    optional: true
+
+# 6. Volver a la pestaña Hoy
+- tapOn: "Hoy"
+
+# 7. Registrar riego ("Ya la regué")
+- assertVisible:
+    text: "Regar Monstera"
+    optional: true
+
+- tapOn:
+    text: "Ya la regué"
+    optional: true
+
+# 8. Verificar que se muestra la confirmación o botón de deshacer
+- assertVisible:
+    text: "Deshacer"
+    optional: true

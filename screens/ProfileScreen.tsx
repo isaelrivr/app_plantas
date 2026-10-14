@@ -280,6 +280,20 @@ export const ProfileScreen: React.FC = () => {
               {t('Usa el modo "Mi planta está enferma" en el escáner para obtener un diagnóstico inmediato y remedios recomendados.')}
             </Text>
           </View>
+
+          <View style={[styles.separator, { backgroundColor: colors.border, marginVertical: spacing.sm }]} />
+
+          <TouchableOpacity
+            onPress={() => navigation.navigate('Help')}
+            accessibilityRole="button"
+            accessibilityLabel={t('Ver centro de ayuda completo')}
+            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: spacing.xs }}
+          >
+            <Text style={[typography.body, { color: colors.primary, fontWeight: '700' }]}>
+              {t('Ver centro de ayuda y soporte')}
+            </Text>
+            <Ionicons name="arrow-forward" size={18} color={colors.primary} />
+          </TouchableOpacity>
         </Card>
       </View>
 

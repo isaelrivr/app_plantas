@@ -108,7 +108,11 @@ export const AchievementCard: React.FC<AchievementCardProps> = ({ achievement, s
 
       <Text style={[typography.caption1, { color: colors.textTertiary, marginTop: spacing.xs }]}>
         {achievement.unlocked
-          ? `✓ ${achievement.reward}`
+          ? `✓ ${achievement.reward}${
+              achievement.unlockedAt
+                ? ` · ${new Date(achievement.unlockedAt).toLocaleDateString()}`
+                : ''
+            }`
           : `${achievement.progress} / ${achievement.target}`}
       </Text>
     </Animated.View>

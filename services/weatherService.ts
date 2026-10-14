@@ -1,18 +1,18 @@
 /**
- * Plantae Weather & Climate Service
+ * EcoScan Weather & Climate Service
  *
- * Utiliza expo-location para geolocalización precisa y la API abierta gratuita de Open-Meteo.
- * Ajusta dinámicamente el calendario de riego y genera alertas meteorológicas para plantas.
- *
- * NOTA DE SEGURIDAD:
- * Open-Meteo es una API pública que no requiere llaves ni autenticación.
- * Para datos meteorológicos premium en producción con proveedores comerciales (e.g. WeatherAPI / AccuWeather),
- * canaliza las peticiones a través de Firebase Cloud Functions sin exponer llaves en el cliente.
+ * Utiliza expo-location para geolocalización o selección manual de ciudad
+ * y la API abierta gratuita de Open-Meteo. Ajusta el calendario de riego
+ * y genera alertas meteorológicas para tus plantas sin jerga técnica.
  */
 
 import * as Location from 'expo-location';
-import { t } from '../i18n';
-import { loadJSON, saveJSON, STORAGE_KEYS } from './storage';
+import { loadJSON, saveJSON, STORAGE_KEYS } from './storage.ts';
+import { WEATHER_CACHE_TTL_MS, SUPPORTED_CITIES } from './weatherConfig.ts';
+export * from './weatherConfig.ts';
+
+// Helper para textos de clima
+const t = (text: string): string => text;
 
 export interface WeatherData {
   city: string;
@@ -45,9 +45,19 @@ interface WeatherCacheEntry {
   result: WeatherRecommendationResult;
 }
 
-const WEATHER_CACHE_TTL_MS = 30 * 60 * 1000;
+export async function getManualCity(): Promise<string | null> {
+  return loadJSON<string | null>(STORAGE_KEYS.manualCity, null);
+}
 
-async function fetchWithTimeout(url: string, timeoutMs = 12_000): Promise<Response> {
+export async function setManualCity(cityName: string | null): Promise<void> {
+  if (cityName == null) {
+    await saveJSON(STORAGE_KEYS.manualCity, null);
+  } else {
+    await saveJSON(STORAGE_KEYS.manualCity, cityName);
+  }
+}
+
+async function fetchWithTimeout(url: string, timeoutMs = 10_000): Promise<Response> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -57,9 +67,8 @@ async function fetchWithTimeout(url: string, timeoutMs = 12_000): Promise<Respon
   }
 }
 
-// Fallback por defecto si no hay conexión o no hay permisos de GPS
 const DEFAULT_FALLBACK_WEATHER: WeatherData = {
-  city: 'Ciudad de México, MX',
+  city: 'Ciudad de México, México',
   temperatureC: 22,
   humidityPercent: 48,
   rainProbability: 15,
@@ -71,90 +80,98 @@ const DEFAULT_FALLBACK_WEATHER: WeatherData = {
 };
 
 function computeClimateAdjustment(weather: WeatherData): ClimateWateringAdjustment {
-  // 1. Alerta de frío y heladas
   if (weather.temperatureC <= 12 || weather.tempMinC <= 8) {
     return {
       alertType: 'frost',
-      alertTitle: t('❄️ Alerta de Frío y Heladas'),
+      alertTitle: t('Alerta de frío'),
       alertMessage: t(
-        'Las bajas temperaturas reducen la evaporación del agua. Resguarda tus plantas tropicales en interiores y espacia el riego para evitar pudrición radicular por frío.'
+        'Las bajas temperaturas reducen la evaporación del agua. Resguarda tus plantas en interiores y espacia el riego.'
       ),
       wateringAdvice: t('Pospón el riego 2 a 3 días y usa agua a temperatura templada.'),
       wateringFactor: 'delay',
     };
   }
 
-  // 2. Alerta de lluvia o alta humedad
   if (weather.rainProbability >= 50 || weather.humidityPercent >= 75) {
     return {
       alertType: 'rain',
-      alertTitle: t('🌧️ Alta Humedad y Lluvia Pronosticada'),
+      alertTitle: t('Lluvia y humedad alta'),
       alertMessage: t(
-        'La atmósfera saturada y las precipitaciones mantienen el cepellón húmedo. No apliques agua hoy a las plantas de exterior.'
+        'La humedad ambiental mantiene la tierra húmeda. No riegues hoy tus plantas que estén al exterior.'
       ),
-      wateringAdvice: t('Suspende el riego hoy; la humedad ambiental nutre el follaje.'),
+      wateringAdvice: t('Suspende el riego hoy; la humedad ambiental nutre las hojas.'),
       wateringFactor: 'delay',
     };
   }
 
-  // 3. Alerta de calor extremo
-  if (weather.temperatureC >= 29 || weather.tempMaxC >= 32) {
+  if (weather.temperatureC >= 28 || weather.tempMaxC >= 32) {
     return {
       alertType: 'heat',
-      alertTitle: t('🔥 Alerta de Ola de Calor'),
+      alertTitle: t('Ola de calor'),
       alertMessage: t(
-        'Las altas temperaturas evaporan la humedad del sustrato al doble de velocidad. Revisa la maceta y pulveriza follaje en horas tempranas.'
+        'El calor acelera la deshidratación del sustrato. Revisa la tierra y no expongas tus plantas a sol directo en horas centrales.'
       ),
-      wateringAdvice: t('Riega a primera hora de la mañana o al atardecer para evitar choque térmico.'),
+      wateringAdvice: t('Riega a primera hora de la mañana o al atardecer para no evaporar el agua.'),
       wateringFactor: 'increase',
     };
   }
 
-  // 4. Condiciones óptimas
   return {
     alertType: 'optimal',
-    alertTitle: t('🌿 Clima Templado Favorable'),
-    alertMessage: t(
-      'Temperatura y humedad en niveles de confort biológico. El sustrato se seca de acuerdo al calendario habitual.'
-    ),
-    wateringAdvice: t('Mantén el calendario de riego estándar según la especie.'),
+    alertTitle: t('Clima favorable'),
+    alertMessage: t('Temperatura y humedad equilibradas. Sigue la rutina habitual de riego.'),
+    wateringAdvice: t('Clima ideal: riega según el calendario normal de cada planta.'),
     wateringFactor: 'normal',
   };
 }
 
-/**
- * Obtiene el clima actual del usuario o fallback y calcula recomendaciones para el jardín
- */
-export async function getLocalWeatherAndRecommendations(): Promise<WeatherRecommendationResult> {
-  const cached = await loadJSON<WeatherCacheEntry | null>(STORAGE_KEYS.weatherCache, null);
-  if (cached && Date.now() - cached.savedAt < WEATHER_CACHE_TTL_MS) return cached.result;
-  try {
-    // 1. Solicitar permisos de ubicación en Expo Go
-    const { status } = await Location.requestForegroundPermissionsAsync();
+export async function getLiveWeatherAdvice(forceRefresh = false): Promise<WeatherRecommendationResult> {
+  // 1. Revisar caché local válida
+  if (!forceRefresh) {
+    const cached = await loadJSON<WeatherCacheEntry | null>(STORAGE_KEYS.weatherCache, null);
+    if (cached && Date.now() - cached.savedAt < WEATHER_CACHE_TTL_MS) {
+      return cached.result;
+    }
+  }
 
+  try {
     let latitude = 19.4326;
     let longitude = -99.1332;
-    let cityName = 'Ciudad de México';
+    let cityName = 'Ciudad de México, México';
 
-    if (status === 'granted') {
-      const position = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-      });
-      latitude = position.coords.latitude;
-      longitude = position.coords.longitude;
+    // 2. Comprobar si el usuario configuró una ciudad manual
+    const manualCityName = await getManualCity();
+    const matchedCity = manualCityName
+      ? SUPPORTED_CITIES.find((c) => c.name.toLowerCase() === manualCityName.toLowerCase())
+      : null;
 
+    if (matchedCity) {
+      latitude = matchedCity.latitude;
+      longitude = matchedCity.longitude;
+      cityName = `${matchedCity.name}, ${matchedCity.country}`;
+    } else {
+      // 3. Consultar GPS si no hay ciudad manual
       try {
-        const [geo] = await Location.reverseGeocodeAsync({ latitude, longitude });
-        if (geo) {
-          cityName = geo.city || geo.subregion || geo.region || 'Tu Ubicación';
+        const { status } = await Location.getForegroundPermissionsAsync();
+        if (status === 'granted') {
+          const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+          latitude = loc.coords.latitude;
+          longitude = loc.coords.longitude;
+
+          const geocode = await Location.reverseGeocodeAsync({ latitude, longitude });
+          if (geocode.length > 0) {
+            const first = geocode[0];
+            cityName = first.city || first.region || first.country || cityName;
+            if (first.country && first.city) cityName = `${first.city}, ${first.country}`;
+          }
         }
       } catch {}
     }
 
-    // 2. Consultar API abierta gratuita de Open-Meteo
+    // 4. Consultar Open-Meteo con timeout
     const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,precipitation,weather_code,wind_speed_10m&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto`;
 
-    const res = await fetchWithTimeout(url);
+    const res = await fetchWithTimeout(url, 10_000);
     if (!res.ok) throw new Error('Respuesta no válida de Open-Meteo');
 
     const data = await res.json();
@@ -199,7 +216,7 @@ export async function getLocalWeatherAndRecommendations(): Promise<WeatherRecomm
 
     const adjustment = computeClimateAdjustment(weather);
 
-    const result = {
+    const result: WeatherRecommendationResult = {
       weather,
       adjustment,
       isMockFallback: false,
@@ -207,7 +224,6 @@ export async function getLocalWeatherAndRecommendations(): Promise<WeatherRecomm
     await saveJSON<WeatherCacheEntry>(STORAGE_KEYS.weatherCache, { savedAt: Date.now(), result });
     return result;
   } catch {
-    // Retorno seguro en caso de falta de red exterior o permisos
     const adjustment = computeClimateAdjustment(DEFAULT_FALLBACK_WEATHER);
     return {
       weather: {
@@ -219,3 +235,5 @@ export async function getLocalWeatherAndRecommendations(): Promise<WeatherRecomm
     };
   }
 }
+
+export const getLocalWeatherAndRecommendations = getLiveWeatherAdvice;

@@ -1,20 +1,17 @@
 /**
- * Plantae Storage Service
+ * EcoScan Storage Service
  *
  * Capa fina y tipada sobre AsyncStorage. Es el único punto por el que la app
  * lee/escribe datos locales, de modo que:
  *  - Todas las claves comparten prefijo (`plantae:`) y se pueden borrar en bloque.
  *  - Los fallos de lectura/escritura nunca tumban la UI (se degrada a memoria).
- *  - Existe una versión de esquema con migraciones para no romper datos antiguos.
- *
- * NOTA: AsyncStorage es para datos no sensibles (jardín, ajustes, caché). Los
- * tokens de sesión/billing deben ir en expo-secure-store (Fase 4).
+ *  - Existe una versión de esquema con migraciones y validación en tiempo de ejecución.
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-/** Versión actual del formato persistido. Súbela al cambiar la forma de los datos. */
-export const STORAGE_SCHEMA_VERSION = 2;
+/** Versión actual del formato persistido. */
+export const STORAGE_SCHEMA_VERSION = 3;
 
 const KEY_PREFIX = 'plantae:';
 
@@ -24,25 +21,68 @@ export const STORAGE_KEYS = {
   settings: `${KEY_PREFIX}settings`,
   premium: `${KEY_PREFIX}premium`,
   growthDiary: `${KEY_PREFIX}growth-diary`,
-  /** UUID persistente que identifica el dispositivo ante el backend (Fase 2). */
+  achievements: `${KEY_PREFIX}achievements`,
+  manualCity: `${KEY_PREFIX}manual-city`,
+  analyticsConsent: `${KEY_PREFIX}analytics-consent`,
+  /** UUID persistente que identifica el dispositivo ante el backend. */
   deviceId: `${KEY_PREFIX}device-id`,
-  /** Caché local de fichas de cuidados generadas por el backend (Fase 2). */
+  /** Caché local de fichas de cuidados generadas por el backend. */
   careCache: `${KEY_PREFIX}care-cache`,
   weatherCache: `${KEY_PREFIX}weather-cache`,
 } as const;
 
 export type StorageKey = (typeof STORAGE_KEYS)[keyof typeof STORAGE_KEYS];
 
+// ── Validadores de esquema en tiempo de ejecución ────────────────────────────
+
+export function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+export function validateGardenData(value: unknown): boolean {
+  if (!isRecord(value)) return false;
+  if (!Array.isArray(value.plants)) return false;
+  if (value.stats !== undefined && !isRecord(value.stats)) return false;
+  return true;
+}
+
+export function validateSettingsData(value: unknown): boolean {
+  if (!isRecord(value)) return false;
+  const validThemes = ['system', 'light', 'dark'];
+  if (typeof value.themePreference === 'string' && !validThemes.includes(value.themePreference)) {
+    return false;
+  }
+  return true;
+}
+
+export function validateAchievementsData(value: unknown): boolean {
+  if (!isRecord(value)) return false;
+  for (const key of Object.keys(value)) {
+    const entry = value[key];
+    if (typeof entry !== 'string' && (!isRecord(entry) || typeof entry.unlockedAt !== 'string')) {
+      return false;
+    }
+  }
+  return true;
+}
+
 /**
- * Lee y deserializa un valor. Devuelve `fallback` si la clave no existe o el
- * JSON está corrupto (nunca lanza).
+ * Lee y deserializa un valor con validación de esquema opcional.
+ * Devuelve `fallback` si la clave no existe, el JSON está corrupto o no supera la validación.
  */
-export async function loadJSON<T>(key: StorageKey, fallback: T, validate?: (value: unknown) => value is T): Promise<T> {
+export async function loadJSON<T>(
+  key: StorageKey,
+  fallback: T,
+  validate?: (value: unknown) => boolean
+): Promise<T> {
   try {
     const raw = await AsyncStorage.getItem(key);
     if (raw == null) return fallback;
     const parsed: unknown = JSON.parse(raw);
-    if (validate && !validate(parsed)) return fallback;
+    if (validate && !validate(parsed)) {
+      console.warn(`[storage] Validación fallida para "${key}". Usando fallback.`);
+      return fallback;
+    }
     return parsed as T;
   } catch (error) {
     console.warn(`[storage] No se pudo leer "${key}". Se usará el valor por defecto.`, error);
@@ -50,44 +90,47 @@ export async function loadJSON<T>(key: StorageKey, fallback: T, validate?: (valu
   }
 }
 
-/** Serializa y guarda un valor. Nunca lanza. */
-export async function saveJSON<T>(key: StorageKey, value: T): Promise<void> {
+/** Serializa y guarda un valor. Devuelve true si la escritura tuvo éxito. */
+export async function saveJSON<T>(key: StorageKey, value: T): Promise<boolean> {
   try {
     await AsyncStorage.setItem(key, JSON.stringify(value));
+    return true;
   } catch (error) {
     console.warn(`[storage] No se pudo guardar "${key}".`, error);
+    return false;
   }
 }
 
-/** Elimina una clave concreta. */
-export async function removeKey(key: StorageKey): Promise<void> {
+/** Elimina una clave concreta. Devuelve true si la eliminación tuvo éxito. */
+export async function removeKey(key: StorageKey): Promise<boolean> {
   try {
     await AsyncStorage.removeItem(key);
+    return true;
   } catch (error) {
     console.warn(`[storage] No se pudo borrar "${key}".`, error);
+    return false;
   }
 }
 
 /**
- * Elimina TODOS los datos persistidos por Plantae (incluso de versiones
- * antiguas). No toca datos de otras apps ni de librerías.
+ * Elimina TODOS los datos persistidos por EcoScan.
  */
-export async function clearAllAppData(): Promise<void> {
+export async function clearAllAppData(): Promise<boolean> {
   try {
     const allKeys = await AsyncStorage.getAllKeys();
     const appKeys = allKeys.filter((key) => key.startsWith(KEY_PREFIX));
     if (appKeys.length > 0) {
       await AsyncStorage.multiRemove(appKeys);
     }
+    return true;
   } catch (error) {
     console.warn('[storage] No se pudieron borrar los datos locales.', error);
+    return false;
   }
 }
 
 /**
- * Aplica migraciones de esquema. Cada migración transforma datos de la versión
- * N a la N+1. Con la primera versión persistida no hay nada que migrar, pero el
- * marco queda listo para el futuro.
+ * Aplica migraciones de esquema.
  */
 export async function runStorageMigrations(): Promise<void> {
   try {
@@ -98,8 +141,9 @@ export async function runStorageMigrations(): Promise<void> {
       return;
     }
 
-    // v0 -> v1: primer esquema persistido. Sin transformaciones.
-    // v1 -> v2: se añade la caché de clima; no requiere migrar datos previos.
+    // v0 -> v1: primer esquema persistido.
+    // v1 -> v2: se añade la caché de clima.
+    // v2 -> v3: se añade persistencia de fecha para logros, consentimiento analítico y ciudad manual.
 
     await AsyncStorage.setItem(STORAGE_KEYS.schemaVersion, String(STORAGE_SCHEMA_VERSION));
   } catch (error) {
