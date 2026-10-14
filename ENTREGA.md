@@ -63,13 +63,18 @@ npx expo-doctor             # diagnósticos de configuración
 | 13. Gamificación y logros | `screens/AchievementsScreen.tsx`, `services/gamificationService.ts`, `components/AchievementCard.tsx` |
 | 14. Escáner multi-plantas + zonas | `context/GardenContext.tsx` (habitaciones), `ScannerScreen.tsx` (lotes) |
 
-### FASE 4 — Monetización y polish (apartados 15–18)
-| Punto | Dónde |
+### FASE 4 — Rediseño de pantallas clave y arquitectura limpia
+| Pantalla / Componente | Cambios y mejoras realizadas |
 |---|---|
-| 15. Paywall con billing mock | `screens/PaywallScreen.tsx`, `services/billingService.ts` |
-| 16. Límites Free + gating | `hooks/usePlanLimits.ts`, gates en `ScannerScreen`, `PlantDetailScreen`, `HealthDiagnosisScreen`, `HabitatMapScreen` |
-| 17. Onboarding + Ajustes | `screens/OnboardingScreen.tsx`, `screens/SettingsScreen.tsx`, `context/SettingsContext.tsx` |
-| 18. Pulido Sprint | `theme/motion.ts`, `theme/useTheme.ts` (Settings-driven), `App.tsx` (RootGate) |
+| **4.1 Onboarding** (`screens/OnboardingScreen.tsx`) | Rediseñado a 3 pasos claros: Selector de idioma accesible, personalización según objetivo ("¿Qué quieres lograr?": identificar / recordar riego / curar planta), y resumen de valor. Botón "Omitir" siempre visible. Cero permisos solicitados prematuramente. |
+| **4.2 Hoy** (`screens/TodayScreen.tsx`) | Saludo personalizado con frase motivacional según el objetivo del usuario. Tarjetas grandes de tareas del día con botón "Ya la regué" y deshacer durante 5s. Estado vacío enorme con escáner o búsqueda por nombre. Clima en una sola línea sin jerga técnica. Racha visible. |
+| **4.3 Mi Jardín** (`screens/GardenScreen.tsx`) | Tarjetas de planta grandes con foto, nombre común, pastilla de estado clara (`StatusPill`), riego rápido con deshacer y menú "⋯" accesible (`PlantActionSheet`). Botón flotante "+ Añadir planta" que abre `AddPlantModal` (Escanear, Buscar en catálogo o Escribir nombre). |
+| **4.4 Escanear** (`screens/ScannerScreen.tsx`) | Botón central de obturador enorme (82dp), galería a la izquierda y controles de flash/cámara a la derecha. Ayuda contextual en una línea con modal visual ("Buena vs Mala foto"). Ficha de resultado simplificada con nombre común destacado, certeza en palabras y 2 botones principales. |
+| **4.5 Ficha de planta** (`screens/PlantDetailScreen.tsx`) | Bloque destacado "Qué hacer hoy" antes de detalles técnicos. Banner de toxicidad para mascotas y niños en cabecera. Revelación progresiva con pestañas claras "Cuidados" y "Más información" (`SegmentedControl`). |
+| **4.6 Enciclopedia** (`screens/EncyclopediaScreen.tsx`) | Migración de ScrollView a `FlatList` virtualizada. Barra de búsqueda permanente tolerante a tildes y mayúsculas (`normalizeDiacritics`). Filtros accesibles en BottomSheet con contador activo y botón de limpiar. |
+| **4.7 Calendario** (`screens/CareCalendarScreen.tsx`) | Vista por defecto "Esta semana" con días claros y alternador a "Mes completo". Marcado rápido con 5s de deshacer. Modal para editar tareas (`EditCareTaskModal`): nombre, próxima fecha y frecuencia de repetición. |
+| **4.8 Perfil y Ajustes** (`ProfileScreen.tsx`, `SettingsScreen.tsx`) | Eliminada fila técnica de base de datos en Perfil. Ajustes agrupados en 8 secciones limpias: Modo fácil, Apariencia, Idioma, Notificaciones con horario de aviso, Plan, Privacidad y datos (con exportación de jardín en JSON), Ayuda y contacto con enlace por correo, y Acerca de sin jerga. |
+| **4.9 Paywall** (`screens/PaywallScreen.tsx`) | 4 viñetas honestas sin falsas promesas. Precio transparente anual/mensual con desglose y prueba de 7 días. Claridad de cancelación ("Cancela cuando quieras"). Enlaces reales a Términos y Privacidad. Restaurar compras visible con feedback claro. |
 
 ---
 
