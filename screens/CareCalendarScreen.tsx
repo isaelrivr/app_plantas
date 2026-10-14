@@ -20,6 +20,7 @@ import { EmptyState } from '../components/EmptyState';
 import { ErrorBanner } from '../components/ErrorBanner';
 import { PlantCardSkeleton } from '../components/SkeletonLoader';
 import { scheduleWateringReminder, scheduleCareTaskReminder } from '../services/notificationService';
+import { announce } from '../services/accessibilityService';
 import { useTranslation } from '../i18n';
 
 type CalendarView = 'semana' | 'mes';
@@ -172,6 +173,7 @@ export const CareCalendarScreen: React.FC = () => {
   const handleCompleteTask = (plantId: string, taskId: string) => {
     try { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); } catch {}
     toggleTaskCompleted(plantId, taskId);
+    announce(t('Tarea completada'));
   };
 
   // Rejilla de días: semana actual o mes del ancla

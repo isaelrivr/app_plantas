@@ -68,8 +68,8 @@ function BottomTabs() {
           backgroundColor: colors.surface,
           borderTopColor: colors.border,
           borderTopWidth: 1,
-          height: Platform.OS === 'ios' ? 88 : 70,
-          paddingBottom: Platform.OS === 'ios' ? 28 : 10,
+          minHeight: Platform.OS === 'ios' ? 88 : 72,
+          paddingBottom: Platform.OS === 'ios' ? 22 : 10,
           paddingTop: 8,
           elevation: 10,
           shadowColor: '#000000',
@@ -78,11 +78,12 @@ function BottomTabs() {
           shadowRadius: 5,
         },
         tabBarLabelStyle: {
-          fontSize: 11,
+          fontSize: 13,
           fontWeight: '600',
         },
         tabBarItemStyle: {
           minHeight: layout.minTouchTarget,
+          paddingVertical: 4,
         },
       }}
     >
@@ -123,16 +124,16 @@ function BottomTabs() {
           tabBarLabel: t('Escanear'),
           tabBarAccessibilityLabel: t('Pestaña de Escanear'),
           tabBarLabelStyle: {
-            fontSize: 11,
+            fontSize: 13,
             fontWeight: '700',
             color: colors.primary,
           },
           tabBarIcon: () => (
             <View
               style={{
-                width: 50,
-                height: 50,
-                borderRadius: 25,
+                width: Math.max(layout.minTouchTarget, 52),
+                height: Math.max(layout.minTouchTarget, 52),
+                borderRadius: Math.max(layout.minTouchTarget, 52) / 2,
                 backgroundColor: colors.primary,
                 alignItems: 'center',
                 justifyContent: 'center',

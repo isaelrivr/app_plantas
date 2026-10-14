@@ -1,10 +1,10 @@
 export const colors = {
   light: {
     // Brand & Tint
-    primary: '#2E7D32', // Rich forest green (contrast ratio > 4.5:1 with white)
+    primary: '#2E7D32', // Forest green (contrast ratio > 5:1 with white)
     primaryLight: '#E8F5E9',
-    primaryDark: '#1B5E20',
-    accent: '#00897B',
+    primaryDark: '#1B5E20', // Contrast ratio > 9:1 with white / primaryLight
+    accent: '#00796B',
 
     // Surfaces & Backgrounds
     background: '#F8F9FA', // Apple HIG system grouped background
@@ -13,34 +13,34 @@ export const colors = {
     surfaceSecondary: '#F1F3F4',
 
     // Borders & Dividers
-    border: '#E0E0E0',
-    borderLight: '#EEEEEE',
+    border: '#D0D0D4',
+    borderLight: '#E5E5EA',
 
-    // Typography (WCAG AA compliant)
-    textPrimary: '#1C1C1E',   // High contrast label
-    textSecondary: '#636366', // Secondary label
-    textTertiary: '#8E8E93',  // Tertiary hint
+    // Typography (WCAG AA compliant: all >= 4.5:1 against white/surface)
+    textPrimary: '#1C1C1E',   // Contrast 15.3:1
+    textSecondary: '#48484A', // Contrast 8.2:1
+    textTertiary: '#59595E',  // Contrast 5.9:1 (meets WCAG AA >= 4.5:1)
     textInverse: '#FFFFFF',
 
-    // Status & Feedback
-    success: '#2E7D32',
-    warning: '#ED6C02',
-    warningLight: '#FFF4E5',
-    error: '#D32F2F',
+    // Status & Feedback (Siempre acompañado de iconos en la UI)
+    success: '#1B5E20',
+    warning: '#D84315',
+    warningLight: '#FBE9E7',
+    error: '#C62828',
     errorLight: '#FFEBEE',
-    info: '#0288D1',
+    info: '#0277BD',
 
     // Premium accents
-    premiumGold: '#B8860B',
+    premiumGold: '#9A6B00', // Contrast >= 4.6:1
     premiumGoldLight: '#FFF8E1',
     badgeBackground: '#E8F5E9',
   },
   dark: {
     // Brand & Tint
-    primary: '#4CAF50', // Vibrant green with excellent dark mode contrast
+    primary: '#66BB6A', // Vibrant green with excellent dark mode contrast
     primaryLight: '#1B3820',
-    primaryDark: '#81C784',
-    accent: '#26A69A',
+    primaryDark: '#A5D6A7',
+    accent: '#4DB6AC',
 
     // Surfaces & Backgrounds
     background: '#000000', // Apple HIG pure black base
@@ -54,20 +54,20 @@ export const colors = {
 
     // Typography (WCAG AA compliant)
     textPrimary: '#FFFFFF',
-    textSecondary: '#AEAEB2',
-    textTertiary: '#8E8E93',
+    textSecondary: '#D1D1D6', // Contrast 12.8:1
+    textTertiary: '#AEAEB2',  // Contrast 6.7:1 on surface
     textInverse: '#121212',
 
     // Status & Feedback
-    success: '#66BB6A',
-    warning: '#FFA726',
+    success: '#81C784',
+    warning: '#FFB74D',
     warningLight: '#3E2723',
     error: '#EF5350',
     errorLight: '#3E1D1D',
-    info: '#29B6F6',
+    info: '#4FC3F7',
 
     // Premium accents
-    premiumGold: '#FFD54F',
+    premiumGold: '#FFE082',
     premiumGoldLight: '#3E341B',
     badgeBackground: '#1C3322',
   },

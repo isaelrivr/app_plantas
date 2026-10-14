@@ -22,6 +22,7 @@ import { requestNotificationPermissions } from '../services/notificationService'
 import { clearAllAppData } from '../services/storage';
 import { clearGrowthDiary } from '../services/growthDiaryService';
 import { clearPersistedImages } from '../services/mediaService';
+import { announce } from '../services/accessibilityService';
 import { useTranslation } from '../i18n';
 
 export const SettingsScreen: React.FC = () => {
@@ -34,6 +35,8 @@ export const SettingsScreen: React.FC = () => {
     setLanguage,
     notificationsEnabled,
     setNotificationsEnabled,
+    easyMode,
+    setEasyMode,
     resetOnboarding,
     resetSettings,
   } = useSettings();
@@ -125,6 +128,31 @@ export const SettingsScreen: React.FC = () => {
       </View>
 
       <ScrollView contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxxl }}>
+        {renderSectionTitle(t('Accesibilidad'))}
+        <Card style={{ marginBottom: spacing.sm }}>
+          <View style={styles.row}>
+            <View style={{ flex: 1, paddingRight: spacing.sm }}>
+              <Text style={[typography.headline, { color: colors.textPrimary }]}>{t('Modo fácil')}</Text>
+              <Text style={[typography.subheadline, { color: colors.textSecondary, marginTop: 4, lineHeight: 20 }]}>
+                {t('Texto y botones más grandes, menos animaciones y navegación simplificada')}
+              </Text>
+            </View>
+            <Switch
+              value={easyMode}
+              onValueChange={(val) => {
+                Haptics.selectionAsync();
+                setEasyMode(val);
+                announce(val ? t('Modo fácil activado') : t('Modo fácil desactivado'));
+              }}
+              accessibilityRole="switch"
+              accessibilityLabel={t('Modo fácil')}
+              accessibilityHint={t('Texto y botones más grandes, menos animaciones y navegación simplificada')}
+              trackColor={{ false: colors.border, true: colors.primaryLight }}
+              thumbColor={easyMode ? colors.primary : '#FFFFFF'}
+            />
+          </View>
+        </Card>
+
         {renderSectionTitle(t('Apariencia'))}
         <Card>
           <View style={styles.row}>
@@ -270,15 +298,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 8,
-    minHeight: 44,
+    paddingVertical: 10,
+    minHeight: 48,
   },
   rowTap: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: 12,
-    minHeight: 44,
+    minHeight: 48,
   },
   segmentRow: { flexDirection: 'row', gap: 8, marginTop: 12 },
   segment: {
@@ -287,7 +315,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    minHeight: 44,
+    minHeight: 48,
+    minWidth: 48,
   },
   separator: { height: 1, width: '100%' },
 });

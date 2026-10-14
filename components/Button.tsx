@@ -80,15 +80,15 @@ export const Button: React.FC<ButtonProps> = ({
     }
   };
 
-  const getHeight = () => {
+  const getMinHeight = () => {
     switch (size) {
       case 'sm':
-        return Math.max(layout.minTouchTarget, 44);
+        return Math.max(layout.minTouchTarget, 48);
       case 'lg':
-        return 52;
+        return Math.max(layout.minTouchTarget, 56);
       case 'md':
       default:
-        return 48;
+        return Math.max(layout.minTouchTarget, 48);
     }
   };
 
@@ -104,9 +104,9 @@ export const Button: React.FC<ButtonProps> = ({
       style={[
         styles.button,
         {
-          minHeight: layout.minTouchTarget,
+          minHeight: getMinHeight(),
           minWidth: layout.minTouchTarget,
-          height: getHeight(),
+          paddingVertical: 10,
           backgroundColor: getBackgroundColor(),
           borderColor: getBorderColor(),
           borderWidth: variant === 'outline' ? 1.5 : 0,

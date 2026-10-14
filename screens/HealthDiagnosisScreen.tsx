@@ -35,6 +35,7 @@ import { getPlantById } from '../services/plantApi';
 import { useGarden } from '../context/GardenContext';
 import { usePlanLimits } from '../hooks/usePlanLimits';
 import { useTranslation } from '../i18n';
+import { announce } from '../services/accessibilityService';
 
 export const HealthDiagnosisScreen: React.FC = () => {
   const { colors, isDark, spacing, typography, layout } = useAppTheme();
@@ -195,6 +196,7 @@ export const HealthDiagnosisScreen: React.FC = () => {
       }
       setDiagnosisResult(result);
       registerDiagnosis();
+      announce(t('Diagnóstico completado: {nombre}', { nombre: result.name }));
 
       // Pulso háptico de detección
       try {
@@ -261,6 +263,7 @@ export const HealthDiagnosisScreen: React.FC = () => {
     }
     setTreatmentScheduled(true);
     setErrorMessage(null);
+    announce(t('Tratamiento programado'));
 
     Alert.alert(
       t('¡Tratamiento Programado!'),
@@ -410,7 +413,7 @@ export const HealthDiagnosisScreen: React.FC = () => {
                   />
                   <View style={styles.loadingPill}>
                     <ActivityIndicator size="small" color="#FFFFFF" />
-                    <Text style={[typography.caption1, { color: '#FFFFFF', marginLeft: 8, fontWeight: '600' }]}>
+                    <Text style={[typography.footnote, { color: '#FFFFFF', marginLeft: 8, fontWeight: '600' }]}>
                       {diagnosisStepText}
                     </Text>
                   </View>
@@ -427,7 +430,7 @@ export const HealthDiagnosisScreen: React.FC = () => {
                 accessibilityRole="button"
                 accessibilityLabel={t('Analizar otra foto')}
               >
-                <Ionicons name="refresh" size={18} color="#FFFFFF" />
+                <Ionicons name="refresh" size={20} color="#FFFFFF" />
               </TouchableOpacity>
             </View>
 
@@ -814,9 +817,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 12,
     right: 12,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: 'rgba(0,0,0,0.6)',
     alignItems: 'center',
     justifyContent: 'center',
@@ -856,7 +859,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 10,
     borderRadius: 9,
-    minHeight: 44,
+    minHeight: 48,
   },
   treatmentTabActive: {
     elevation: 2,

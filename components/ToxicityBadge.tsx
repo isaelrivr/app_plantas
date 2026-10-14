@@ -13,7 +13,7 @@ interface ToxicityBadgeProps {
 }
 
 const levelVariant: Record<ToxicityLevel, { bg: keyof ThemeColors; fg: keyof ThemeColors }> = {
-  safe: { bg: 'primaryLight', fg: 'primary' },
+  safe: { bg: 'primaryLight', fg: 'primaryDark' },
   caution: { bg: 'warningLight', fg: 'warning' },
   toxic: { bg: 'errorLight', fg: 'error' },
 };
@@ -45,7 +45,7 @@ export const ToxicityBadge: React.FC<ToxicityBadgeProps> = ({ speciesId, compact
         accessible
         accessibilityLabel={`${label}: ${toxicityLevelMeta[level].label}`}
       >
-        <Ionicons name={icon} size={13} color={fg} />
+        <Ionicons name={icon} size={16} color={fg} />
         <Text style={[styles.chipText, { color: fg }]}>
           {label} · {toxicityLevelMeta[level].shortLabel}
         </Text>
@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
   },
   chipText: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '600',
   },
   panelRow: {

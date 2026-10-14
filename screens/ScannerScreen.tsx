@@ -34,6 +34,7 @@ import { useGarden } from '../context/GardenContext';
 import { usePlanLimits, FREE_IDENTIFICATION_LIMIT } from '../hooks/usePlanLimits';
 import { SkeletonBox } from '../components/SkeletonLoader';
 import { EmptyState } from '../components/EmptyState';
+import { announce } from '../services/accessibilityService';
 import { useTranslation } from '../i18n';
 
 const MAX_PHOTOS = 4;
@@ -155,6 +156,7 @@ export const ScannerScreen: React.FC = () => {
         );
         return prev;
       }
+      announce(t('Foto añadida'));
       return [...prev, uri];
     });
   };
@@ -274,11 +276,13 @@ export const ScannerScreen: React.FC = () => {
   const handleRemovePhoto = (index: number) => {
     Haptics.selectionAsync();
     setPhotos((prev) => prev.filter((_, i) => i !== index));
+    announce(t('Foto eliminada'));
   };
 
   const handleClearPhotos = () => {
     Haptics.selectionAsync();
     setPhotos([]);
+    announce(t('Fotos eliminadas'));
   };
 
   const toggleFacing = () => {
@@ -1166,7 +1170,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 20,
-    minHeight: 44,
+    minHeight: 48,
   },
   modeHelpBox: {
     flexDirection: 'row',
@@ -1174,13 +1178,13 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.72)',
     borderRadius: 16,
     paddingHorizontal: 14,
-    paddingVertical: 6,
+    paddingVertical: 8,
     marginTop: 8,
     maxWidth: '96%',
   },
   modeHelpText: {
     color: '#FFFFFF',
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     marginLeft: 6,
     textAlign: 'center',
@@ -1232,7 +1236,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    height: 46,
+    minHeight: 48,
+    paddingVertical: 10,
     borderRadius: 12,
   },
   cameraControlsBar: {
@@ -1354,7 +1359,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    height: 44,
+    minHeight: 48,
+    paddingVertical: 10,
     paddingHorizontal: 14,
     borderRadius: 12,
     borderWidth: 1,
@@ -1363,7 +1369,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    height: 44,
+    minHeight: 48,
+    paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 12,
   },

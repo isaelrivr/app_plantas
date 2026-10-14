@@ -695,8 +695,8 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
   },
   actionHeaderBtn: {
-    width: 44,
-    height: 44,
+    width: 48,
+    height: 48,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -737,11 +737,11 @@ const styles = StyleSheet.create({
   },
   segmentButton: {
     flex: 1,
-    paddingVertical: 8,
+    paddingVertical: 10,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 8,
-    minHeight: 44, // HIG 44x44
+    minHeight: 48,
   },
   segmentActive: {
     elevation: 2,

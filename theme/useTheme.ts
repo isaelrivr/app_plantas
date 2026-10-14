@@ -1,28 +1,44 @@
 import { colors, ThemeColors } from './colors';
-import { typography } from './typography';
+import { typography, easyModeTypography } from './typography';
 import { spacing, layout } from './spacing';
-import { motion } from './motion';
+import { standardMotion, reducedMotion } from './motion';
 import { useSettings } from '../context/SettingsContext';
+import { useReduceMotion } from '../services/accessibilityService';
 
 export interface Theme {
   isDark: boolean;
+  easyMode: boolean;
   colors: ThemeColors;
   typography: typeof typography;
   spacing: typeof spacing;
   layout: typeof layout;
-  motion: typeof motion;
+  motion: typeof standardMotion;
 }
 
 export function useAppTheme(): Theme {
-  const { resolvedScheme } = useSettings();
+  const { resolvedScheme, easyMode } = useSettings();
+  const systemReducedMotion = useReduceMotion();
   const isDark = resolvedScheme === 'dark';
+
+  const isMotionReduced = systemReducedMotion || easyMode;
+
+  const activeTypography = easyMode ? easyModeTypography : typography;
+  const activeLayout = easyMode
+    ? {
+        ...layout,
+        minTouchTarget: layout.easyMinTouchTarget,
+        cardPadding: 18,
+        screenPadding: 18,
+      }
+    : layout;
 
   return {
     isDark,
+    easyMode,
     colors: isDark ? colors.dark : colors.light,
-    typography,
+    typography: activeTypography,
     spacing,
-    layout,
-    motion,
+    layout: activeLayout,
+    motion: isMotionReduced ? reducedMotion : standardMotion,
   };
 }

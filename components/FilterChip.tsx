@@ -48,7 +48,7 @@ export const FilterChip: React.FC<FilterChipProps> = ({
       ) : null}
       <Text
         style={[
-          typography.footnote,
+          typography.subheadline,
           { color: selected ? '#FFFFFF' : colors.textPrimary, fontWeight: '600' },
         ]}
       >
@@ -62,9 +62,9 @@ const styles = StyleSheet.create({
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    minHeight: 36,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    minHeight: 48,
     borderWidth: 1,
   },
 });

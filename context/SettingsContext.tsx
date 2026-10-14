@@ -7,13 +7,10 @@ import type { AppLanguage } from '../i18n/types';
 /**
  * SettingsContext
  *
- * Preferencias del usuario: tema, idioma, notificaciones y estado de onboarding.
+ * Preferencias del usuario: tema, idioma, modo fácil (accesibilidad para adultos mayores),
+ * notificaciones y estado de onboarding.
  *
- * Las preferencias se persisten localmente en AsyncStorage. La sincronización
- * con una cuenta remota todavía no está implementada.
- *
- * IDIOMA: la preferencia se sincroniza con el módulo i18n (../i18n), que aplica
- * las traducciones al inglés (el español es el idioma fuente del código).
+ * Las preferencias se persisten localmente en AsyncStorage.
  */
 
 export type ThemePreference = 'system' | 'light' | 'dark';
@@ -29,12 +26,14 @@ interface SettingsContextType {
   language: AppLanguage;
   notificationsEnabled: boolean;
   hasOnboarded: boolean;
+  easyMode: boolean;
   resolvedScheme: 'light' | 'dark';
   /** `true` cuando las preferencias persistidas ya se cargaron desde disco. */
   isHydrated: boolean;
   setThemePreference: (value: ThemePreference) => void;
   setLanguage: (value: AppLanguage) => void;
   setNotificationsEnabled: (value: boolean) => void;
+  setEasyMode: (value: boolean) => void;
   completeOnboarding: () => void;
   resetOnboarding: () => void;
   resetSettings: () => void;
@@ -47,6 +46,7 @@ interface PersistedSettings {
   language: AppLanguage;
   notificationsEnabled: boolean;
   hasOnboarded: boolean;
+  easyMode?: boolean;
 }
 
 const DEFAULT_SETTINGS: PersistedSettings = {
@@ -54,6 +54,7 @@ const DEFAULT_SETTINGS: PersistedSettings = {
   language: 'es',
   notificationsEnabled: true,
   hasOnboarded: false,
+  easyMode: false,
 };
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
@@ -62,6 +63,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [language, setLanguage] = useState<AppLanguage>('es');
   const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(true);
   const [hasOnboarded, setHasOnboarded] = useState<boolean>(false);
+  const [easyMode, setEasyMode] = useState<boolean>(false);
   const [isHydrated, setIsHydrated] = useState<boolean>(false);
 
   // Hidratación desde disco.
@@ -74,6 +76,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       setLanguage(stored.language ?? 'es');
       setNotificationsEnabled(stored.notificationsEnabled ?? true);
       setHasOnboarded(stored.hasOnboarded ?? false);
+      setEasyMode(Boolean(stored.easyMode));
       setIsHydrated(true);
     })();
     return () => {
@@ -89,8 +92,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       language,
       notificationsEnabled,
       hasOnboarded,
+      easyMode,
     });
-  }, [isHydrated, themePreference, language, notificationsEnabled, hasOnboarded]);
+  }, [isHydrated, themePreference, language, notificationsEnabled, hasOnboarded, easyMode]);
 
   // Mantiene el traductor global (servicios, alertas) en sintonía con el idioma.
   useEffect(() => {
@@ -106,20 +110,23 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       language,
       notificationsEnabled,
       hasOnboarded,
+      easyMode,
       resolvedScheme,
       isHydrated,
       setThemePreference,
       setLanguage,
       setNotificationsEnabled,
+      setEasyMode,
       completeOnboarding: () => setHasOnboarded(true),
       resetOnboarding: () => setHasOnboarded(false),
       resetSettings: () => {
         setThemePreference('system');
         setLanguage('es');
         setNotificationsEnabled(true);
+        setEasyMode(false);
       },
     }),
-    [themePreference, language, notificationsEnabled, hasOnboarded, resolvedScheme, isHydrated]
+    [themePreference, language, notificationsEnabled, hasOnboarded, easyMode, resolvedScheme, isHydrated]
   );
 
   return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>;
@@ -136,11 +143,13 @@ export function useSettings(): SettingsContextType {
       language: 'es',
       notificationsEnabled: true,
       hasOnboarded: false,
+      easyMode: false,
       resolvedScheme: fallbackScheme,
       isHydrated: false,
       setThemePreference: () => {},
       setLanguage: () => {},
       setNotificationsEnabled: () => {},
+      setEasyMode: () => {},
       completeOnboarding: () => {},
       resetOnboarding: () => {},
       resetSettings: () => {},

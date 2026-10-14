@@ -21,7 +21,7 @@ export const Badge: React.FC<BadgeProps> = ({
     switch (variant) {
       case 'primary':
       case 'success':
-        return { bg: colors.primaryLight, text: colors.primary };
+        return { bg: colors.primaryLight, text: colors.primaryDark };
       case 'warning':
         return { bg: colors.warningLight, text: colors.warning };
       case 'error':
@@ -45,13 +45,14 @@ export const Badge: React.FC<BadgeProps> = ({
         {
           backgroundColor: bg,
           borderRadius: layout.borderRadius.full,
-          paddingVertical: spacing.xxs + 1,
+          paddingVertical: spacing.xxs + 2,
           paddingHorizontal: spacing.sm,
+          minHeight: 28,
         },
         style,
       ]}
     >
-      {icon ? <View style={{ marginRight: 4 }}>{icon}</View> : null}
+      {icon ? <View style={{ marginRight: 6 }}>{icon}</View> : null}
       <Text
         style={[
           styles.text,
@@ -71,9 +72,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
+    flexWrap: 'wrap',
   },
   text: {
-    fontSize: 12,
+    fontSize: 14,
+    lineHeight: 18,
     fontWeight: '600',
   },
 });

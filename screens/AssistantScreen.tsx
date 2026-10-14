@@ -24,6 +24,7 @@ import {
   SUGGESTED_QUESTIONS,
 } from '../services/assistantService';
 import { useTranslation } from '../i18n';
+import { announce } from '../services/accessibilityService';
 
 export const AssistantScreen: React.FC = () => {
   const { colors, layout, spacing, typography } = useAppTheme();
@@ -84,6 +85,7 @@ export const AssistantScreen: React.FC = () => {
         plantName: targetPlantName,
       });
       setMessages((prev) => [...prev, reply]);
+      announce(reply.text);
       try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
     } catch {
       setMessages((prev) => [
@@ -119,7 +121,7 @@ export const AssistantScreen: React.FC = () => {
         </TouchableOpacity>
         <View style={{ alignItems: 'center' }}>
           <Text style={[typography.headline, { color: colors.textPrimary }]}>{t('Asistente de Plantas')}</Text>
-          <Text style={[typography.caption2, { color: colors.textTertiary }]}>{t('Respuestas botánicas al instante')}</Text>
+          <Text style={[typography.footnote, { color: colors.textSecondary }]}>{t('Respuestas botánicas al instante')}</Text>
         </View>
         <View style={styles.actionHeaderBtn} />
       </View>
@@ -276,13 +278,13 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    minHeight: 44,
+    minHeight: 48,
     paddingHorizontal: 16,
     fontSize: 16,
   },
   sendButton: {
-    width: 44,
-    height: 44,
+    width: 48,
+    height: 48,
     alignItems: 'center',
     justifyContent: 'center',
   },

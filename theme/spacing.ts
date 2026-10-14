@@ -10,7 +10,12 @@ export const spacing = {
 };
 
 export const layout = {
-  minTouchTarget: 44, // Apple HIG minimum interactive target size: 44x44 pt
+  /** Área táctil mínima accesible estándar (WCAG / Material 3 / iOS HIG): 48x48 dp */
+  minTouchTarget: 48,
+  /** Área táctil mínima en Modo Fácil: 56x56 dp */
+  easyMinTouchTarget: 56,
+  /** Separación mínima entre botones o controles interactivos contiguos: 8 dp */
+  buttonGap: 8,
   borderRadius: {
     xs: 6,
     sm: 10,

@@ -353,8 +353,8 @@ const styles = StyleSheet.create({
   },
   clearBtn: {
     padding: 10,
-    minHeight: 44,
-    minWidth: 44,
+    minHeight: 48,
+    minWidth: 48,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -398,8 +398,8 @@ const styles = StyleSheet.create({
   moreButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    minHeight: 44,
-    minWidth: 44,
+    minHeight: 48,
+    minWidth: 48,
     justifyContent: 'center',
   },
   collectionGrid: {

@@ -30,6 +30,7 @@ import {
   WeatherRecommendationResult,
 } from '../services/weatherService';
 import { scheduleWateringReminder } from '../services/notificationService';
+import { announce } from '../services/accessibilityService';
 import { useTranslation } from '../i18n';
 
 /** Resuelve el id de especie del catálogo (o 'monstera' como último recurso). */
@@ -110,6 +111,7 @@ export const GardenScreen: React.FC = () => {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch {}
     waterPlantToday(plant.id);
+    announce(t('Planta {nombre} regada correctamente', { nombre: plant.name }));
   };
 
   const handleOpenDiagnosis = (plant: GardenPlant) => {
@@ -817,8 +819,8 @@ const styles = StyleSheet.create({
   taskRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    minHeight: 44, // HIG 44x44
-    paddingVertical: 6,
+    minHeight: 48,
+    paddingVertical: 8,
   },
   actionRow: {
     flexDirection: 'row',
@@ -831,13 +833,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    height: 44,
+    minHeight: 48,
+    paddingVertical: 8,
     borderRadius: 12,
     borderWidth: 1,
   },
   iconActionBtn: {
-    width: 44,
-    height: 44,
+    width: 48,
+    height: 48,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',

@@ -16,6 +16,7 @@ import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import { useTranslation } from '../i18n';
 import { useAppTheme } from '../theme';
+import { announce } from '../services/accessibilityService';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { SkeletonBox } from '../components/SkeletonLoader';
@@ -89,6 +90,7 @@ export const GrowthDiaryScreen: React.FC = () => {
     });
     setEntries((prev) => [created, ...prev]);
     try { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); } catch {}
+    announce(t('Entrada guardada en el diario de crecimiento'));
     setModalVisible(false);
     setPendingPhoto(null);
   };
@@ -96,17 +98,18 @@ export const GrowthDiaryScreen: React.FC = () => {
   const renderDelta = (label: string, value: number | null, suffix: string) => {
     if (value == null) return null;
     const positive = value >= 0;
+    const badgeColor = positive ? colors.primaryDark : colors.textSecondary;
     return (
       <View style={[styles.deltaChip, { backgroundColor: positive ? colors.primaryLight : colors.surfaceSecondary }]}>
         <Ionicons
           name={positive ? 'trending-up' : 'trending-down'}
           size={14}
-          color={positive ? colors.primary : colors.textSecondary}
+          color={badgeColor}
         />
-        <Text style={[typography.caption1, { color: positive ? colors.primary : colors.textSecondary, marginLeft: 4, fontWeight: '700' }]}>
+        <Text style={[typography.footnote, { color: badgeColor, marginLeft: 4, fontWeight: '700' }]}>
           {positive ? '+' : ''}{value}{suffix}
         </Text>
-        <Text style={[typography.caption2, { color: colors.textTertiary, marginLeft: 4 }]}>{label}</Text>
+        <Text style={[typography.footnote, { color: colors.textSecondary, marginLeft: 4 }]}>{label}</Text>
       </View>
     );
   };

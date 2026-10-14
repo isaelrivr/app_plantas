@@ -17,6 +17,7 @@ import { Badge } from '../components/Badge';
 import { Button } from '../components/Button';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { getLocalWeatherAndRecommendations, WeatherData } from '../services/weatherService';
+import { announce } from '../services/accessibilityService';
 import { useTranslation } from '../i18n';
 
 const DEFAULT_WEATHER: WeatherData = {
@@ -86,6 +87,7 @@ export const TodayScreen: React.FC = () => {
     } catch {}
     waterPlantToday(plant.id);
     setJustWateredId(plant.id);
+    announce(t('Planta {nombre} regada correctamente', { nombre: plant.name }));
     setTimeout(() => {
       setJustWateredId((prev) => (prev === plant.id ? null : prev));
     }, 2500);

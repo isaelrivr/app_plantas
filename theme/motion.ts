@@ -1,13 +1,12 @@
 /**
  * Sistema de diseño · Tokens de movimiento y estilo
  *
- * Centraliza duraciones, easings y sombras para micro-animaciones y
- * transiciones coherentes en toda la app (Parte del punto 18 de pulido).
+ * Centraliza duraciones, easings y comportamiento con respeto al ajuste del sistema "Reducir movimiento".
  */
 
 import { Easing } from 'react-native';
 
-export const motion = {
+export const standardMotion = {
   duration: {
     instant: 120,
     fast: 200,
@@ -27,4 +26,29 @@ export const motion = {
   },
   /** Desplazamiento estándar de entrada en pantallas */
   translateYOffset: 16,
+  isReduced: false,
 };
+
+export const reducedMotion: typeof standardMotion = {
+  duration: {
+    instant: 0,
+    fast: 0,
+    normal: 0,
+    slow: 0,
+    slower: 0,
+  },
+  easing: {
+    standard: Easing.linear,
+    decelerate: Easing.linear,
+    accelerate: Easing.linear,
+    emphasized: Easing.linear,
+  },
+  spring: {
+    gentle: { damping: 50, stiffness: 300, mass: 1 },
+    bouncy: { damping: 50, stiffness: 300, mass: 1 },
+  },
+  translateYOffset: 0,
+  isReduced: true,
+};
+
+export const motion = standardMotion;

@@ -5,7 +5,7 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Dimensions,
+  useWindowDimensions,
   Animated,
   NativeSyntheticEvent,
   NativeScrollEvent,
@@ -15,8 +15,6 @@ import { useAppTheme } from '../theme';
 import { Button } from '../components/Button';
 import { useTranslation } from '../i18n';
 import { requestNotificationPermissions } from '../services/notificationService';
-
-const { width } = Dimensions.get('window');
 
 interface Page {
   icon: keyof typeof Ionicons.glyphMap;
@@ -51,30 +49,36 @@ interface OnboardingScreenProps {
 }
 
 export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }) => {
-  const { colors, layout, spacing, typography } = useAppTheme();
+  const { colors, motion, spacing, typography } = useAppTheme();
+  const { width } = useWindowDimensions();
   const { t } = useTranslation();
   const scrollRef = useRef<ScrollView>(null);
   const [index, setIndex] = useState(0);
-  const [welcomeScale] = useState(() => new Animated.Value(0.6));
-  const [welcomeOpacity] = useState(() => new Animated.Value(0));
+  const [welcomeScale] = useState(() => new Animated.Value(motion.isReduced ? 1 : 0.6));
+  const [welcomeOpacity] = useState(() => new Animated.Value(motion.isReduced ? 1 : 0));
 
   useEffect(() => {
+    if (motion.isReduced) {
+      welcomeScale.setValue(1);
+      welcomeOpacity.setValue(1);
+      return;
+    }
     Animated.parallel([
       Animated.spring(welcomeScale, { toValue: 1, damping: 12, stiffness: 140, useNativeDriver: true }),
       Animated.timing(welcomeOpacity, { toValue: 1, duration: 500, useNativeDriver: true }),
     ]).start();
-  }, [welcomeScale, welcomeOpacity]);
+  }, [welcomeScale, welcomeOpacity, motion.isReduced]);
 
   const getAccent = (accent: Page['accent']) => colors[accent];
 
   const handleMomentumEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const newIndex = Math.round(event.nativeEvent.contentOffset.x / width);
+    const newIndex = Math.round(event.nativeEvent.contentOffset.x / Math.max(width, 1));
     setIndex(newIndex);
   };
 
   const handleNext = async () => {
     if (index < PAGES.length - 1) {
-      scrollRef.current?.scrollTo({ x: width * (index + 1), animated: true });
+      scrollRef.current?.scrollTo({ x: width * (index + 1), animated: !motion.isReduced });
       setIndex(index + 1);
       return;
     }
@@ -90,6 +94,8 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
         onPress={onComplete}
         accessibilityRole="button"
         accessibilityLabel={t('Saltar introducción')}
+        accessibilityHint={t('Pasa directamente a la pantalla principal')}
+        hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
         style={styles.skipButton}
       >
         <Text style={[typography.subheadline, { color: colors.textSecondary, fontWeight: '600' }]}>{t('Saltar')}</Text>
@@ -126,7 +132,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
               <Text
                 style={[
                   typography.body,
-                  { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.md, paddingHorizontal: spacing.lg, lineHeight: 24 },
+                  { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.md, paddingHorizontal: spacing.lg, lineHeight: 26 },
                 ]}
               >
                 {t(page.description)}
@@ -137,7 +143,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
       </ScrollView>
 
       <View style={styles.footer}>
-        <View style={styles.dots}>
+        <View style={styles.dots} accessibilityRole="none">
           {PAGES.map((page, i) => (
             <View
               key={page.title}
@@ -145,7 +151,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
                 styles.dot,
                 {
                   backgroundColor: i === index ? colors.primary : colors.border,
-                  width: i === index ? 22 : 8,
+                  width: i === index ? 24 : 8,
                 },
               ]}
             />
@@ -159,7 +165,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
           size="lg"
           style={{ marginTop: spacing.lg, alignSelf: 'stretch' }}
           icon={
-            index < PAGES.length - 1 ? undefined : <Ionicons name="checkmark" size={18} color="#FFFFFF" />
+            index < PAGES.length - 1 ? undefined : <Ionicons name="checkmark" size={20} color="#FFFFFF" />
           }
         />
       </View>
@@ -174,7 +180,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 56,
     paddingBottom: 8,
-    minHeight: 44,
+    minHeight: 48,
+    minWidth: 48,
     justifyContent: 'center',
   },
   page: {

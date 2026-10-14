@@ -6,6 +6,7 @@ import * as topojson from 'topojson-client';
 import * as d3Geo from 'd3-geo';
 import { MapControls } from './MapControls';
 import Animated, { useAnimatedProps, useAnimatedStyle, useSharedValue, withDecay, withSpring } from 'react-native-reanimated';
+import { useReduceMotion } from '../services/accessibilityService';
 
 const AnimatedView = Animated.View;
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
@@ -40,16 +41,24 @@ const clamp = (value: number, min: number, max: number): number => Math.min(max,
 const distance = (a: { pageX: number; pageY: number }, b: { pageX: number; pageY: number }): number => Math.hypot(a.pageX - b.pageX, a.pageY - b.pageY);
 
 const PulseMarker: React.FC<{ x: number; y: number; color: string }> = ({ x, y, color }) => {
+  const isReduced = useReduceMotion();
   const pulse = useSharedValue(0);
   React.useEffect(() => {
+    if (isReduced) return;
     pulse.value = withDecay({ velocity: 0.35, deceleration: 0.995 });
     const timer = setInterval(() => { pulse.value = 0; pulse.value = withSpring(1, { damping: 12, stiffness: 45 }); }, 1900);
     return () => clearInterval(timer);
-  }, [pulse]);
+  }, [pulse, isReduced]);
+
   const animatedProps = useAnimatedProps(() => ({
-    r: 5 + pulse.value * 8,
-    opacity: 0.85 - pulse.value * 0.55,
+    r: isReduced ? 7 : 5 + pulse.value * 8,
+    opacity: isReduced ? 0.9 : 0.85 - pulse.value * 0.55,
   }));
+
+  if (isReduced) {
+    return <Circle cx={x} cy={y} r={7} fill={color} opacity={0.9} />;
+  }
+
   return <AnimatedCircle cx={x} cy={y} fill={color} animatedProps={animatedProps} />;
 };
 

@@ -14,23 +14,42 @@ interface MapControlsProps {
 export const MapControls: React.FC<MapControlsProps> = ({
   onZoomIn, onZoomOut, onReset, canZoomOut, colors, labels,
 }) => (
-  <View style={styles.container} accessibilityRole="toolbar" accessibilityLabel="Controles del mapa">
-    <TouchableOpacity style={[styles.button, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={onZoomIn} accessibilityRole="button" accessibilityLabel={labels.zoomIn}>
+  <View style={styles.container}>
+    <TouchableOpacity
+      style={[styles.button, { backgroundColor: colors.surface, borderColor: colors.border }]}
+      onPress={onZoomIn}
+      accessibilityRole="button"
+      accessibilityLabel={labels.zoomIn}
+      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+    >
       <Ionicons name="add" size={24} color={colors.textPrimary} />
     </TouchableOpacity>
-    <TouchableOpacity disabled={!canZoomOut} style={[styles.button, { backgroundColor: colors.surface, borderColor: colors.border, opacity: canZoomOut ? 1 : 0.45 }]} onPress={onZoomOut} accessibilityRole="button" accessibilityLabel={labels.zoomOut}>
+    <TouchableOpacity
+      disabled={!canZoomOut}
+      style={[styles.button, { backgroundColor: colors.surface, borderColor: colors.border, opacity: canZoomOut ? 1 : 0.45 }]}
+      onPress={onZoomOut}
+      accessibilityRole="button"
+      accessibilityLabel={labels.zoomOut}
+      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+    >
       <Ionicons name="remove" size={24} color={colors.textPrimary} />
     </TouchableOpacity>
-    <TouchableOpacity style={[styles.reset, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={onReset} accessibilityRole="button" accessibilityLabel={labels.reset}>
-      <Ionicons name="scan-outline" size={17} color={colors.primary} />
+    <TouchableOpacity
+      style={[styles.reset, { backgroundColor: colors.surface, borderColor: colors.border }]}
+      onPress={onReset}
+      accessibilityRole="button"
+      accessibilityLabel={labels.reset}
+      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+    >
+      <Ionicons name="scan-outline" size={18} color={colors.primary} />
       <Text style={[styles.resetText, { color: colors.primary }]}>{labels.reset}</Text>
     </TouchableOpacity>
   </View>
 );
 
 const styles = StyleSheet.create({
-  container: { position: 'absolute', right: 12, top: 12, gap: 8, alignItems: 'flex-end' },
-  button: { width: 46, height: 46, borderRadius: 14, borderWidth: StyleSheet.hairlineWidth, alignItems: 'center', justifyContent: 'center' },
-  reset: { minHeight: 44, paddingHorizontal: 10, borderRadius: 12, borderWidth: StyleSheet.hairlineWidth, flexDirection: 'row', alignItems: 'center', gap: 5 },
-  resetText: { fontSize: 12, fontWeight: '700' },
+  container: { position: 'absolute', right: 12, top: 12, gap: 10, alignItems: 'flex-end' },
+  button: { width: 48, height: 48, borderRadius: 14, borderWidth: StyleSheet.hairlineWidth, alignItems: 'center', justifyContent: 'center' },
+  reset: { minHeight: 48, minWidth: 48, paddingHorizontal: 12, borderRadius: 12, borderWidth: StyleSheet.hairlineWidth, flexDirection: 'row', alignItems: 'center', gap: 6 },
+  resetText: { fontSize: 14, fontWeight: '700' },
 });

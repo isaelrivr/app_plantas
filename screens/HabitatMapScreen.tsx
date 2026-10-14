@@ -15,6 +15,7 @@ import { WorldMap } from '../components/WorldMap';
 import { getPlantById, BOTANICAL_KNOWLEDGE_BASE } from '../services/plantApi';
 import { getMappedCountries, getNativeCountries, getPlantHabitat, getRegionTypeColor, HabitatRegionDetail, PlantHabitatInfo } from '../services/habitatService';
 import { usePlanLimits } from '../hooks/usePlanLimits';
+import { announce } from '../services/accessibilityService';
 import type { RootStackParamList } from '../navigation/AppNavigator';
 
 type MapRoute = RouteProp<RootStackParamList, 'HabitatMap'>;
@@ -59,6 +60,8 @@ export const HabitatMapScreen: React.FC = () => {
     if (nextPlantId === plantId) return;
     setPlantId(nextPlantId);
     setResetToken((token) => token + 1);
+    const target = BOTANICAL_KNOWLEDGE_BASE.find((p) => p.id === nextPlantId);
+    if (target) announce(t('Mostrando hábitat de {especie}', { especie: target.name }));
   };
 
   const mapColors = {
@@ -85,7 +88,7 @@ export const HabitatMapScreen: React.FC = () => {
         <Ionicons name="chevron-back" size={26} color={colors.primary} />
         <Text style={[typography.body, { color: colors.primary, fontWeight: '600' }]}>{t('Atrás')}</Text>
       </TouchableOpacity>
-      <View style={styles.titleWrap}><Text style={[typography.headline, { color: colors.textPrimary }]} numberOfLines={1}>{t('Hábitat Global')}</Text><Text style={[typography.caption1, { color: colors.textSecondary }]} numberOfLines={1}>{plant?.scientificName || t('Distribución biogeográfica')}</Text></View>
+      <View style={styles.titleWrap}><Text style={[typography.headline, { color: colors.textPrimary }]} numberOfLines={1}>{t('Hábitat Global')}</Text><Text style={[typography.footnote, { color: colors.textSecondary }]} numberOfLines={1}>{plant?.scientificName || t('Distribución biogeográfica')}</Text></View>
       <View style={styles.headerPlaceholder} />
     </View>
   );
@@ -100,12 +103,12 @@ export const HabitatMapScreen: React.FC = () => {
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.selector} accessibilityLabel={t('Selector de planta')}>
         {BOTANICAL_KNOWLEDGE_BASE.map((candidate) => {
           const active = candidate.id === plantId;
-          return <TouchableOpacity key={candidate.id} onPress={() => changePlant(candidate.id)} style={[styles.chip, { backgroundColor: active ? colors.primary : colors.surface, borderColor: active ? colors.primary : colors.border }]} accessibilityRole="button" accessibilityLabel={t('Mostrar hábitat de {especie}', { especie: candidate.name })}><Text style={{ color: active ? '#FFFFFF' : colors.textPrimary, fontWeight: '700', fontSize: 13 }}>{candidate.name}</Text></TouchableOpacity>;
+          return <TouchableOpacity key={candidate.id} onPress={() => changePlant(candidate.id)} style={[styles.chip, { backgroundColor: active ? colors.primary : colors.surface, borderColor: active ? colors.primary : colors.border }]} accessibilityRole="button" accessibilityLabel={t('Mostrar hábitat de {especie}', { especie: candidate.name })}><Text style={{ color: active ? '#FFFFFF' : colors.textPrimary, fontWeight: '700', fontSize: 14 }}>{candidate.name}</Text></TouchableOpacity>;
         })}
       </ScrollView>
       <View style={[styles.legend, { backgroundColor: isDark ? '#1C1C1E' : '#F1F3F4' }]}>
-        <View style={styles.legendItem}><View style={[styles.dot, { backgroundColor: getRegionTypeColor('native', isDark) }]} /><Text style={{ color: colors.textPrimary }}>{t('Zona nativa')}</Text></View>
-        <View style={styles.legendItem}><View style={[styles.dot, { backgroundColor: isDark ? '#667176' : '#DCE3E6' }]} /><Text style={{ color: colors.textPrimary }}>{t('Resto del mundo')}</Text></View>
+        <View style={styles.legendItem}><View style={[styles.dot, { backgroundColor: getRegionTypeColor('native', isDark) }]} /><Text style={{ color: colors.textPrimary, fontSize: 14 }}>{t('Zona nativa')}</Text></View>
+        <View style={styles.legendItem}><View style={[styles.dot, { backgroundColor: isDark ? '#667176' : '#DCE3E6' }]} /><Text style={{ color: colors.textPrimary, fontSize: 14 }}>{t('Resto del mundo')}</Text></View>
       </View>
       <View style={[styles.mapPanel, { backgroundColor: mapColors.ocean }]}>
         {loading ? <View style={styles.state}><SkeletonBox width="92%" height={240} borderRadius={18} /><Text style={[typography.subheadline, { color: colors.textSecondary, marginTop: spacing.md }]}>{t('Generando proyección cartográfica...')}</Text></View>
@@ -126,12 +129,12 @@ const styles = StyleSheet.create({
   titleWrap: { flex: 1, alignItems: 'center' },
   headerPlaceholder: { width: 78 },
   selector: { gap: 8, paddingHorizontal: 14, paddingVertical: 10 },
-  chip: { minHeight: 44, paddingHorizontal: 13, borderRadius: 22, borderWidth: StyleSheet.hairlineWidth, alignItems: 'center', justifyContent: 'center' },
-  legend: { minHeight: 38, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 18 },
+  chip: { minHeight: 48, paddingHorizontal: 14, borderRadius: 24, borderWidth: StyleSheet.hairlineWidth, alignItems: 'center', justifyContent: 'center' },
+  legend: { minHeight: 44, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 18 },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  dot: { width: 11, height: 11, borderRadius: 6 },
+  dot: { width: 12, height: 12, borderRadius: 6 },
   mapPanel: { minHeight: 300, flex: 1, margin: 12, borderRadius: 18, overflow: 'hidden' },
   state: { flex: 1, minHeight: 280, alignItems: 'center', justifyContent: 'center', padding: 16 },
-  hint: { fontSize: 12, textAlign: 'center', marginHorizontal: 16, marginBottom: 8 },
+  hint: { fontSize: 14, textAlign: 'center', marginHorizontal: 16, marginBottom: 8 },
 });
 
