@@ -8,17 +8,17 @@ const fragment: Record<string, string> = {
   'PLAN BÁSICO GRATUITO': 'FREE BASIC PLAN',
   'Activo': 'Active',
   'facturación mensual': 'monthly billing',
-  '¡Gracias por apoyar a Plantae! Disfrutas de análisis botánicos avanzados y recomendaciones inteligentes ilimitadas.':
-    'Thank you for supporting Plantae! You enjoy advanced botanical analyses and unlimited smart recommendations.',
+  '¡Gracias por apoyar a EcoScan! Disfrutas de análisis botánicos avanzados y recomendaciones inteligentes ilimitadas.':
+    'Thank you for supporting EcoScan! You enjoy advanced botanical analyses and unlimited smart recommendations.',
   'Desbloquea recomendaciones inteligentes de clima, diagnósticos botánicos ilimitados y alertas de riego.':
     'Unlock smart climate recommendations, unlimited botanical diagnoses and watering alerts.',
   'Gestionar mi plan Pro': 'Manage my Pro plan',
-  'Explorar Plantae Pro': 'Explore Plantae Pro',
-  'Ver planes de Plantae Pro': 'View Plantae Pro plans',
+  'Explorar EcoScan Pro': 'Explore EcoScan Pro',
+  'Ver planes de EcoScan Pro': 'View EcoScan Pro plans',
   'Abrir los ajustes de la aplicación': 'Open app settings',
   'Ajustes de la aplicación': 'App settings',
   'Tema, idioma, notificaciones y privacidad': 'Theme, language, notifications and privacy',
-  'Beneficios incluidos en Plantae Pro': 'Benefits included in Plantae Pro',
+  'Beneficios incluidos en EcoScan Pro': 'Benefits included in EcoScan Pro',
   'Diagnósticos ilimitados por IA': 'Unlimited AI diagnoses',
   'Escanea tantas plantas como desees sin límites diarios.':
     'Scan as many plants as you want with no daily limits.',
@@ -62,7 +62,9 @@ const fragment: Record<string, string> = {
   'Gestionar suscripción': 'Manage subscription',
   'Ver planes Premium': 'View Premium plans',
   'Plantae Pro activo': 'Plantae Pro active',
+  'EcoScan Pro activo': 'EcoScan Pro active',
   'Mejorar a Plantae Pro': 'Upgrade to Plantae Pro',
+  'Mejorar a EcoScan Pro': 'Upgrade to EcoScan Pro',
   'Gestiona tu plan y facturación': 'Manage your plan and billing',
   'Desbloquea todas las funciones': 'Unlock all features',
   'Privacidad y datos': 'Privacy and data',
@@ -70,6 +72,7 @@ const fragment: Record<string, string> = {
   'Ver introducción de nuevo': 'View introduction again',
   'Eliminar mis datos del dispositivo': 'Delete my data from this device',
   'Plantae · Versión 1.0.0 (Expo SDK 57)': 'Plantae · Version 1.0.0 (Expo SDK 57)',
+  'EcoScan · Versión 1.0.0 (Expo SDK 57)': 'EcoScan · Version 1.0.0 (Expo SDK 57)',
   'Se borrarán de este dispositivo tu jardín, estadísticas, fotos, diario y ajustes. Esta acción no se puede deshacer.':
     'Your garden, statistics, photos, diary and settings will be deleted from this device. This action cannot be undone.',
   'Se borrarán tu jardín, estadísticas, ajustes y suscripción local de forma permanente. Esta acción no se puede deshacer.':
@@ -79,8 +82,8 @@ const fragment: Record<string, string> = {
   'Datos eliminados': 'Data deleted',
   'Los datos locales de este dispositivo se han eliminado.': 'The local data on this device has been deleted.',
   'Privacidad': 'Privacy',
-  'En Plantae las fotos se procesan para identificar plantas. En producción, la identificación se realiza mediante Cloud Functions y no se almacenan imágenes sin tu consentimiento. Puedes eliminar todos tus datos en cualquier momento desde esta pantalla.\n\nPolítica completa: plantae.app/privacidad':
-    'At Plantae photos are processed to identify plants. In production, identification is done through Cloud Functions and images are not stored without your consent. You can delete all your data at any time from this screen.\n\nFull policy: plantae.app/privacidad',
+  'En EcoScan las fotos se procesan para identificar plantas. En producción, la identificación se realiza mediante Cloud Functions y no se almacenan imágenes sin tu consentimiento. Puedes eliminar todos tus datos en cualquier momento desde esta pantalla.\n\nPolítica completa: ecoscan.app/privacidad':
+    'At EcoScan photos are processed to identify plants. In production, identification is done through Cloud Functions and images are not stored without your consent. You can delete all your data at any time from this screen.\n\nFull policy: ecoscan.app/privacidad',
   'Entendido': 'Got it',
 
   // Paywall
@@ -133,8 +136,8 @@ const fragment: Record<string, string> = {
   'Enviar mensaje': 'Send message',
 
   // Asistente (servicio)
-  '¡Hola! Soy tu asistente botánico de Plantae 🌿. Pregúntame sobre riego, luz, plagas, toxicidad o cuidados de tus plantas. Puedes empezar con una de las sugerencias de abajo.':
-    'Hi! I am your Plantae botanical assistant 🌿. Ask me about watering, light, pests, toxicity or caring for your plants. You can start with one of the suggestions below.',
+  '¡Hola! Soy tu asistente botánico de EcoScan 🌿. Pregúntame sobre riego, luz, plagas, toxicidad o cuidados de tus plantas. Puedes empezar con una de las sugerencias de abajo.':
+    'Hi! I am your EcoScan botanical assistant 🌿. Ask me about watering, light, pests, toxicity or caring for your plants. You can start with one of the suggestions below.',
   '{nombre}: {resumen}\n\n• Mascotas ({mascotas}): {notasMascotas}\n• Niños ({ninos}): {notasNinos}\n\nPuedes ver la etiqueta de toxicidad en la ficha de la especie.':
     '{nombre}: {resumen}\n\n• Pets ({mascotas}): {notasMascotas}\n• Children ({ninos}): {notasNinos}\n\nYou can see the toxicity label on the species page.',
   '¿Qué plantas son 100% seguras?': 'Which plants are 100% safe?',

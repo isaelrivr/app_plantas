@@ -60,7 +60,7 @@ export function createMessage(
 export function getWelcomeMessage(): AssistantMessage {
   return createMessage(
     'assistant',
-    t('¡Hola! Soy tu asistente botánico de Plantae 🌿. Pregúntame sobre riego, luz, plagas, toxicidad o cuidados de tus plantas. Puedes empezar con una de las sugerencias de abajo.'),
+    t('¡Hola! Soy tu asistente botánico de EcoScan 🌿. Pregúntame sobre riego, luz, plagas, toxicidad o cuidados de tus plantas. Puedes empezar con una de las sugerencias de abajo.'),
     { quickReplies: SUGGESTED_QUESTIONS.slice(0, 4).map((q) => t(q)), source: 'mock' }
   );
 }

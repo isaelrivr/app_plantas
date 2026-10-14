@@ -267,7 +267,7 @@ export const ScannerScreen: React.FC = () => {
     if (!limits.isPremium && limits.identificationsToday >= limits.identificationLimit) {
       Alert.alert(
         t('Límite gratuito alcanzado'),
-        t('Usaste tus {limite} identificaciones gratuitas de hoy. Con Plantae Pro escaneas sin límites.', { limite: limits.identificationLimit }),
+        t('Usaste tus {limite} identificaciones gratuitas de hoy. Con EcoScan Pro escaneas sin límites.', { limite: limits.identificationLimit }),
         [
           { text: t('Ahora no'), style: 'cancel' },
           { text: t('Ver Pro'), onPress: () => navigation.navigate('Paywall') },
@@ -344,7 +344,7 @@ export const ScannerScreen: React.FC = () => {
     if (!limits.isPremium && plants.length >= limits.plantLimit) {
       Alert.alert(
         t('Jardín gratuito lleno'),
-        t('El plan gratuito permite {limite} plantas. Con Plantae Pro guardas las que quieras.', { limite: limits.plantLimit }),
+        t('El plan gratuito permite {limite} plantas. Con EcoScan Pro guardas las que quieras.', { limite: limits.plantLimit }),
         [
           { text: t('Ahora no'), style: 'cancel' },
           { text: t('Ver Pro'), onPress: () => navigation.navigate('Paywall') },

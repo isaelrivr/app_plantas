@@ -80,7 +80,7 @@ async function parseError(response: Response): Promise<ApiError> {
   const message =
     body?.error?.message ??
     (response.status >= 500
-      ? t('El servidor de Plantae no está disponible en este momento. Inténtalo de nuevo.')
+      ? t('El servidor de EcoScan no está disponible en este momento. Inténtalo de nuevo.')
       : t('La petición no se pudo completar. Revisa los datos e inténtalo de nuevo.'));
   return new ApiError(code, message, response.status, body?.error?.retryAfterSeconds);
 }
@@ -154,7 +154,7 @@ export async function postJson<T>(path: string, body: unknown, options: PostOpti
       } else {
         lastError = new ApiError(
           'NETWORK',
-          t('No se pudo conectar con el servidor de Plantae. Revisa tu conexión.'),
+          t('No se pudo conectar con el servidor de EcoScan. Revisa tu conexión.'),
           0
         );
       }
@@ -165,5 +165,5 @@ export async function postJson<T>(path: string, body: unknown, options: PostOpti
     }
   }
 
-  throw lastError ?? new ApiError('NETWORK', t('No se pudo conectar con el servidor de Plantae.'), 0);
+  throw lastError ?? new ApiError('NETWORK', t('No se pudo conectar con el servidor de EcoScan.'), 0);
 }

@@ -106,17 +106,17 @@ const fragment: Record<string, string> = {
   'Tóxica': 'Toxic',
 
   // Cliente API: mensajes de error de red y servidor
-  'El servidor de Plantae no está disponible en este momento. Inténtalo de nuevo.':
-    'The Plantae server is not available right now. Please try again.',
+  'El servidor de EcoScan no está disponible en este momento. Inténtalo de nuevo.':
+    'The EcoScan server is not available right now. Please try again.',
   'La petición no se pudo completar. Revisa los datos e inténtalo de nuevo.':
     'The request could not be completed. Check the data and try again.',
   'La app no tiene configurado el servidor de reconocimiento (EXPO_PUBLIC_PLANT_AI_ENDPOINT).':
     'The app does not have the recognition server configured (EXPO_PUBLIC_PLANT_AI_ENDPOINT).',
   'El análisis tardó demasiado. Comprueba tu conexión e inténtalo de nuevo.':
     'The analysis took too long. Check your connection and try again.',
-  'No se pudo conectar con el servidor de Plantae. Revisa tu conexión.':
-    'Could not connect to the Plantae server. Check your connection.',
-  'No se pudo conectar con el servidor de Plantae.': 'Could not connect to the Plantae server.',
+  'No se pudo conectar con el servidor de EcoScan. Revisa tu conexión.':
+    'Could not connect to the EcoScan server. Check your connection.',
+  'No se pudo conectar con el servidor de EcoScan.': 'Could not connect to the EcoScan server.',
 
   // Caché de fichas de cuidados: ficha de respaldo
   'Esta planta': 'This plant',

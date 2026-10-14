@@ -9,8 +9,8 @@ const fragment: Record<string, string> = {
   'No se pudo abrir la cámara.': 'Could not open the camera.',
   'No se pudo abrir la galería de imágenes.': 'Could not open the image gallery.',
   'Diagnóstico de plagas Pro': 'Pro Pest Diagnosis',
-  'Detectamos {nombre}. Identificar plagas con detalle y su tratamiento es exclusivo de Plantae Pro.':
-    'We detected {nombre}. Identifying pests in detail and their treatment is exclusive to Plantae Pro.',
+  'Detectamos {nombre}. Identificar plagas con detalle y su tratamiento es exclusivo de EcoScan Pro.':
+    'We detected {nombre}. Identifying pests in detail and their treatment is exclusive to EcoScan Pro.',
   'Ahora no': 'Not now',
   ' Podrás volver a intentarlo en {min} min.': ' You can try again in {min} min.',
   'Límite de diagnósticos': 'Diagnosis limit',
@@ -296,8 +296,8 @@ const fragment: Record<string, string> = {
   'Riego único de emergencia; luego retomar calendario normal según la especie.':
     'Single emergency watering; then resume the normal schedule according to the species.',
   '4 a 8 horas tras el riego por inmersión.': '4 to 8 hours after soak watering.',
-  'Configura alarmas de riego personalizadas en Plantae Pro.':
-    'Set up custom watering alarms in Plantae Pro.',
+  'Configura alarmas de riego personalizadas en EcoScan Pro.':
+    'Set up custom watering alarms in EcoScan Pro.',
   'Procedimiento seguro y natural sin riesgos para el hogar.':
     'Safe and natural procedure with no risks for the home.',
 

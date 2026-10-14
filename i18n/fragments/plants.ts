@@ -16,8 +16,8 @@ const fragment: Record<string, string> = {
 
   // Límite del plan gratuito
   'Jardín gratuito lleno': 'Free garden full',
-  'El plan gratuito permite {limite} plantas. Con Plantae Pro guardas las que quieras.':
-    'The free plan allows {limite} plants. With Plantae Pro you can save as many as you want.',
+  'El plan gratuito permite {limite} plantas. Con EcoScan Pro guardas las que quieras.':
+    'The free plan allows {limite} plants. With EcoScan Pro you can save as many as you want.',
   'Ahora no': 'Not now',
   'Ver Pro': 'See Pro',
 

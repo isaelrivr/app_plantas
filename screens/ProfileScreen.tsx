@@ -134,7 +134,7 @@ export const ProfileScreen: React.FC = () => {
                 },
               ]}
             >
-              {isPremium ? 'Plantae Pro' : 'Plantae Free'}
+              {isPremium ? 'EcoScan Pro' : 'EcoScan Free'}
             </Text>
           </View>
 
@@ -162,13 +162,13 @@ export const ProfileScreen: React.FC = () => {
           ]}
         >
           {isPremium
-            ? t('¡Gracias por apoyar a Plantae! Disfrutas de análisis botánicos avanzados y recomendaciones inteligentes ilimitadas.')
+            ? t('¡Gracias por apoyar a EcoScan! Disfrutas de análisis botánicos avanzados y recomendaciones inteligentes ilimitadas.')
             : t('Desbloquea recomendaciones inteligentes de clima, diagnósticos botánicos ilimitados y alertas de riego.')}
         </Text>
 
         {/* Botón para abrir la pantalla de planes */}
         <Button
-          title={isPremium ? t('Gestionar mi plan Pro') : t('Explorar Plantae Pro')}
+          title={isPremium ? t('Gestionar mi plan Pro') : t('Explorar EcoScan Pro')}
           onPress={handleTogglePremium}
           variant={isPremium ? 'secondary' : 'premium'}
           size="md"
@@ -179,7 +179,7 @@ export const ProfileScreen: React.FC = () => {
               color={isPremium ? colors.textPrimary : '#1C1C1E'}
             />
           }
-          accessibilityLabel={isPremium ? t('Gestionar mi plan Pro') : t('Ver planes de Plantae Pro')}
+          accessibilityLabel={isPremium ? t('Gestionar mi plan Pro') : t('Ver planes de EcoScan Pro')}
         />
       </Card>
       )}
@@ -210,7 +210,7 @@ export const ProfileScreen: React.FC = () => {
             { color: colors.textPrimary, marginBottom: spacing.sm, paddingHorizontal: spacing.xxs },
           ]}
         >
-          {t('Beneficios incluidos en Plantae Pro')}
+          {t('Beneficios incluidos en EcoScan Pro')}
         </Text>
 
         <Card>

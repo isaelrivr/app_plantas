@@ -86,7 +86,7 @@ export const SettingsScreen: React.FC = () => {
   const handlePrivacy = () => {
     Alert.alert(
       t('Privacidad'),
-      t('En Plantae las fotos se procesan para identificar plantas. En producción, la identificación se realiza mediante Cloud Functions y no se almacenan imágenes sin tu consentimiento. Puedes eliminar todos tus datos en cualquier momento desde esta pantalla.\n\nPolítica completa: plantae.app/privacidad'),
+      t('En EcoScan las fotos se procesan para identificar plantas. En producción, la identificación se realiza mediante Cloud Functions y no se almacenan imágenes sin tu consentimiento. Puedes eliminar todos tus datos en cualquier momento desde esta pantalla.\n\nPolítica completa: ecoscan.app/privacidad'),
       [{ text: t('Entendido') }]
     );
   };
@@ -218,7 +218,7 @@ export const SettingsScreen: React.FC = () => {
           >
             <View style={{ flex: 1 }}>
               <Text style={[typography.body, { color: colors.textPrimary }]}>
-                {isPremium ? t('Plantae Pro activo') : t('Mejorar a Plantae Pro')}
+                {isPremium ? t('EcoScan Pro activo') : t('Mejorar a EcoScan Pro')}
               </Text>
               <Text style={[typography.caption1, { color: colors.textTertiary, marginTop: 2 }]}>
                 {isPremium ? t('Gestiona tu plan y facturación') : t('Desbloquea todas las funciones')}
@@ -247,7 +247,7 @@ export const SettingsScreen: React.FC = () => {
         </Card>
 
         <Text style={[typography.caption2, { color: colors.textTertiary, textAlign: 'center', marginTop: spacing.xl }]}>
-          {t('Plantae · Versión 1.0.0 (Expo SDK 57)')}
+          {t('EcoScan · Versión 1.0.0 (Expo SDK 57)')}
         </Text>
       </ScrollView>
     </View>

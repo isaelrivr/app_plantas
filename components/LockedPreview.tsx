@@ -47,7 +47,7 @@ export const LockedPreview: React.FC<LockedPreviewProps> = ({
             },
           ]}
           accessible
-          accessibilityLabel={t('{title} bloqueado. Requiere Plantae Pro.', { title })}
+          accessibilityLabel={t('{title} bloqueado. Requiere EcoScan Pro.', { title })}
         >
           <View
             style={[
@@ -76,7 +76,7 @@ export const LockedPreview: React.FC<LockedPreviewProps> = ({
             onPress={onUnlock}
             activeOpacity={0.8}
             accessibilityRole="button"
-            accessibilityLabel={t('Desbloquear con Plantae Pro')}
+            accessibilityLabel={t('Desbloquear con EcoScan Pro')}
             style={[
               styles.cta,
               {

@@ -90,7 +90,7 @@ export const PlantDetailScreen: React.FC = () => {
     if (!limits.isPremium && plants.length >= limits.plantLimit) {
       Alert.alert(
         t('Jardín gratuito lleno'),
-        t('El plan gratuito permite {limite} plantas. Con Plantae Pro guardas las que quieras.', { limite: limits.plantLimit }),
+        t('El plan gratuito permite {limite} plantas. Con EcoScan Pro guardas las que quieras.', { limite: limits.plantLimit }),
         [
           { text: t('Ahora no'), style: 'cancel' },
           { text: t('Ver Pro'), onPress: () => navigation.navigate('Paywall') },

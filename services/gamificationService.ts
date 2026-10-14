@@ -48,7 +48,7 @@ export const ACHIEVEMENTS: AchievementDefinition[] = [
   {
     id: 'first-water',
     title: 'Primer Riego',
-    description: 'Registra tu primer riego en Plantae.',
+    description: 'Registra tu primer riego en EcoScan.',
     icon: 'water',
     metric: 'waterings',
     target: 1,

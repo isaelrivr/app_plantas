@@ -13,7 +13,7 @@ const fragment: Record<string, string> = {
   'Exclusivo Pro': 'Pro Only',
   'Conecta tu ubicación con satélites meteorológicos en tiempo real (Open-Meteo) para ajustar automáticamente el riego según lluvia, frío o calor extremo.':
     'Connect your location to real-time weather satellites (Open-Meteo) to automatically adjust watering based on rain, cold, or extreme heat.',
-  'Desbloquear con Plantae Pro ({precio})': 'Unlock with Plantae Pro ({precio})',
+  'Desbloquear con EcoScan Pro ({precio})': 'Unlock with EcoScan Pro ({precio})',
   'Cargando pronóstico del clima': 'Loading weather forecast',
   'Sincronizando pronóstico Open-Meteo para tu ciudad...':
     'Syncing Open-Meteo forecast for your city...',
@@ -100,8 +100,8 @@ const fragment: Record<string, string> = {
   '🔔 Recordatorio Programado': '🔔 Reminder Scheduled',
   'Recibirás una notificación para regar "{planta}" en tu dispositivo.':
     'You will receive a notification to water "{planta}" on your device.',
-  'Activa las notificaciones de Plantae en los Ajustes de tu dispositivo para recibir recordatorios de riego.':
-    'Enable Plantae notifications in your device Settings to receive watering reminders.',
+  'Activa las notificaciones de EcoScan en los Ajustes de tu dispositivo para recibir recordatorios de riego.':
+    'Enable EcoScan notifications in your device Settings to receive watering reminders.',
   'Se avisará "{tarea}" para {planta} en {dias} día(s).':
     'You will be reminded of "{tarea}" for {planta} in {dias} day(s).',
   'No se pudo programar el recordatorio. Revisa los permisos de notificación.':

@@ -117,7 +117,7 @@ export const PaywallScreen: React.FC = () => {
             <Ionicons name="leaf" size={40} color={colors.premiumGold} />
           </View>
           <Text style={[typography.largeTitle, { color: colors.textPrimary, textAlign: 'center', marginTop: spacing.md }]}>
-            Plantae Pro
+            EcoScan Pro
           </Text>
           <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xs }]}>
             {t('Cuida tus plantas como un experto: análisis ilimitados, clima local y diagnóstico de plagas.')}

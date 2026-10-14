@@ -143,7 +143,7 @@ export const CareCalendarScreen: React.FC = () => {
       );
     } else {
       setErrorMessage(
-        t('Activa las notificaciones de Plantae en los Ajustes de tu dispositivo para recibir recordatorios de riego.')
+        t('Activa las notificaciones de EcoScan en los Ajustes de tu dispositivo para recibir recordatorios de riego.')
       );
     }
   };

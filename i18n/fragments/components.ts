@@ -8,7 +8,7 @@ const fragment: Record<string, string> = {
   'Error inesperado': 'Unexpected error',
   'Error': 'Error',
   'Reintentar operación': 'Retry operation',
-  'Plantae Pro Activo': 'Plantae Pro Active',
+  'EcoScan Pro Activo': 'EcoScan Pro Active',
   'Consejo personalizado de ubicación y clima': 'Personalized location and climate tip',
   'En tu zona geográfica actual (clima templado), mantén esta planta lejos de radiadores en invierno y aumenta el riego si la temperatura supera los 26°C.':
     'In your current geographic area (temperate climate), keep this plant away from radiators in winter and increase watering if the temperature exceeds 26°C.',
@@ -28,10 +28,10 @@ const fragment: Record<string, string> = {
   'Después': 'After',
   'Comparador de crecimiento. {before} y {after}.': 'Growth comparison. {before} and {after}.',
   'Función Premium': 'Premium feature',
-  '{title} bloqueado. Requiere Plantae Pro.': '{title} locked. Requires Plantae Pro.',
-  'Desbloquear con Plantae Pro': 'Unlock with Plantae Pro',
+  '{title} bloqueado. Requiere EcoScan Pro.': '{title} locked. Requires EcoScan Pro.',
+  'Desbloquear con EcoScan Pro': 'Unlock with EcoScan Pro',
   'Desbloquear con Pro': 'Unlock with Pro',
-  'Cargando Plantae': 'Loading Plantae',
+  'Cargando EcoScan': 'Loading EcoScan',
   'Preparando tu jardín…': 'Preparing your garden…',
 };
 

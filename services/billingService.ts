@@ -54,7 +54,7 @@ export interface BillingResult {
   errorMessage?: string;
 }
 
-export const PREMIUM_ENTITLEMENT_ID = 'Plantae Pro';
+export const PREMIUM_ENTITLEMENT_ID = 'EcoScan Pro';
 
 export const BILLING_PLANS: BillingPlan[] = [
   {

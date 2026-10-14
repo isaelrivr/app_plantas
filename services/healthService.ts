@@ -397,7 +397,7 @@ const HEALTH_CATALOG: DemoDiagnosis[] = [
       },
       frequency: 'Riego único de emergencia; luego retomar calendario normal según la especie.',
       recoveryDays: '4 a 8 horas tras el riego por inmersión.',
-      prevention: 'Configura alarmas de riego personalizadas en Plantae Pro.',
+      prevention: 'Configura alarmas de riego personalizadas en EcoScan Pro.',
       safetyAlert: {
         hasPetsWarning: false,
         hasChildrenWarning: false,

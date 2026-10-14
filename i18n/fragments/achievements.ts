@@ -16,7 +16,7 @@ const fragment: Record<string, string> = {
 
   // Logros: títulos, descripciones y recompensas
   'Primer Riego': 'First Watering',
-  'Registra tu primer riego en Plantae.': 'Log your first watering in Plantae.',
+  'Registra tu primer riego en EcoScan.': 'Log your first watering in EcoScan.',
   'Empieza tu camino verde': 'Start your green journey',
   'Racha de 3 días': '3-Day Streak',
   'Mantén una racha de riego de 3 días seguidos.': 'Keep a 3-day watering streak.',

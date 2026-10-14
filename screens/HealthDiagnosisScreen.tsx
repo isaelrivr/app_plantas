@@ -168,7 +168,7 @@ export const HealthDiagnosisScreen: React.FC = () => {
     if (result.category === 'Plaga' && limits.isFeatureLocked('pestDiagnosis')) {
       Alert.alert(
         t('Diagnóstico de plagas Pro'),
-        t('Detectamos {nombre}. Identificar plagas con detalle y su tratamiento es exclusivo de Plantae Pro.', { nombre: result.name }),
+        t('Detectamos {nombre}. Identificar plagas con detalle y su tratamiento es exclusivo de EcoScan Pro.', { nombre: result.name }),
         [
           { text: t('Ahora no'), style: 'cancel' },
           { text: t('Ver Pro'), onPress: () => navigation.navigate('Paywall') },

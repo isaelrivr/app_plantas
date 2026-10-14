@@ -28,7 +28,7 @@ interface Page {
 const PAGES: Page[] = [
   {
     icon: 'leaf',
-    title: 'Bienvenido a Plantae',
+    title: 'Bienvenido a EcoScan',
     description: 'Tu compañero inteligente para mantener cada planta sana y radiante, sin necesidad de ser experto.',
     accent: 'primary',
   },

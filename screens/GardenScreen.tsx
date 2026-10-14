@@ -235,7 +235,7 @@ export const GardenScreen: React.FC = () => {
 
           <View style={{ marginTop: spacing.md }}>
             <Button
-              title={t('Desbloquear con Plantae Pro ({precio})', { precio: price })}
+              title={t('Desbloquear con EcoScan Pro ({precio})', { precio: price })}
               onPress={() => navigation.navigate('Perfil')}
               variant="premium"
               size="sm"

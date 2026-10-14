@@ -1,9 +1,9 @@
 {
   "expo": {
-    "name": "Plantae - Cuidado y Escáner",
-    "slug": "plantae-app",
+    "name": "EcoScan",
+    "slug": "ecoscan-app",
     "version": "1.0.0",
-    "scheme": "plantae",
+    "scheme": "ecoscan",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -11,15 +11,15 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Plantae necesita acceso a tu cámara para identificar especies de plantas y diagnosticar sus hojas.",
+          "cameraPermission": "EcoScan necesita acceso a tu cámara para identificar especies de plantas y diagnosticar sus hojas.",
           "recordAudioAndroid": false
         }
       ],
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "Plantae usa tu ubicación para ajustar las recomendaciones de riego según el clima y temperatura de tu ciudad (solo usuarios Pro).",
-          "locationWhenInUsePermission": "Plantae usa tu ubicación para personalizar alertas de riego y clima según tu ciudad."
+          "locationAlwaysAndWhenInUsePermission": "EcoScan usa tu ubicación para ajustar las recomendaciones de riego según el clima y temperatura de tu ciudad (solo usuarios Pro).",
+          "locationWhenInUsePermission": "EcoScan usa tu ubicación para personalizar alertas de riego y clima según tu ciudad."
         }
       ],
       [
@@ -33,13 +33,13 @@
       "expo-font"
     ],
     "ios": {
-      "bundleIdentifier": "com.isaelrivr.plantae",
+      "bundleIdentifier": "com.isaelrivr.ecoscan",
       "buildNumber": "1",
       "supportsTablet": true,
       "infoPlist": {
-        "NSCameraUsageDescription": "Plantae necesita acceso a tu cámara para identificar plantas y diagnosticar problemas de salud foliar.",
-        "NSPhotoLibraryUsageDescription": "Plantae necesita acceso a tus fotos para analizar imágenes de plantas.",
-        "NSLocationWhenInUseUsageDescription": "Plantae usa tu ubicación para personalizar recomendaciones de riego según el clima local (solo usuarios Pro)."
+        "NSCameraUsageDescription": "EcoScan necesita acceso a tu cámara para identificar plantas y diagnosticar problemas de salud foliar.",
+        "NSPhotoLibraryUsageDescription": "EcoScan necesita acceso a tus fotos para analizar imágenes de plantas.",
+        "NSLocationWhenInUseUsageDescription": "EcoScan usa tu ubicación para personalizar recomendaciones de riego según el clima local (solo usuarios Pro)."
       }
     },
     "android": {
@@ -50,7 +50,7 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.isaelrivr.plantae",
+      "package": "com.isaelrivr.ecoscan",
       "versionCode": 1,
       "permissions": [
         "android.permission.CAMERA",
@@ -61,6 +61,12 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "1098ace6-db25-4367-bfca-89dca3b028eb"
+      }
+    },
+    "owner": "isaelriv"
   }
 }

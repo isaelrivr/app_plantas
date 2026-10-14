@@ -19,10 +19,10 @@ const fragment: Record<string, string> = {
   Galería: 'Gallery',
   'No se pudo acceder a las fotos.': 'Could not access the photos.',
   'Límite gratuito alcanzado': 'Free limit reached',
-  'Usaste tus {limite} identificaciones gratuitas de hoy. Con Plantae Pro escaneas sin límites.':
-    'You used your {limite} free identifications today. With Plantae Pro you scan without limits.',
-  'El plan gratuito permite {limite} plantas. Con Plantae Pro guardas las que quieras.':
-    'The free plan allows {limite} plants. With Plantae Pro you save as many as you like.',
+  'Usaste tus {limite} identificaciones gratuitas de hoy. Con EcoScan Pro escaneas sin límites.':
+    'You used your {limite} free identifications today. With EcoScan Pro you scan without limits.',
+  'El plan gratuito permite {limite} plantas. Con EcoScan Pro guardas las que quieras.':
+    'The free plan allows {limite} plants. With EcoScan Pro you save as many as you like.',
   'Ahora no': 'Not now',
   'Ver Pro': 'View Pro',
   ' Podrás volver a intentarlo en {min} min.': ' You can try again in {min} min.',

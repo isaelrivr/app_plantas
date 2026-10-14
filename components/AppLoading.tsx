@@ -16,12 +16,12 @@ export const AppLoading: React.FC = () => {
     <View
       style={[styles.container, { backgroundColor: colors.background }]}
       accessible
-      accessibilityLabel={t('Cargando Plantae')}
+      accessibilityLabel={t('Cargando EcoScan')}
     >
       <View style={[styles.logoCircle, { backgroundColor: colors.primaryLight }]}>
         <Ionicons name="leaf" size={56} color={colors.primary} />
       </View>
-      <Text style={[typography.title2, { color: colors.textPrimary, marginTop: spacing.lg }]}>Plantae</Text>
+      <Text style={[typography.title2, { color: colors.textPrimary, marginTop: spacing.lg }]}>EcoScan</Text>
       <Text style={[typography.subheadline, { color: colors.textSecondary, marginTop: spacing.xs }]}>
         {t('Preparando tu jardín…')}
       </Text>

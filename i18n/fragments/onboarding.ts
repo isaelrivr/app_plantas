@@ -1,6 +1,6 @@
 /** Traducciones al inglés: Onboarding. Clave = texto fuente en español. */
 const fragment: Record<string, string> = {
-  'Bienvenido a Plantae': 'Welcome to Plantae',
+  'Bienvenido a EcoScan': 'Welcome to EcoScan',
   'Tu compañero inteligente para mantener cada planta sana y radiante, sin necesidad de ser experto.':
     'Your smart companion to keep every plant healthy and radiant, without needing to be an expert.',
   'Identifica al instante': 'Identify instantly',

@@ -1,4 +1,4 @@
-# Plantae
+# EcoScan
 
 Aplicación móvil Expo/React Native para identificar plantas, organizar un jardín y registrar cuidados.
 

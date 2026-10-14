@@ -43,7 +43,7 @@ export const PremiumBanner: React.FC<PremiumBannerProps> = ({
       >
         <View style={styles.headerRow}>
           <Badge
-            label={t('Plantae Pro Activo')}
+            label={t('EcoScan Pro Activo')}
             variant="premium"
             icon={<Ionicons name="sparkles" size={14} color={colors.premiumGold} />}
           />
