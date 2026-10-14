@@ -1,13 +1,33 @@
 /** Traducciones al inglés: Perfil, ajustes, paywall y asistente. Clave = texto fuente en español. */
 const fragment: Record<string, string> = {
-  // Perfil
+  // Perfil / Yo
   'Perfil': 'Profile',
+  'Yo': 'Profile',
   'Ajustes y Suscripción': 'Settings and Subscription',
+  'Tu espacio y preferencias': 'Your space and preferences',
   'Cargando datos de la suscripción': 'Loading subscription data',
   'PLAN PRO ACTIVO': 'PRO PLAN ACTIVE',
   'PLAN BÁSICO GRATUITO': 'FREE BASIC PLAN',
+  'Plan Pro': 'Pro Plan',
+  'Plan Gratuito': 'Free Plan',
   'Activo': 'Active',
   'facturación mensual': 'monthly billing',
+  'Mis Logros y Medallas': 'My Achievements and Badges',
+  'Revisa tu racha de cuidados y recompensas': 'Check your care streak and rewards',
+  'Ajustes y Privacidad': 'Settings and Privacy',
+  'Ayuda y Preguntas Frecuentes': 'Help & FAQ',
+  'Aprende a usar EcoScan en 1 minuto': 'Learn how to use EcoScan in 1 minute',
+  'Preguntas Frecuentes': 'Frequently Asked Questions',
+  '¿Cómo identifico una planta?': 'How do I identify a plant?',
+  'Toca el botón verde central "Escanear", apunta a la hoja o flor y toma una foto clara. EcoScan te dirá su especie y cuidados.':
+    'Tap the central green "Scan" button, point at the leaf or flower and take a clear photo. EcoScan will tell you its species and care.',
+  '¿Cómo sé cuándo regar?': 'How do I know when to water?',
+  'En la pestaña "Hoy" verás las plantas que necesitan agua cada día. También puedes consultar tu "Calendario de Cuidados".':
+    'In the "Today" tab you will see the plants that need water each day. You can also check your "Care Calendar".',
+  '¿Qué hago si mi planta tiene hojas amarillas?': 'What if my plant has yellow leaves?',
+  'Usa el modo "Mi planta está enferma" en el escáner para obtener un diagnóstico inmediato y remedios recomendados.':
+    'Use the "My plant is sick" mode in the scanner to get an immediate diagnosis and recommended remedies.',
+  'Cerrar ayuda': 'Close help',
   '¡Gracias por apoyar a EcoScan! Disfrutas de análisis botánicos avanzados y recomendaciones inteligentes ilimitadas.':
     'Thank you for supporting EcoScan! You enjoy advanced botanical analyses and unlimited smart recommendations.',
   'Desbloquea recomendaciones inteligentes de clima, diagnósticos botánicos ilimitados y alertas de riego.':
@@ -133,6 +153,12 @@ const fragment: Record<string, string> = {
   'Preguntar: {pregunta}': 'Ask: {pregunta}',
   'Escribe tu pregunta...': 'Type your question...',
   'Mensaje para el asistente': 'Message to the assistant',
+  '¡Hola! Soy tu asistente botánico de EcoScan 🌿. Pregúntame sobre riego, luz, plagas, toxicidad o cuidados de tu {nombre}.':
+    'Hi! I am your EcoScan botanical assistant 🌿. Ask me about watering, light, pests, toxicity or caring for your {nombre}.',
+  '¿Cada cuántos días se riega?': 'How often should it be watered?',
+  '¿Cuánta luz necesita?': 'How much light does it need?',
+  '¿Es tóxica para mascotas?': 'Is it toxic to pets?',
+  '¿Por qué tiene hojas amarillas?': 'Why does it have yellow leaves?',
   'Enviar mensaje': 'Send message',
 
   // Asistente (servicio)

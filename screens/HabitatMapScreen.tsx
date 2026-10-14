@@ -75,8 +75,15 @@ export const HabitatMapScreen: React.FC = () => {
 
   const header = (
     <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border, paddingTop: Platform.OS === 'ios' ? 12 : 16 }]}>
-      <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton} accessibilityRole="button" accessibilityLabel={t('Volver a la pantalla anterior')}>
-        <Ionicons name="chevron-back" size={26} color={colors.primary} /><Text style={[typography.body, { color: colors.primary, fontWeight: '600' }]}>{t('Atrás')}</Text>
+      <TouchableOpacity
+        onPress={() => navigation.goBack()}
+        style={styles.backButton}
+        accessibilityRole="button"
+        accessibilityLabel={t('Volver a la pantalla anterior')}
+        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+      >
+        <Ionicons name="chevron-back" size={26} color={colors.primary} />
+        <Text style={[typography.body, { color: colors.primary, fontWeight: '600' }]}>{t('Atrás')}</Text>
       </TouchableOpacity>
       <View style={styles.titleWrap}><Text style={[typography.headline, { color: colors.textPrimary }]} numberOfLines={1}>{t('Hábitat Global')}</Text><Text style={[typography.caption1, { color: colors.textSecondary }]} numberOfLines={1}>{plant?.scientificName || t('Distribución biogeográfica')}</Text></View>
       <View style={styles.headerPlaceholder} />
@@ -115,7 +122,7 @@ export const HabitatMapScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   header: { minHeight: 70, borderBottomWidth: StyleSheet.hairlineWidth, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16 },
-  backButton: { minWidth: 78, minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 2 },
+  backButton: { minWidth: 78, minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: 2 },
   titleWrap: { flex: 1, alignItems: 'center' },
   headerPlaceholder: { width: 78 },
   selector: { gap: 8, paddingHorizontal: 14, paddingVertical: 10 },

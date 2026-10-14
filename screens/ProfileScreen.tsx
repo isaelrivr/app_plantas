@@ -78,8 +78,8 @@ export const ProfileScreen: React.FC = () => {
       contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxxl }}
     >
       <ScreenHeader
-        title={t('Perfil')}
-        subtitle={t('Ajustes y Suscripción')}
+        title={t('Yo')}
+        subtitle={t('Tu espacio y preferencias')}
       />
 
       {/* TARJETA DE ESTADO DE SUSCRIPCIÓN */}
@@ -184,6 +184,34 @@ export const ProfileScreen: React.FC = () => {
       </Card>
       )}
 
+      {/* ACCESO A LOGROS (LOGROS DENTRO DE YO) */}
+      <Card style={{ marginBottom: spacing.md }}>
+        <TouchableOpacity
+          style={styles.settingRow}
+          onPress={() => navigation.navigate('Achievements')}
+          accessibilityRole="button"
+          accessibilityLabel={t('Mis Logros y Medallas')}
+        >
+          <View
+            style={[
+              styles.benefitIconBox,
+              { backgroundColor: colors.primaryLight, marginRight: spacing.sm },
+            ]}
+          >
+            <Ionicons name="trophy" size={22} color={colors.accent} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[typography.body, { color: colors.textPrimary, fontWeight: '600' }]}>
+              {t('Mis Logros y Medallas')}
+            </Text>
+            <Text style={[typography.footnote, { color: colors.textSecondary, marginTop: 2 }]}>
+              {t('Revisa tu racha de cuidados y recompensas')}
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} style={{ marginLeft: 8 }} />
+        </TouchableOpacity>
+      </Card>
+
       {/* ACCESO A AJUSTES */}
       <Card style={{ marginBottom: spacing.lg }}>
         <TouchableOpacity
@@ -192,8 +220,16 @@ export const ProfileScreen: React.FC = () => {
           accessibilityRole="button"
           accessibilityLabel={t('Abrir los ajustes de la aplicación')}
         >
+          <View
+            style={[
+              styles.benefitIconBox,
+              { backgroundColor: colors.surfaceSecondary, marginRight: spacing.sm },
+            ]}
+          >
+            <Ionicons name="settings-outline" size={22} color={colors.textPrimary} />
+          </View>
           <View style={{ flex: 1 }}>
-            <Text style={[typography.body, { color: colors.textPrimary }]}>{t('Ajustes de la aplicación')}</Text>
+            <Text style={[typography.body, { color: colors.textPrimary, fontWeight: '600' }]}>{t('Ajustes de la aplicación')}</Text>
             <Text style={[typography.footnote, { color: colors.textSecondary, marginTop: 2 }]}>
               {t('Tema, idioma, notificaciones y privacidad')}
             </Text>
@@ -201,6 +237,51 @@ export const ProfileScreen: React.FC = () => {
           <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} style={{ marginLeft: 8 }} />
         </TouchableOpacity>
       </Card>
+
+      {/* SECCIÓN DE AYUDA Y SOPORTE */}
+      <View style={{ marginBottom: spacing.lg }}>
+        <Text
+          style={[
+            typography.headline,
+            { color: colors.textPrimary, marginBottom: spacing.sm, paddingHorizontal: spacing.xxs },
+          ]}
+        >
+          {t('Ayuda y Preguntas Frecuentes')}
+        </Text>
+
+        <Card>
+          <View style={{ paddingVertical: spacing.xs }}>
+            <Text style={[typography.subheadline, { color: colors.textPrimary, fontWeight: '700' }]}>
+              {t('¿Cómo identifico una planta?')}
+            </Text>
+            <Text style={[typography.footnote, { color: colors.textSecondary, marginTop: 4, lineHeight: 20 }]}>
+              {t('Toca el botón verde central "Escanear", apunta a la hoja o flor y toma una foto clara. EcoScan te dirá su especie y cuidados.')}
+            </Text>
+          </View>
+
+          <View style={[styles.separator, { backgroundColor: colors.border, marginVertical: spacing.sm }]} />
+
+          <View style={{ paddingVertical: spacing.xs }}>
+            <Text style={[typography.subheadline, { color: colors.textPrimary, fontWeight: '700' }]}>
+              {t('¿Cómo sé cuándo regar?')}
+            </Text>
+            <Text style={[typography.footnote, { color: colors.textSecondary, marginTop: 4, lineHeight: 20 }]}>
+              {t('En la pestaña "Hoy" verás las plantas que necesitan agua cada día. También puedes consultar tu "Calendario de Cuidados".')}
+            </Text>
+          </View>
+
+          <View style={[styles.separator, { backgroundColor: colors.border, marginVertical: spacing.sm }]} />
+
+          <View style={{ paddingVertical: spacing.xs }}>
+            <Text style={[typography.subheadline, { color: colors.textPrimary, fontWeight: '700' }]}>
+              {t('¿Qué hago si mi planta tiene hojas amarillas?')}
+            </Text>
+            <Text style={[typography.footnote, { color: colors.textSecondary, marginTop: 4, lineHeight: 20 }]}>
+              {t('Usa el modo "Mi planta está enferma" en el escáner para obtener un diagnóstico inmediato y remedios recomendados.')}
+            </Text>
+          </View>
+        </Card>
+      </View>
 
       {/* BENEFICIOS DE PREMIUM */}
       <View style={{ marginBottom: spacing.lg }}>

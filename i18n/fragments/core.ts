@@ -1,10 +1,20 @@
 /** Traducciones al inglés: navegación, contextos y hooks. Clave = texto fuente en español. */
 const fragment: Record<string, string> = {
   // ── Navegación (AppNavigator) ──────────────────────────────────────
-  'Escáner': 'Scanner',
+  'Hoy': 'Today',
   'Mi Jardín': 'My Garden',
+  'Escanear': 'Scan',
+  'Explorar': 'Explore',
+  'Yo': 'Profile',
+  'Yo (Pro)': 'Profile (Pro)',
+  'Escáner': 'Scanner',
   'Perfil': 'Profile',
   'Perfil (Pro)': 'Profile (Pro)',
+  'Pestaña de Hoy': 'Today tab',
+  'Pestaña de Mi Jardín': 'My Garden tab',
+  'Pestaña de Escanear': 'Scan tab',
+  'Pestaña de Explorar': 'Explore tab',
+  'Pestaña de Yo y Perfil': 'Profile tab',
   'Pestaña de Escáner y Reconocimiento de Plantas': 'Scanner and Plant Recognition tab',
   'Pestaña de Mi Jardín y Registro de Riegos': 'My Garden and Watering Log tab',
   'Pestaña de Perfil y Suscripción Premium': 'Profile and Premium Subscription tab',

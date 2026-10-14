@@ -229,6 +229,13 @@ export const HealthDiagnosisScreen: React.FC = () => {
     }
   };
 
+  const initialPhotoUri = route.params?.initialPhotoUri;
+  useEffect(() => {
+    if (initialPhotoUri && !photoUri && !diagnosisResult && !isDiagnosing) {
+      processImage(initialPhotoUri);
+    }
+  }, [initialPhotoUri]);
+
   const handleRetryDiagnosis = () => {
     if (lastAnalyzed) {
       processImage(lastAnalyzed);
@@ -753,8 +760,8 @@ const styles = StyleSheet.create({
   backButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    minWidth: 44,
-    minHeight: 44,
+    minWidth: 48,
+    minHeight: 48,
   },
   headerTitleCenter: {
     alignItems: 'center',

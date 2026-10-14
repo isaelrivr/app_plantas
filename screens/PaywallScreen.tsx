@@ -101,6 +101,7 @@ export const PaywallScreen: React.FC = () => {
             accessibilityRole="button"
             accessibilityLabel={t('Cerrar')}
             style={styles.closeButton}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <Ionicons name="close" size={26} color={colors.textSecondary} />
           </TouchableOpacity>
@@ -243,7 +244,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingTop: Platform.OS === 'ios' ? 8 : 12,
   },
-  closeButton: { width: 44, height: 44, alignItems: 'flex-start', justifyContent: 'center' },
+  closeButton: { width: 48, height: 48, alignItems: 'flex-start', justifyContent: 'center' },
   hero: { alignItems: 'center', marginTop: 16, marginBottom: 8 },
   heroIcon: {
     width: 80,

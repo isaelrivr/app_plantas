@@ -53,6 +53,9 @@ export const ScannerScreen: React.FC = () => {
   const [facing, setFacing] = useState<CameraType>('back');
   const [torchEnabled, setTorchEnabled] = useState<boolean>(false);
 
+  // Modo de escaneo: Identificar especie vs. Diagnosticar salud foliar
+  const [scanMode, setScanMode] = useState<'identify' | 'health'>('identify');
+
   // Fotos de la MISMA planta (hasta 4 mejoran la precisión)
   const [photos, setPhotos] = useState<string[]>([]);
 
@@ -142,6 +145,41 @@ export const ScannerScreen: React.FC = () => {
     );
   }
 
+  // ACCIÓN: Captura con haptics (se añade a la bandeja de fotos)
+  const addPhoto = (uri: string) => {
+    setPhotos((prev) => {
+      if (prev.length >= MAX_PHOTOS) {
+        Alert.alert(
+          t('Máximo de fotos'),
+          t('Puedes analizar hasta {max} fotos de la misma planta. Elimina alguna para añadir otra.', { max: MAX_PHOTOS })
+        );
+        return prev;
+      }
+      return [...prev, uri];
+    });
+  };
+
+  const handlePickFromGallery = async () => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      const pickerResult = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        quality: 0.8,
+      });
+
+      if (!pickerResult.canceled && pickerResult.assets[0]?.uri) {
+        if (scanMode === 'health') {
+          navigation.navigate('HealthDiagnosis', { initialPhotoUri: pickerResult.assets[0].uri });
+        } else {
+          addPhoto(pickerResult.assets[0].uri);
+        }
+      }
+    } catch {
+      Alert.alert(t('Galería'), t('No se pudo acceder a las fotos.'));
+    }
+  };
+
   if (!permission.granted) {
     return (
       <View style={[styles.permissionContainer, { backgroundColor: colors.background, padding: spacing.xl }]}>
@@ -160,7 +198,7 @@ export const ScannerScreen: React.FC = () => {
             { color: colors.textPrimary, textAlign: 'center', marginBottom: spacing.sm, fontWeight: '700' },
           ]}
         >
-          {t('Reconocimiento Botánico')}
+          {t('Escanear')}
         </Text>
 
         <Text
@@ -169,13 +207,21 @@ export const ScannerScreen: React.FC = () => {
             { color: colors.textSecondary, textAlign: 'center', marginBottom: spacing.xl, lineHeight: 24 },
           ]}
         >
-          {t('Apunta la cámara a cualquier hoja o flor para identificar su especie, origen biológico en el mapa mundial y guía de cuidados.')}
+          {t('EcoScan necesita tu cámara para identificar plantas y revisar la salud de sus hojas.')}
         </Text>
 
         <Button
-          title={t('Permitir cámara')}
+          title={t('Activar cámara')}
           onPress={requestPermission}
           variant="primary"
+          size="lg"
+          style={{ width: '100%', marginBottom: spacing.md }}
+        />
+
+        <Button
+          title={t('Elegir de la galería')}
+          onPress={handlePickFromGallery}
+          variant="secondary"
           size="lg"
           style={{ width: '100%' }}
         />
@@ -183,21 +229,23 @@ export const ScannerScreen: React.FC = () => {
     );
   }
 
-  // ACCIÓN: Captura con haptics (se añade a la bandeja de fotos)
-  const addPhoto = (uri: string) => {
-    setPhotos((prev) => {
-      if (prev.length >= MAX_PHOTOS) {
-        Alert.alert(
-          t('Máximo de fotos'),
-          t('Puedes analizar hasta {max} fotos de la misma planta. Elimina alguna para añadir otra.', { max: MAX_PHOTOS })
-        );
-        return prev;
-      }
-      return [...prev, uri];
-    });
-  };
-
   const handleCapture = async () => {
+    if (scanMode === 'health') {
+      try {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        if (cameraRef.current) {
+          const photo = await cameraRef.current.takePictureAsync({ quality: 0.8 });
+          if (photo?.uri) {
+            navigation.navigate('HealthDiagnosis', { initialPhotoUri: photo.uri });
+            return;
+          }
+        }
+      } catch {
+        Alert.alert(t('Error'), t('No se pudo capturar la imagen. Intenta de nuevo.'));
+      }
+      return;
+    }
+
     if (photos.length >= MAX_PHOTOS) {
       Alert.alert(
         t('Máximo de fotos'),
@@ -213,23 +261,6 @@ export const ScannerScreen: React.FC = () => {
       }
     } catch {
       Alert.alert(t('Error'), t('No se pudo capturar la imagen. Intenta de nuevo.'));
-    }
-  };
-
-  const handlePickFromGallery = async () => {
-    try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      const pickerResult = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'],
-        allowsEditing: true,
-        quality: 0.8,
-      });
-
-      if (!pickerResult.canceled && pickerResult.assets[0]?.uri) {
-        addPhoto(pickerResult.assets[0].uri);
-      }
-    } catch {
-      Alert.alert(t('Galería'), t('No se pudo acceder a las fotos.'));
     }
   };
 
@@ -817,18 +848,86 @@ export const ScannerScreen: React.FC = () => {
         </TouchableOpacity>
       </View>
 
-      {/* BOTÓN FLOTANTE DIRECTO PARA "DIAGNOSTICAR SALUD" */}
-      <TouchableOpacity
-        style={[styles.floatingDiagnosisBtn, { backgroundColor: colors.surface }]}
-        onPress={() => navigation.navigate('HealthDiagnosis')}
-        accessibilityRole="button"
-        accessibilityLabel={t('Diagnosticar salud y plagas')}
-      >
-        <Ionicons name="medkit" size={20} color={colors.primary} />
-        <Text style={[typography.caption1, { color: colors.textPrimary, fontWeight: '700', marginLeft: 6 }]}>
-          {t('Diagnosticar salud')}
-        </Text>
-      </TouchableOpacity>
+      {/* SELECTOR DE MODOS: IDENTIFICAR PLANTA VS MI PLANTA ESTÁ ENFERMA */}
+      <View style={styles.modeSelectorWrap}>
+        <View style={styles.modeTabsRow}>
+          <TouchableOpacity
+            style={[
+              styles.modeTabBtn,
+              scanMode === 'identify' && { backgroundColor: colors.primary },
+            ]}
+            onPress={() => {
+              try { Haptics.selectionAsync(); } catch {}
+              setScanMode('identify');
+            }}
+            accessibilityRole="button"
+            accessibilityLabel={t('Identificar planta')}
+          >
+            <Ionicons
+              name="leaf"
+              size={18}
+              color={scanMode === 'identify' ? '#FFFFFF' : '#DDDDDD'}
+            />
+            <Text
+              style={[
+                typography.subheadline,
+                {
+                  color: scanMode === 'identify' ? '#FFFFFF' : '#DDDDDD',
+                  fontWeight: '700',
+                  marginLeft: 6,
+                },
+              ]}
+            >
+              {t('Identificar planta')}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.modeTabBtn,
+              scanMode === 'health' && { backgroundColor: '#E65100' },
+            ]}
+            onPress={() => {
+              try { Haptics.selectionAsync(); } catch {}
+              setScanMode('health');
+            }}
+            accessibilityRole="button"
+            accessibilityLabel={t('Mi planta está enferma')}
+          >
+            <Ionicons
+              name="medkit"
+              size={18}
+              color={scanMode === 'health' ? '#FFFFFF' : '#DDDDDD'}
+            />
+            <Text
+              style={[
+                typography.subheadline,
+                {
+                  color: scanMode === 'health' ? '#FFFFFF' : '#DDDDDD',
+                  fontWeight: '700',
+                  marginLeft: 6,
+                },
+              ]}
+            >
+              {t('Mi planta está enferma')}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* FRASE DE AYUDA VISIBLE DEBAJO */}
+        <View style={styles.modeHelpBox}>
+          <Ionicons
+            name={scanMode === 'identify' ? 'information-circle' : 'alert-circle'}
+            size={16}
+            color="#FFFFFF"
+          />
+          <Text style={styles.modeHelpText}>
+            {scanMode === 'identify'
+              ? t('Apunta a toda la planta o flor para saber qué especie es')
+              : t('Enfoca las hojas con manchas, hojas amarillas o plagas')}
+          </Text>
+        </View>
+      </View>
 
       {/* BANDEJA DE FOTOS (FILMSTRIP) Y BOTÓN ANALIZAR */}
       {photos.length > 0 && (
@@ -1045,22 +1144,46 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 4,
   },
-  floatingDiagnosisBtn: {
+  modeSelectorWrap: {
     position: 'absolute',
-    top: 20,
-    right: 16,
+    top: 76,
+    left: 12,
+    right: 12,
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  modeTabsRow: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(0, 0, 0, 0.72)',
+    borderRadius: 24,
+    padding: 4,
+    alignItems: 'center',
+  },
+  modeTabBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 20,
     minHeight: 44,
+  },
+  modeHelpBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.72)',
+    borderRadius: 16,
     paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 22,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
+    paddingVertical: 6,
+    marginTop: 8,
+    maxWidth: '96%',
+  },
+  modeHelpText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '600',
+    marginLeft: 6,
+    textAlign: 'center',
   },
   captureTray: {
     position: 'absolute',

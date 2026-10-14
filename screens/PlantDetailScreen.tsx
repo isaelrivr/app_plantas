@@ -633,6 +633,29 @@ export const PlantDetailScreen: React.FC = () => {
           />
         </View>
       </ScrollView>
+
+      {/* BOTÓN FLOTANTE: PREGÚNTALE A ECOSCAN */}
+      <TouchableOpacity
+        style={[
+          styles.floatingAssistantBtn,
+          {
+            backgroundColor: colors.primary,
+            shadowColor: colors.primary,
+          },
+        ]}
+        onPress={() => {
+          try { Haptics.selectionAsync(); } catch {}
+          navigation.navigate('Assistant', { plantName: plant.name });
+        }}
+        activeOpacity={0.88}
+        accessibilityRole="button"
+        accessibilityLabel={t('Preguntar sobre {nombre}', { nombre: plant.name })}
+      >
+        <Ionicons name="chatbubbles" size={20} color="#FFFFFF" />
+        <Text style={[typography.subheadline, { color: '#FFFFFF', fontWeight: '700', marginLeft: 8 }]}>
+          {t('Pregúntale a EcoSan')}
+        </Text>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -652,8 +675,24 @@ const styles = StyleSheet.create({
   backButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    minWidth: 44,
-    minHeight: 44,
+    minWidth: 48,
+    minHeight: 48,
+  },
+  floatingAssistantBtn: {
+    position: 'absolute',
+    bottom: 24,
+    right: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 18,
+    borderRadius: 28,
+    minHeight: 48,
+    elevation: 6,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 6,
   },
   actionHeaderBtn: {
     width: 44,

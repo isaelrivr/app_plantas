@@ -11,7 +11,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
 import { useAppTheme } from '../theme';
 import { ChatBubble } from '../components/ChatBubble';
@@ -28,11 +28,36 @@ import { useTranslation } from '../i18n';
 export const AssistantScreen: React.FC = () => {
   const { colors, layout, spacing, typography } = useAppTheme();
   const navigation = useNavigation<any>();
+  const route = useRoute<any>();
   const { plants } = useGarden();
   const { t } = useTranslation();
 
+  const plantNameFromRoute = route.params?.plantName;
+  const targetPlantName = plantNameFromRoute || plants[0]?.name;
+
   const scrollRef = useRef<ScrollView>(null);
-  const [messages, setMessages] = useState<AssistantMessage[]>([getWelcomeMessage()]);
+  const [messages, setMessages] = useState<AssistantMessage[]>(() => {
+    if (plantNameFromRoute) {
+      return [
+        createMessage(
+          'assistant',
+          t('¡Hola! Soy tu asistente botánico de EcoScan 🌿. Pregúntame sobre riego, luz, plagas, toxicidad o cuidados de tu {nombre}.', {
+            nombre: plantNameFromRoute,
+          }),
+          {
+            quickReplies: [
+              t('¿Cada cuántos días se riega?'),
+              t('¿Cuánta luz necesita?'),
+              t('¿Es tóxica para mascotas?'),
+              t('¿Por qué tiene hojas amarillas?'),
+            ],
+            source: 'mock',
+          }
+        ),
+      ];
+    }
+    return [getWelcomeMessage()];
+  });
   const [input, setInput] = useState('');
   const [typing, setTyping] = useState(false);
 
@@ -56,7 +81,7 @@ export const AssistantScreen: React.FC = () => {
 
     try {
       const reply = await sendAssistantMessage(trimmed, {
-        plantName: plants[0]?.name,
+        plantName: targetPlantName,
       });
       setMessages((prev) => [...prev, reply]);
       try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
@@ -216,7 +241,7 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
     borderBottomWidth: 1,
   },
-  backButton: { flexDirection: 'row', alignItems: 'center', minHeight: 44 },
+  backButton: { flexDirection: 'row', alignItems: 'center', minHeight: 48, minWidth: 48 },
   actionHeaderBtn: { width: 60 },
   typingRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
   avatar: {
@@ -239,7 +264,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     paddingHorizontal: 14,
     paddingVertical: 10,
-    minHeight: 44,
+    minHeight: 48,
     justifyContent: 'center',
   },
   inputBar: {

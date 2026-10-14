@@ -6,6 +6,19 @@ const fragment: Record<string, string> = {
   'Enfocando patrones foliares...': 'Focusing on leaf patterns...',
   'Cargando cámara y reconocimiento botánico': 'Loading camera and botanical recognition',
   'Reconocimiento Botánico': 'Botanical Recognition',
+  'EcoScan necesita tu cámara para identificar plantas y revisar la salud de sus hojas.':
+    'EcoScan needs your camera to identify plants and check the health of their leaves.',
+  'Activar cámara': 'Enable camera',
+  'Elegir de la galería': 'Choose from gallery',
+  'Identificar planta': 'Identify plant',
+  'Mi planta está enferma': 'My plant is sick',
+  'Apunta a toda la planta o flor para saber qué especie es':
+    'Point at the whole plant or flower to find out which species it is',
+  'Enfoca las hojas con manchas, hojas amarillas o plagas':
+    'Focus on leaves with spots, yellowing, or pests',
+  'Modo activo: {modo}': 'Active mode: {modo}',
+  'Cambiar a modo {modo}': 'Switch to {modo} mode',
+  'Abrir galería': 'Open gallery',
   'Apunta la cámara a cualquier hoja o flor para identificar su especie, origen biológico en el mapa mundial y guía de cuidados.':
     'Point the camera at any leaf or flower to identify its species, biological origin on the world map, and care guide.',
   'Permitir cámara': 'Allow camera',

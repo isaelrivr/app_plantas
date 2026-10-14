@@ -1,10 +1,12 @@
 import React from 'react';
-import { Platform } from 'react-native';
+import { Platform, View } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
-import { ScannerScreen } from '../screens/ScannerScreen';
+import { TodayScreen } from '../screens/TodayScreen';
 import { GardenScreen } from '../screens/GardenScreen';
+import { ScannerScreen } from '../screens/ScannerScreen';
+import { ExploreScreen } from '../screens/ExploreScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
 import { HabitatMapScreen } from '../screens/HabitatMapScreen';
 import { PlantDetailScreen } from '../screens/PlantDetailScreen';
@@ -21,13 +23,15 @@ import { usePremium } from '../context/PremiumContext';
 import { useTranslation } from '../i18n';
 
 export type RootTabParamList = {
-  'Escáner': undefined;
-  'Mi Jardín': undefined;
-  'Perfil': undefined;
+  Today: undefined;
+  Garden: undefined;
+  Scan: undefined;
+  Explore: undefined;
+  Profile: undefined;
 };
 
 export type RootStackParamList = {
-  MainTabs: undefined;
+  MainTabs: { screen?: keyof RootTabParamList } | undefined;
   HabitatMap: { plantId: string };
   PlantDetail: {
     plantId: string;
@@ -38,7 +42,7 @@ export type RootStackParamList = {
   HealthDiagnosis: { plantId?: string; plantName?: string; scientificName?: string };
   CareCalendar: undefined;
   GrowthDiary: { plantId: string };
-  Assistant: undefined;
+  Assistant: { plantName?: string; initialQuestion?: string } | undefined;
   Encyclopedia: undefined;
   Achievements: undefined;
   Paywall: undefined;
@@ -55,7 +59,7 @@ function BottomTabs() {
 
   return (
     <Tab.Navigator
-      initialRouteName="Escáner"
+      initialRouteName="Today"
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
@@ -64,17 +68,17 @@ function BottomTabs() {
           backgroundColor: colors.surface,
           borderTopColor: colors.border,
           borderTopWidth: 1,
-          height: Platform.OS === 'ios' ? 88 : 68,
+          height: Platform.OS === 'ios' ? 88 : 70,
           paddingBottom: Platform.OS === 'ios' ? 28 : 10,
           paddingTop: 8,
-          elevation: 8,
+          elevation: 10,
           shadowColor: '#000000',
-          shadowOffset: { width: 0, height: -2 },
-          shadowOpacity: 0.05,
-          shadowRadius: 4,
+          shadowOffset: { width: 0, height: -3 },
+          shadowOpacity: 0.08,
+          shadowRadius: 5,
         },
         tabBarLabelStyle: {
-          fontSize: 12,
+          fontSize: 11,
           fontWeight: '600',
         },
         tabBarItemStyle: {
@@ -83,45 +87,93 @@ function BottomTabs() {
       }}
     >
       <Tab.Screen
-        name="Escáner"
-        component={ScannerScreen}
+        name="Today"
+        component={TodayScreen}
         options={{
-          tabBarLabel: t('Escáner'),
-          tabBarAccessibilityLabel: t('Pestaña de Escáner y Reconocimiento de Plantas'),
+          tabBarLabel: t('Hoy'),
+          tabBarAccessibilityLabel: t('Pestaña de Hoy'),
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons
-              name={focused ? 'camera' : 'camera-outline'}
-              size={size + 2}
+              name={focused ? 'today' : 'today-outline'}
+              size={size + 1}
               color={color}
             />
           ),
         }}
       />
       <Tab.Screen
-        name="Mi Jardín"
+        name="Garden"
         component={GardenScreen}
         options={{
           tabBarLabel: t('Mi Jardín'),
-          tabBarAccessibilityLabel: t('Pestaña de Mi Jardín y Registro de Riegos'),
+          tabBarAccessibilityLabel: t('Pestaña de Mi Jardín'),
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons
               name={focused ? 'leaf' : 'leaf-outline'}
-              size={size + 2}
+              size={size + 1}
               color={color}
             />
           ),
         }}
       />
       <Tab.Screen
-        name="Perfil"
+        name="Scan"
+        component={ScannerScreen}
+        options={{
+          tabBarLabel: t('Escanear'),
+          tabBarAccessibilityLabel: t('Pestaña de Escanear'),
+          tabBarLabelStyle: {
+            fontSize: 11,
+            fontWeight: '700',
+            color: colors.primary,
+          },
+          tabBarIcon: () => (
+            <View
+              style={{
+                width: 50,
+                height: 50,
+                borderRadius: 25,
+                backgroundColor: colors.primary,
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginTop: -12,
+                shadowColor: colors.primary,
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.35,
+                shadowRadius: 6,
+                elevation: 6,
+              }}
+            >
+              <Ionicons name="camera" size={26} color="#FFFFFF" />
+            </View>
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Explore"
+        component={ExploreScreen}
+        options={{
+          tabBarLabel: t('Explorar'),
+          tabBarAccessibilityLabel: t('Pestaña de Explorar'),
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons
+              name={focused ? 'compass' : 'compass-outline'}
+              size={size + 1}
+              color={color}
+            />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Profile"
         component={ProfileScreen}
         options={{
-          tabBarLabel: isPremium ? t('Perfil (Pro)') : t('Perfil'),
-          tabBarAccessibilityLabel: t('Pestaña de Perfil y Suscripción Premium'),
+          tabBarLabel: isPremium ? t('Yo (Pro)') : t('Yo'),
+          tabBarAccessibilityLabel: t('Pestaña de Yo y Perfil'),
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons
               name={focused ? (isPremium ? 'sparkles' : 'person') : (isPremium ? 'sparkles-outline' : 'person-outline')}
-              size={size + 2}
+              size={size + 1}
               color={isPremium ? colors.premiumGold : color}
             />
           ),

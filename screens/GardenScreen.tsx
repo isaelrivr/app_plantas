@@ -236,7 +236,7 @@ export const GardenScreen: React.FC = () => {
           <View style={{ marginTop: spacing.md }}>
             <Button
               title={t('Desbloquear con EcoScan Pro ({precio})', { precio: price })}
-              onPress={() => navigation.navigate('Perfil')}
+              onPress={() => navigation.navigate('Paywall')}
               variant="premium"
               size="sm"
               icon={<Ionicons name="lock-open" size={16} color="#1C1C1E" />}
@@ -529,13 +529,6 @@ export const GardenScreen: React.FC = () => {
     );
   };
 
-  const quickLinks = [
-    { label: 'Enciclopedia', icon: 'book-outline' as const, route: 'Encyclopedia' },
-    { label: 'Asistente', icon: 'chatbubbles-outline' as const, route: 'Assistant' },
-    { label: 'Logros', icon: 'trophy-outline' as const, route: 'Achievements' },
-    { label: 'Calendario', icon: 'calendar-outline' as const, route: 'CareCalendar' },
-  ];
-
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <SectionList
@@ -569,7 +562,7 @@ export const GardenScreen: React.FC = () => {
               subtitle={t('{n} plantas bajo tu cuidado', { n: plants.length })}
               rightAction={
                 <TouchableOpacity
-                  onPress={() => navigation.navigate('Escáner')}
+                  onPress={() => navigation.navigate('Scan')}
                   style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: colors.primaryLight, alignItems: 'center', justifyContent: 'center' }}
                   accessibilityRole="button"
                   accessibilityLabel={t('Identificar nueva planta con la cámara')}
@@ -581,26 +574,6 @@ export const GardenScreen: React.FC = () => {
 
             {/* BLOQUE DE CLIMA Y UBICACIÓN (PREMIUM RECOMENDACIONES) */}
             {renderWeatherBlock()}
-
-            {/* ACCESO RÁPIDO A NUEVAS SECCIONES (Enciclopedia / Asistente / Logros / Calendario) */}
-            <View style={styles.quickLinks}>
-              {quickLinks.map((link) => (
-                <TouchableOpacity
-                  key={link.label}
-                  onPress={() => navigation.navigate(link.route)}
-                  style={styles.quickLink}
-                  accessibilityRole="button"
-                  accessibilityLabel={t('Abrir {seccion}', { seccion: t(link.label) })}
-                >
-                  <View style={[styles.quickIcon, { backgroundColor: colors.surfaceSecondary }]}>
-                    <Ionicons name={link.icon} size={20} color={colors.primary} />
-                  </View>
-                  <Text style={[typography.caption1, { color: colors.textSecondary, marginTop: 4, fontWeight: '600' }]}>
-                    {t(link.label)}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
 
             {plants.length > 0 && (
               <View style={styles.listSectionHeader}>
@@ -644,7 +617,7 @@ export const GardenScreen: React.FC = () => {
               title={t('Tu jardín está esperando')}
               description={t('Escanea o fotografía tu primera planta para comenzar a monitorear su salud, calendario de riego y origen biogeográfico.')}
               actionTitle={t('Escanear primera planta')}
-              onActionPress={() => navigation.navigate('Escáner')}
+              onActionPress={() => navigation.navigate('Scan')}
             />
           )
         }

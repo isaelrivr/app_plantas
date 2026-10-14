@@ -263,7 +263,7 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
     borderBottomWidth: 1,
   },
-  backButton: { flexDirection: 'row', alignItems: 'center', minHeight: 44 },
+  backButton: { flexDirection: 'row', alignItems: 'center', minHeight: 48, minWidth: 48 },
   actionHeaderBtn: { width: 60 },
   searchBar: {
     flexDirection: 'row',

@@ -340,7 +340,17 @@ export const CareCalendarScreen: React.FC = () => {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 60 }}>
         {/* HEADER */}
         <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
-          <Text style={[typography.largeTitle, { color: colors.textPrimary, fontWeight: '700' }]}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}
+            accessibilityRole="button"
+            accessibilityLabel={t('Volver')}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Ionicons name="chevron-back" size={26} color={colors.primary} />
+            <Text style={[typography.body, { color: colors.primary, fontWeight: '600' }]}>{t('Atrás')}</Text>
+          </TouchableOpacity>
+          <Text style={[typography.largeTitle, { color: colors.textPrimary, fontWeight: '700', marginTop: 8 }]}>
             {t('Plan de Cuidados')}
           </Text>
           <Text style={[typography.subheadline, { color: colors.textSecondary, marginTop: 2 }]}>
@@ -624,8 +634,8 @@ export const CareCalendarScreen: React.FC = () => {
                     styles.reminderBtn,
                     {
                       backgroundColor: colors.primaryLight,
-                      minWidth: 44,
-                      minHeight: 44,
+                      minWidth: 48,
+                      minHeight: 48,
                     },
                   ]}
                   onPress={() => handleScheduleWatering(plant.name, plant.wateringFrequencyDays)}
@@ -651,6 +661,13 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingTop: Platform.OS === 'ios' ? 20 : 24,
     borderBottomWidth: 1,
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 48,
+    minWidth: 48,
+    alignSelf: 'flex-start',
   },
   plantHealthCard: {
     width: 180,

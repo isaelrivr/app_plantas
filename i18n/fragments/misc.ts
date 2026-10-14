@@ -139,6 +139,53 @@ const fragment: Record<string, string> = {
   'Origen no confirmado': 'Unconfirmed origin',
   'Sin información específica de toxicidad; mantén mascotas y niños alejados.':
     'No specific toxicity information; keep pets and children away.',
+
+  // Hoy y Explorar
+  'Buenos días ☀️': 'Good morning ☀️',
+  'Buenas tardes 🌤️': 'Good afternoon 🌤️',
+  'Buenas noches 🌙': 'Good evening 🌙',
+  'Cuidados de Hoy': "Today's Care",
+  'Todo al día en tu jardín': 'Everything up to date in your garden',
+  'No tienes riegos pendientes para hoy. ¡Tus plantas están felices!':
+    'You have no pending waterings for today. Your plants are happy!',
+  'Riego pendiente': 'Pending watering',
+  'Riego completado': 'Watering completed',
+  'Marcar como regada': 'Mark as watered',
+  'Regar': 'Water',
+  'Ver calendario completo': 'View full calendar',
+  '¿Dudas sobre tus plantas?': 'Questions about your plants?',
+  'Consejo del día': 'Tip of the day',
+  'Escanear ahora': 'Scan now',
+  'Identifica una nueva planta o diagnostica una hoja':
+    'Identify a new plant or diagnose a leaf',
+  'Plantas en tu jardín': 'Plants in your garden',
+  'Sin plantas registradas': 'No plants registered',
+  'Añade tu primera planta escaneando con la cámara':
+    'Add your first plant by scanning with the camera',
+  'Explorar Especies y Asistente': 'Explore Species & Assistant',
+  'Descubre plantas y consulta tus dudas con IA':
+    'Discover plants and consult your doubts with AI',
+  'Buscar por nombre o familia...': 'Search by name or family...',
+  'Pregúntale a EcoSan 🌿': 'Ask EcoSan 🌿',
+  'Tu asistente botánico inteligente': 'Your smart botanical assistant',
+  'Consulta sobre riego, poda, plagas y toxicidad':
+    'Ask about watering, pruning, pests, and toxicity',
+  'Chatear con el Asistente': 'Chat with Assistant',
+  'Enciclopedia Botánica': 'Botanical Encyclopedia',
+  'Ver catálogo completo': 'View full catalog',
+  'Colecciones Populares': 'Popular Collections',
+  'Fáciles de cuidar': 'Easy to care for',
+  'Seguras para mascotas': 'Pet safe',
+  'Para interiores con sombra': 'For indoor shade',
+  'Resistentes a sequía': 'Drought resistant',
+  'Pregúntale a EcoSan': 'Ask EcoSan',
+  'Preguntar sobre esta planta': 'Ask about this plant',
+  'Preguntar sobre {nombre}': 'Ask about {nombre}',
+  'Hoy': 'Today',
+  'Atención requerida': 'Attention required',
+  '{count} planta necesita riego hoy': '{count} plant needs water today',
+  '{count} plantas necesitan riego hoy': '{count} plants need water today',
+  '¡Bien hecho! Riego registrado': 'Well done! Watering logged',
 };
 
 export default fragment;
