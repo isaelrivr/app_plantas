@@ -164,6 +164,12 @@ export function deleteGrowthEntry(plantId: string, entryId: string): void {
   if (removed) void deleteImage(removed.photoUri);
 }
 
+export function restoreGrowthEntry(entry: GrowthEntry): void {
+  const current = store.get(entry.plantId) ?? [];
+  store.set(entry.plantId, [...current, entry]);
+  persist();
+}
+
 /** Borra todas las entradas y fotos de una planta al eliminarla del jardín. */
 export function deleteGrowthEntriesForPlant(plantId: string): void {
   const entries = store.get(plantId) ?? [];

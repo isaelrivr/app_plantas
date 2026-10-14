@@ -7,7 +7,7 @@
  *
  * Uso en servicios / código no React:
  *   import { t } from '../i18n';
- *   Alert.alert(t('Atención'), t('Algo salió mal'));
+ *   const message = t('Algo salió mal');
  */
 
 import { useCallback } from 'react';

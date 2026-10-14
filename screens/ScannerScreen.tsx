@@ -7,7 +7,6 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
-  Alert,
   Animated,
   Easing,
 } from 'react-native';
@@ -36,6 +35,7 @@ import { SkeletonBox } from '../components/SkeletonLoader';
 import { EmptyState } from '../components/EmptyState';
 import { announce } from '../services/accessibilityService';
 import { useTranslation } from '../i18n';
+import { useFeedback } from '../context/FeedbackContext';
 
 const MAX_PHOTOS = 4;
 /** Por debajo de este umbral pedimos confirmación manual al usuario. */
@@ -44,6 +44,7 @@ const LOW_CONFIDENCE_THRESHOLD = 60;
 export const ScannerScreen: React.FC = () => {
   const { colors, spacing, typography } = useAppTheme();
   const { t } = useTranslation();
+  const { showToast, confirm } = useFeedback();
   const { plants, addPlant, registerIdentification } = useGarden();
   const limits = usePlanLimits();
   const navigation = useNavigation<any>();
@@ -62,7 +63,7 @@ export const ScannerScreen: React.FC = () => {
 
   // Estados del flujo de escaneo
   const [isIdentifying, setIsIdentifying] = useState<boolean>(false);
-  const [scanStepText, setScanStepText] = useState<string>(t('Analizando patrones...'));
+  const [scanStepText, setScanStepText] = useState<string>(t('Buscando tu planta...'));
   const [identificationResult, setIdentificationResult] = useState<PlantIdentificationResult | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -98,11 +99,11 @@ export const ScannerScreen: React.FC = () => {
       scanLoop.current.start();
 
       const timer1 = setTimeout(() => {
-        setScanStepText(t('Analizando forma y nervadura foliar...'));
+        setScanStepText(t('Revisando las hojas...'));
       }, 400);
 
       const timer2 = setTimeout(() => {
-        setScanStepText(t('Consultando el proveedor botánico...'));
+        setScanStepText(t('Buscando en la enciclopedia...'));
       }, 900);
 
       return () => {
@@ -150,10 +151,10 @@ export const ScannerScreen: React.FC = () => {
   const addPhoto = (uri: string) => {
     setPhotos((prev) => {
       if (prev.length >= MAX_PHOTOS) {
-        Alert.alert(
-          t('Máximo de fotos'),
-          t('Puedes analizar hasta {max} fotos de la misma planta. Elimina alguna para añadir otra.', { max: MAX_PHOTOS })
-        );
+        showToast({
+          message: t('Puedes analizar hasta {max} fotos de la misma planta.', { max: MAX_PHOTOS }),
+          type: 'info',
+        });
         return prev;
       }
       announce(t('Foto añadida'));
@@ -178,7 +179,10 @@ export const ScannerScreen: React.FC = () => {
         }
       }
     } catch {
-      Alert.alert(t('Galería'), t('No se pudo acceder a las fotos.'));
+      showToast({
+        message: t('No se pudo acceder a las fotos. Revisa los permisos.'),
+        type: 'warning',
+      });
     }
   };
 
@@ -243,16 +247,19 @@ export const ScannerScreen: React.FC = () => {
           }
         }
       } catch {
-        Alert.alert(t('Error'), t('No se pudo capturar la imagen. Intenta de nuevo.'));
+        showToast({
+          message: t('No se pudo capturar la imagen. Intenta de nuevo.'),
+          type: 'error',
+        });
       }
       return;
     }
 
     if (photos.length >= MAX_PHOTOS) {
-      Alert.alert(
-        t('Máximo de fotos'),
-        t('Puedes analizar hasta {max} fotos de la misma planta. Pulsa "Analizar" o elimina alguna.', { max: MAX_PHOTOS })
-      );
+      showToast({
+        message: t('Puedes analizar hasta {max} fotos de la misma planta.', { max: MAX_PHOTOS }),
+        type: 'info',
+      });
       return;
     }
     try {
@@ -262,7 +269,10 @@ export const ScannerScreen: React.FC = () => {
         if (photo?.uri) addPhoto(photo.uri);
       }
     } catch {
-      Alert.alert(t('Error'), t('No se pudo capturar la imagen. Intenta de nuevo.'));
+      showToast({
+        message: t('No se pudo capturar la imagen. Intenta de nuevo.'),
+        type: 'error',
+      });
     }
   };
 
@@ -300,14 +310,15 @@ export const ScannerScreen: React.FC = () => {
 
     // Límite free de UX (el servidor aplica el suyo de 3/día).
     if (!limits.isPremium && limits.identificationsToday >= limits.identificationLimit) {
-      Alert.alert(
-        t('Límite gratuito alcanzado'),
-        t('Usaste tus {limite} identificaciones gratuitas de hoy. Con EcoScan Pro escaneas sin límites.', { limite: limits.identificationLimit }),
-        [
-          { text: t('Ahora no'), style: 'cancel' },
-          { text: t('Ver Pro'), onPress: () => navigation.navigate('Paywall') },
-        ]
-      );
+      const seePro = await confirm({
+        title: t('Límite gratuito alcanzado'),
+        message: t('Usaste tus {limite} identificaciones gratuitas de hoy. Con EcoScan Pro escaneas sin límites.', { limite: limits.identificationLimit }),
+        confirmText: t('Ver Pro'),
+        cancelText: t('Ahora no'),
+      });
+      if (seePro) {
+        navigation.navigate('Paywall');
+      }
       return;
     }
 
@@ -316,7 +327,7 @@ export const ScannerScreen: React.FC = () => {
     setSelectedIndex(0);
     setIsSavedToGarden(false);
     setIsIdentifying(true);
-    setScanStepText(t('Enfocando patrones foliares...'));
+    setScanStepText(t('Enfocando la planta...'));
 
     try {
       const result = await identifyPlants(photos);
@@ -332,10 +343,13 @@ export const ScannerScreen: React.FC = () => {
         const retry = err.retryAfterSeconds
           ? t(' Podrás volver a intentarlo en {min} min.', { min: Math.ceil(err.retryAfterSeconds / 60) })
           : '';
-        Alert.alert(t('Límite de identificaciones'), `${err.message}${retry}`, [
-          { text: t('Entendido'), style: 'cancel' },
-          { text: t('Ver Pro'), onPress: () => navigation.navigate('Paywall') },
-        ]);
+        const wantPro = await confirm({
+          title: t('Límite de identificaciones'),
+          message: `${err.message}${retry}`,
+          confirmText: t('Ver Pro'),
+          cancelText: t('Entendido'),
+        });
+        if (wantPro) navigation.navigate('Paywall');
         setErrorMessage(err.message);
       } else {
         const msg =
@@ -377,14 +391,13 @@ export const ScannerScreen: React.FC = () => {
 
     // Límite free de plantas en Mi Jardín (máx. 5)
     if (!limits.isPremium && plants.length >= limits.plantLimit) {
-      Alert.alert(
-        t('Jardín gratuito lleno'),
-        t('El plan gratuito permite {limite} plantas. Con EcoScan Pro guardas las que quieras.', { limite: limits.plantLimit }),
-        [
-          { text: t('Ahora no'), style: 'cancel' },
-          { text: t('Ver Pro'), onPress: () => navigation.navigate('Paywall') },
-        ]
-      );
+      const wantPro = await confirm({
+        title: t('Jardín lleno'),
+        message: t('El plan gratuito permite {limite} plantas. Con EcoScan Pro guardas plantas ilimitadas.', { limite: limits.plantLimit }),
+        confirmText: t('Ver Pro'),
+        cancelText: t('Ahora no'),
+      });
+      if (wantPro) navigation.navigate('Paywall');
       return;
     }
 
@@ -407,13 +420,19 @@ export const ScannerScreen: React.FC = () => {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       } catch {}
       setIsSavedToGarden(true);
-      Alert.alert(t('Añadida a Mi Jardín'), t('{nombre} se guardó junto a su ficha de cuidados.', { nombre: candidate.name }));
+      showToast({
+        message: t('{nombre} guardada en Mi Jardín', { nombre: candidate.name }),
+        type: 'success',
+      });
     } catch (err) {
       const msg =
         err instanceof ApiError && err.status === 429
           ? err.message
           : t('No se pudo guardar la planta. Revisa tu conexión e inténtalo de nuevo.');
-      Alert.alert(t('No se pudo guardar'), msg);
+      showToast({
+        message: msg,
+        type: 'error',
+      });
     } finally {
       setIsSaving(false);
     }
@@ -540,12 +559,23 @@ export const ScannerScreen: React.FC = () => {
             <Text style={[typography.body, { color: colors.textPrimary, marginBottom: spacing.md }]}>
               {errorMessage}
             </Text>
-            <Button
-              title={t('Tomar otras fotos')}
-              onPress={handleRetake}
-              variant="primary"
-              icon={<Ionicons name="camera-reverse" size={18} color="#FFFFFF" />}
-            />
+            <View style={{ gap: 8 }}>
+              <Button
+                title={t('Tomar otras fotos')}
+                onPress={handleRetake}
+                variant="primary"
+                icon={<Ionicons name="camera-reverse" size={18} color="#FFFFFF" />}
+              />
+              <Button
+                title={t('Buscar en la Enciclopedia')}
+                onPress={() => {
+                  handleRetake();
+                  navigation.navigate('Explore');
+                }}
+                variant="secondary"
+                icon={<Ionicons name="book-outline" size={18} color={colors.primary} />}
+              />
+            </View>
           </Card>
         )}
 
@@ -587,11 +617,6 @@ export const ScannerScreen: React.FC = () => {
                   <View style={{ flex: 1 }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4, flexWrap: 'wrap' }}>
                       <Badge label={t('Familia {familia}', { familia: selectedCandidate?.family ?? '—' })} variant="primary" />
-                      {identificationResult.source === 'mock' ? (
-                        <Badge label={t('Demo')} variant="neutral" />
-                      ) : (
-                        <Badge label={t('IA real')} variant="success" />
-                      )}
                     </View>
 
                     <Text style={[typography.title1, { color: colors.textPrimary, fontWeight: '700' }]}>
@@ -686,15 +711,15 @@ export const ScannerScreen: React.FC = () => {
                 {/* BOTONES PRINCIPALES */}
                 <View style={{ gap: 10 }}>
                   <Button
-                    title={t('Ver Mapa Mundial de Hábitat 🌍')}
+                    title={t('Ver mapa de origen')}
                     onPress={handleOpenHabitatMap}
                     variant="primary"
                     size="lg"
-                    icon={<Ionicons name="globe" size={18} color="#FFFFFF" />}
+                    icon={<Ionicons name="earth" size={18} color="#FFFFFF" />}
                   />
 
                   <Button
-                    title={t('Ver Ficha Completa de Cuidados')}
+                    title={t('Ver ficha de cuidados')}
                     onPress={handleOpenPlantDetail}
                     variant="secondary"
                     size="md"
@@ -702,7 +727,7 @@ export const ScannerScreen: React.FC = () => {
                   />
 
                   <Button
-                    title={t('Diagnosticar Salud de esta Hoja 🩺')}
+                    title={t('Revisar salud de la hoja')}
                     onPress={handleOpenDiagnosis}
                     variant="secondary"
                     size="md"

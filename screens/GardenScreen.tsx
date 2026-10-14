@@ -32,6 +32,7 @@ import {
 import { scheduleWateringReminder } from '../services/notificationService';
 import { announce } from '../services/accessibilityService';
 import { useTranslation } from '../i18n';
+import { useFeedback } from '../context/FeedbackContext';
 
 /** Resuelve el id de especie del catálogo (o 'monstera' como último recurso). */
 const speciesIdFor = (name: string, scientificName?: string): string =>
@@ -39,10 +40,14 @@ const speciesIdFor = (name: string, scientificName?: string): string =>
 
 export const GardenScreen: React.FC = () => {
   const { colors, isDark, spacing, typography, layout } = useAppTheme();
+  const { showToast, confirm } = useFeedback();
   const {
     plants,
     rooms,
     waterPlantToday,
+    undoWaterPlant,
+    removePlant,
+    restorePlant,
     toggleTaskCompleted,
     resetDefaultPlants,
     assignPlantToRoom,
@@ -110,8 +115,42 @@ export const GardenScreen: React.FC = () => {
     try {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch {}
+    const prevWatered = plant.lastWatered;
+    const prevIsWatered = plant.isWateredToday;
     waterPlantToday(plant.id);
     announce(t('Planta {nombre} regada correctamente', { nombre: plant.name }));
+    showToast({
+      message: t('Regaste {nombre}', { nombre: plant.name }),
+      actionLabel: t('Deshacer'),
+      durationMs: 5000,
+      onAction: () => {
+        undoWaterPlant(plant.id, prevWatered, prevIsWatered);
+        announce(t('Riego deshecho'));
+      },
+    });
+  };
+
+  const handleDeletePlant = async (plant: GardenPlant) => {
+    const confirmed = await confirm({
+      title: t('¿Eliminar {nombre}?', { nombre: plant.name }),
+      message: t('Se eliminará de tu jardín junto con su historial de cuidados y notas.'),
+      confirmText: t('Eliminar planta'),
+      cancelText: t('Conservar'),
+      isDestructive: true,
+    });
+    if (!confirmed) return;
+
+    removePlant(plant.id);
+    announce(t('{nombre} eliminada del jardín', { nombre: plant.name }));
+    showToast({
+      message: t('Eliminaste {nombre}', { nombre: plant.name }),
+      actionLabel: t('Deshacer'),
+      durationMs: 5000,
+      onAction: () => {
+        restorePlant(plant);
+        announce(t('Planta {nombre} restaurada', { nombre: plant.name }));
+      },
+    });
   };
 
   const handleOpenDiagnosis = (plant: GardenPlant) => {
@@ -142,18 +181,18 @@ export const GardenScreen: React.FC = () => {
     } catch {}
     const id = await scheduleWateringReminder(plant.name, plant.wateringFrequencyDays);
     if (id) {
-      Alert.alert(
-        t('🔔 Notificación Programada'),
-        t('Recibirás un recordatorio para regar tu {planta} cada {dias} días.', {
+      showToast({
+        message: t('Recordatorio programado para tu {planta} cada {dias} días.', {
           planta: plant.name,
           dias: plant.wateringFrequencyDays,
-        })
-      );
+        }),
+        type: 'success',
+      });
     } else {
-      Alert.alert(
-        t('Aviso'),
-        t('Activa los permisos de notificaciones para recibir alertas de riego.')
-      );
+      showToast({
+        message: t('Activa las notificaciones en los ajustes de tu teléfono para recibir alertas de riego.'),
+        type: 'warning',
+      });
     }
   };
 
@@ -199,6 +238,19 @@ export const GardenScreen: React.FC = () => {
     setNewRoomName('');
   };
 
+  const handleRemoveRoom = async (room: Room) => {
+    const confirmed = await confirm({
+      title: t('¿Eliminar zona {zona}?', { zona: room.name }),
+      message: t('Las plantas de esta zona se mantendrán en tu jardín.'),
+      confirmText: t('Eliminar zona'),
+      cancelText: t('Conservar'),
+      isDestructive: true,
+    });
+    if (confirmed) {
+      removeRoom(room.id);
+    }
+  };
+
   // RENDER: Bloque de Clima y Recomendaciones (Premium vs Free Teaser)
   const renderWeatherBlock = () => {
     if (!isPremium) {
@@ -232,7 +284,7 @@ export const GardenScreen: React.FC = () => {
           </View>
 
           <Text style={[typography.body, { color: colors.textSecondary, marginTop: 6, lineHeight: 21 }]}>
-            {t('Conecta tu ubicación con satélites meteorológicos en tiempo real (Open-Meteo) para ajustar automáticamente el riego según lluvia, frío o calor extremo.')}
+            {t('Ajusta el riego automáticamente según el clima de tu zona (lluvia, frío o calor extremo).')}
           </Text>
 
           <View style={{ marginTop: spacing.md }}>
@@ -255,7 +307,7 @@ export const GardenScreen: React.FC = () => {
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
             <Ionicons name="cloudy-night" size={16} color={colors.primary} />
             <Text style={[typography.subheadline, { color: colors.textSecondary, marginLeft: 8 }]}>
-              {t('Sincronizando pronóstico Open-Meteo para tu ciudad...')}
+              {t('Revisando el clima de tu zona...')}
             </Text>
           </View>
           <SkeletonBox width="100%" height={16} borderRadius={6} />
@@ -269,10 +321,10 @@ export const GardenScreen: React.FC = () => {
 
     return (
       <View>
-        {/* ESTADO DE ERROR: datos de respaldo porque la API falló */}
+        {/* ESTADO DE ERROR: datos estimados porque la API falló */}
         {weatherError && (
           <ErrorBanner
-            message={t('No pudimos conectar con tu ubicación. Mostramos datos de respaldo: activa el GPS o revisa tu conexión para obtener recomendaciones reales.')}
+            message={t('Sin acceso a tu ubicación. Mostramos el clima estimado: activa el permiso de ubicación para ajustar con precisión.')}
             onRetry={handleRetryWeather}
             style={{ marginBottom: spacing.sm }}
           />
@@ -303,7 +355,7 @@ export const GardenScreen: React.FC = () => {
                   {weather.city}
                 </Text>
                 {weatherData.isMockFallback && (
-                  <Badge label={t('Datos de respaldo')} variant="neutral" />
+                  <Badge label={t('Clima estimado')} variant="neutral" />
                 )}
               </View>
               <Text style={[typography.title2, { color: colors.textPrimary, fontWeight: '700', marginTop: 2 }]}>
@@ -526,6 +578,15 @@ export const GardenScreen: React.FC = () => {
           >
             <Ionicons name="information-circle-outline" size={20} color={colors.textSecondary} />
           </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.iconActionBtn, { backgroundColor: colors.surfaceSecondary }]}
+            onPress={() => handleDeletePlant(item)}
+            accessibilityRole="button"
+            accessibilityLabel={t('Eliminar {nombre} del jardín', { nombre: item.name })}
+          >
+            <Ionicons name="trash-outline" size={18} color={colors.textTertiary} />
+          </TouchableOpacity>
         </View>
       </Card>
     );
@@ -709,7 +770,7 @@ export const GardenScreen: React.FC = () => {
                       </Text>
                     </TouchableOpacity>
                     <TouchableOpacity
-                      onPress={() => removeRoom(room.id)}
+                      onPress={() => handleRemoveRoom(room)}
                       style={{ width: 36, height: 36, alignItems: 'center', justifyContent: 'center' }}
                       accessibilityRole="button"
                       accessibilityLabel={t('Eliminar zona {zona}', { zona: t(room.name) })}

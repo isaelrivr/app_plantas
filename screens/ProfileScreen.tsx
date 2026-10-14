@@ -361,7 +361,7 @@ export const ProfileScreen: React.FC = () => {
         <View style={styles.settingRow}>
           <Text style={[typography.body, { color: colors.textPrimary }]}>{t('Versión')}</Text>
           <Text style={[typography.subheadline, { color: colors.textSecondary }]}>
-            1.0.0 (Expo SDK 57)
+            1.0.0
           </Text>
         </View>
 
@@ -370,7 +370,7 @@ export const ProfileScreen: React.FC = () => {
         <View style={styles.settingRow}>
           <Text style={[typography.body, { color: colors.textPrimary }]}>{t('Base de datos botánica')}</Text>
           <Text style={[typography.subheadline, { color: colors.textSecondary }]}>
-            {t('Mock Local (Listo para Firebase)')}
+            {t('Catálogo integrado (sin conexión)')}
           </Text>
         </View>
       </Card>

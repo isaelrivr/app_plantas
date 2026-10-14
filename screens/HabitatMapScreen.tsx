@@ -88,13 +88,13 @@ export const HabitatMapScreen: React.FC = () => {
         <Ionicons name="chevron-back" size={26} color={colors.primary} />
         <Text style={[typography.body, { color: colors.primary, fontWeight: '600' }]}>{t('Atrás')}</Text>
       </TouchableOpacity>
-      <View style={styles.titleWrap}><Text style={[typography.headline, { color: colors.textPrimary }]} numberOfLines={1}>{t('Hábitat Global')}</Text><Text style={[typography.footnote, { color: colors.textSecondary }]} numberOfLines={1}>{plant?.scientificName || t('Distribución biogeográfica')}</Text></View>
+      <View style={styles.titleWrap}><Text style={[typography.headline, { color: colors.textPrimary }]} numberOfLines={1}>{t('Origen en el Mundo')}</Text><Text style={[typography.footnote, { color: colors.textSecondary }]} numberOfLines={1}>{plant?.scientificName || t('Lugar de origen')}</Text></View>
       <View style={styles.headerPlaceholder} />
     </View>
   );
 
   if (limits.isFeatureLocked('animatedMap')) {
-    return <View style={[styles.container, { backgroundColor: colors.background }]}>{header}<LockedPreview locked feature="animatedMap" onUnlock={() => navigation.navigate('Paywall')} style={{ flex: 1 }}><View style={{ padding: spacing.md }}><EmptyState iconName="earth-outline" title={t('Mapa de hábitat Pro')} description={t('Explora el origen natural de cada especie con un mapa interactivo por país.')} /></View></LockedPreview></View>;
+    return <View style={[styles.container, { backgroundColor: colors.background }]}>{header}<LockedPreview locked feature="animatedMap" onUnlock={() => navigation.navigate('Paywall')} style={{ flex: 1 }}><View style={{ padding: spacing.md }}><EmptyState iconName="earth-outline" title={t('Mapa de origen Pro')} description={t('Descubre de qué parte del mundo proviene cada especie con un mapa interactivo.')} /></View></LockedPreview></View>;
   }
 
   return (
@@ -111,9 +111,9 @@ export const HabitatMapScreen: React.FC = () => {
         <View style={styles.legendItem}><View style={[styles.dot, { backgroundColor: isDark ? '#667176' : '#DCE3E6' }]} /><Text style={{ color: colors.textPrimary, fontSize: 14 }}>{t('Resto del mundo')}</Text></View>
       </View>
       <View style={[styles.mapPanel, { backgroundColor: mapColors.ocean }]}>
-        {loading ? <View style={styles.state}><SkeletonBox width="92%" height={240} borderRadius={18} /><Text style={[typography.subheadline, { color: colors.textSecondary, marginTop: spacing.md }]}>{t('Generando proyección cartográfica...')}</Text></View>
-          : error ? <View style={styles.state}><ErrorBanner message={t('No pudimos cargar el hábitat de esta planta.')} onRetry={loadHabitat} /></View>
-            : !habitatData || !mappedCountries.length ? <View style={styles.state}><EmptyState iconName="leaf-outline" title={t('Sin registros de hábitat')} description={t('Aún no tenemos datos biogeográficos para esta especie.')} /></View>
+        {loading ? <View style={styles.state}><SkeletonBox width="92%" height={240} borderRadius={18} /><Text style={[typography.subheadline, { color: colors.textSecondary, marginTop: spacing.md }]}>{t('Cargando mapa...')}</Text></View>
+          : error ? <View style={styles.state}><ErrorBanner message={t('No pudimos cargar el mapa de esta planta.')} onRetry={loadHabitat} /></View>
+            : !habitatData || !mappedCountries.length ? <View style={styles.state}><EmptyState iconName="leaf-outline" title={t('Sin registros de origen')} description={t('Aún no tenemos datos sobre el origen de esta especie.')} /></View>
               : <WorldMap topology={worldData as never} highlightedIds={highlightedIds} focusIds={focusIds} onCountryPress={(country) => { const region = mappedCountries.find((item) => item.id === country.id)?.region; if (region) setSelectedRegion(region); }} colors={mapColors} accessibilitySummary={t('Mapa mundial de {especie}. Regiones nativas: {regiones}', { especie: plant?.name || t('esta planta'), regiones: nativeCountries.map((country) => country.name).join(', ') })} resetToken={resetToken} />}
       </View>
       {selectedRegion ? <RegionCard plantName={plant?.name || t('Esta planta')} region={selectedRegion} onClose={() => setSelectedRegion(null)} colors={colors} labels={{ native: t('Zona nativa'), naturalized: t('Naturalizada'), cultivated: t('Cultivada'), close: t('Cerrar detalle de región') }} /> : null}

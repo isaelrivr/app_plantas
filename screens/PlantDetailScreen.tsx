@@ -6,7 +6,6 @@ import {
   ScrollView,
   TouchableOpacity,
   Platform,
-  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRoute, useNavigation } from '@react-navigation/native';
@@ -22,6 +21,7 @@ import { EmptyState } from '../components/EmptyState';
 import { SkeletonBox } from '../components/SkeletonLoader';
 import { resolvePlantForDetail, CatalogPlant } from '../services/plantApi';
 import { useGarden } from '../context/GardenContext';
+import { useFeedback } from '../context/FeedbackContext';
 import { usePlanLimits } from '../hooks/usePlanLimits';
 import { ToxicityBadge, ToxicityPanel } from '../components/ToxicityBadge';
 
@@ -38,7 +38,8 @@ export const PlantDetailScreen: React.FC = () => {
   const { t } = useTranslation();
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
-  const { addPlant, plants } = useGarden();
+  const { addPlant, plants, removePlant, restorePlant } = useGarden();
+  const { confirm, showToast } = useFeedback();
   const limits = usePlanLimits();
 
   const plantId = route.params?.plantId || 'monstera';
@@ -84,18 +85,16 @@ export const PlantDetailScreen: React.FC = () => {
     setActiveTab(tab);
   };
 
-  const handleSaveToGarden = () => {
+  const handleSaveToGarden = async () => {
     if (!plant) return;
-    // Límite free: máx. 5 plantas (punto 16)
     if (!limits.isPremium && plants.length >= limits.plantLimit) {
-      Alert.alert(
-        t('Jardín gratuito lleno'),
-        t('El plan gratuito permite {limite} plantas. Con EcoScan Pro guardas las que quieras.', { limite: limits.plantLimit }),
-        [
-          { text: t('Ahora no'), style: 'cancel' },
-          { text: t('Ver Pro'), onPress: () => navigation.navigate('Paywall') },
-        ]
-      );
+      const wantPro = await confirm({
+        title: t('Jardín lleno'),
+        message: t('El plan gratuito permite {limite} plantas. Con EcoScan Pro guardas plantas ilimitadas.', { limite: limits.plantLimit }),
+        confirmText: t('Ver Pro'),
+        cancelText: t('Ahora no'),
+      });
+      if (wantPro) navigation.navigate('Paywall');
       return;
     }
     try {
@@ -109,6 +108,38 @@ export const PlantDetailScreen: React.FC = () => {
       avatarEmoji: plant.avatarEmoji,
     });
     setIsSaved(true);
+    showToast({
+      message: t('{nombre} guardada en Mi Jardín', { nombre: plant.name }),
+      type: 'success',
+    });
+  };
+
+  const handleRemoveFromGarden = async () => {
+    if (!plant) return;
+    const token = plant.name.toLowerCase().split(' ')[0];
+    const saved = plants.find((p) => p.name.toLowerCase().includes(token));
+    if (!saved) return;
+
+    const confirmed = await confirm({
+      title: t('¿Eliminar {nombre}?', { nombre: plant.name }),
+      message: t('Se eliminará de tu jardín junto con su historial de cuidados y notas.'),
+      confirmText: t('Eliminar planta'),
+      cancelText: t('Conservar'),
+      isDestructive: true,
+    });
+    if (!confirmed) return;
+
+    removePlant(saved.id);
+    setIsSaved(false);
+    showToast({
+      message: t('Eliminaste {nombre}', { nombre: plant.name }),
+      actionLabel: t('Deshacer'),
+      durationMs: 5000,
+      onAction: () => {
+        restorePlant(saved);
+        setIsSaved(true);
+      },
+    });
   };
 
   const handleOpenGrowthDiary = () => {
@@ -566,11 +597,11 @@ export const PlantDetailScreen: React.FC = () => {
               </View>
 
               <Button
-                title={t('Abrir Mapa Mundial Interactivo 🌍')}
+                title={t('Abrir mapa de origen')}
                 onPress={handleOpenHabitatMap}
                 variant="primary"
                 size="lg"
-                icon={<Ionicons name="map" size={18} color="#FFFFFF" />}
+                icon={<Ionicons name="earth" size={18} color="#FFFFFF" />}
                 style={{ marginTop: spacing.md }}
               />
             </Card>
@@ -603,7 +634,7 @@ export const PlantDetailScreen: React.FC = () => {
               ))}
 
               <Button
-                title={t('Diagnosticar Salud con IA 🩺')}
+                title={t('Revisar salud de la hoja')}
                 onPress={handleOpenDiagnosis}
                 variant="secondary"
                 size="md"
@@ -617,20 +648,29 @@ export const PlantDetailScreen: React.FC = () => {
         {/* BOTÓN INFERIOR DE ACCIÓN */}
         <View style={{ marginTop: spacing.xl, gap: spacing.sm }}>
           <Button
-            title={t('📈 Ver Diario de Crecimiento')}
+            title={t('Ver diario de crecimiento')}
             onPress={handleOpenGrowthDiary}
             variant="secondary"
             size="md"
             icon={<Ionicons name="images" size={18} color={colors.primary} />}
           />
-          <Button
-            title={isSaved ? t('Guardada en Mi Jardín ✓') : t('Guardar en Mi Jardín')}
-            onPress={handleSaveToGarden}
-            disabled={isSaved}
-            variant={isSaved ? 'secondary' : 'primary'}
-            size="lg"
-            icon={<Ionicons name={isSaved ? 'checkmark' : 'leaf'} size={18} color={isSaved ? colors.textSecondary : '#FFFFFF'} />}
-          />
+          {isSaved ? (
+            <Button
+              title={t('Eliminar de Mi Jardín')}
+              onPress={handleRemoveFromGarden}
+              variant="secondary"
+              size="lg"
+              icon={<Ionicons name="trash-outline" size={18} color={colors.error} />}
+            />
+          ) : (
+            <Button
+              title={t('Guardar en Mi Jardín')}
+              onPress={handleSaveToGarden}
+              variant="primary"
+              size="lg"
+              icon={<Ionicons name="leaf" size={18} color="#FFFFFF" />}
+            />
+          )}
         </View>
       </ScrollView>
 

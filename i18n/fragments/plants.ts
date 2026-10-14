@@ -62,12 +62,22 @@ const fragment: Record<string, string> = {
     'Discover the regions where this species grows natively, where it has naturalized, and its global cultivation zones.',
   'Países de Presencia Principal:': 'Main Presence Countries:',
   'Abrir Mapa Mundial Interactivo 🌍': 'Open Interactive World Map 🌍',
+  'Abrir Mapa de Hábitat': 'Open Habitat Map',
 
   // Problemas y diagnóstico
   'Problemas Comunes': 'Common Problems',
   'Síntomas frecuentes identificables en sus hojas': 'Common symptoms identifiable in its leaves',
   'Diagnosticar Salud con IA 🩺': 'Diagnose Health with AI 🩺',
+  'Diagnosticar Salud': 'Diagnose Health',
   '📈 Ver Diario de Crecimiento': '📈 View Growth Diary',
+  'Ver Diario de Crecimiento': 'View Growth Diary',
+  'Eliminar de Mi Jardín': 'Remove from My Garden',
+  '¿Eliminar de Mi Jardín?': 'Remove from My Garden?',
+  'Esta planta se quitará de tus cuidados y recordatorios.':
+    'This plant will be removed from your care schedule and reminders.',
+  'Planta eliminada del jardín': 'Plant removed from garden',
+  'Guardada en Mi Jardín': 'Saved in My Garden',
+  'Deshacer': 'Undo',
 
   // Nivel de dificultad
   Fácil: 'Easy',

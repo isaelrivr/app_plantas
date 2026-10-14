@@ -4,6 +4,19 @@ const fragment: Record<string, string> = {
   'Analizando forma y nervadura foliar...': 'Analyzing leaf shape and venation...',
   'Consultando el proveedor botánico...': 'Consulting the botanical provider...',
   'Enfocando patrones foliares...': 'Focusing on leaf patterns...',
+  'Buscando tu planta...': 'Searching for your plant...',
+  'Revisando las hojas...': 'Checking the leaves...',
+  'Buscando en la enciclopedia...': 'Searching the encyclopedia...',
+  'Enfocando la planta...': 'Focusing on the plant...',
+  'Ver Mapa de Hábitat': 'View Habitat Map',
+  'Diagnosticar Salud': 'Diagnose Health',
+  'Buscar en la Enciclopedia': 'Search Encyclopedia',
+  'Error de conexión. Revisa tu internet e inténtalo de nuevo.':
+    'Connection error. Check your internet and try again.',
+  'La identificación tardó demasiado. Puedes volver a intentarlo o buscar directamente en la enciclopedia.':
+    'Identification took too long. You can try again or search the encyclopedia directly.',
+  'No pudimos identificar la planta. Intenta con otra foto o busca en la enciclopedia.':
+    'We could not identify the plant. Try another photo or search the encyclopedia.',
   'Cargando cámara y reconocimiento botánico': 'Loading camera and botanical recognition',
   'Reconocimiento Botánico': 'Botanical Recognition',
   'EcoScan necesita tu cámara para identificar plantas y revisar la salud de sus hojas.':

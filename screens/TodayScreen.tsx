@@ -12,6 +12,7 @@ import { useNavigation } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
 import { useAppTheme } from '../theme';
 import { useGarden, GardenPlant } from '../context/GardenContext';
+import { useFeedback } from '../context/FeedbackContext';
 import { Card } from '../components/Card';
 import { Badge } from '../components/Badge';
 import { Button } from '../components/Button';
@@ -35,7 +36,8 @@ const DEFAULT_WEATHER: WeatherData = {
 export const TodayScreen: React.FC = () => {
   const { colors, layout, spacing, typography } = useAppTheme();
   const navigation = useNavigation<any>();
-  const { plants, rooms, waterPlantToday } = useGarden();
+  const { plants, rooms, waterPlantToday, undoWaterPlant } = useGarden();
+  const { showToast } = useFeedback();
   const { t } = useTranslation();
 
   const [weather, setWeather] = useState<WeatherData>(DEFAULT_WEATHER);
@@ -58,12 +60,12 @@ export const TodayScreen: React.FC = () => {
     };
   }, []);
 
-  // Saludo según la hora
+  // Saludo según la hora (sin emojis en el texto principal)
   const greeting = useMemo(() => {
     const hour = new Date().getHours();
-    if (hour < 12) return t('Buenos días ☀️');
-    if (hour < 19) return t('Buenas tardes 🌤️');
-    return t('Buenas noches 🌙');
+    if (hour < 12) return t('Buenos días');
+    if (hour < 19) return t('Buenas tardes');
+    return t('Buenas noches');
   }, [t]);
 
   // Fecha legible
@@ -85,9 +87,20 @@ export const TodayScreen: React.FC = () => {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     } catch {}
+    const prevWatered = plant.lastWatered;
+    const prevIsWatered = plant.isWateredToday;
     waterPlantToday(plant.id);
     setJustWateredId(plant.id);
     announce(t('Planta {nombre} regada correctamente', { nombre: plant.name }));
+    showToast({
+      message: t('Regaste {nombre}', { nombre: plant.name }),
+      actionLabel: t('Deshacer'),
+      durationMs: 5000,
+      onAction: () => {
+        undoWaterPlant(plant.id, prevWatered, prevIsWatered);
+        announce(t('Riego deshecho'));
+      },
+    });
     setTimeout(() => {
       setJustWateredId((prev) => (prev === plant.id ? null : prev));
     }, 2500);
@@ -132,7 +145,7 @@ export const TodayScreen: React.FC = () => {
               {weather.city ? `${weather.city} · ${Math.round(weather.temperatureC)}°C` : `${Math.round(weather.temperatureC)}°C`}
             </Text>
           </View>
-          <Badge label={weather.temperatureC > 25 ? '☀️ Calor' : '🌿 Templado'} variant="neutral" />
+          <Badge label={weather.temperatureC > 25 ? t('Calor') : t('Templado')} variant="neutral" />
         </View>
 
         <Text style={[typography.body, { color: colors.textSecondary, marginTop: spacing.sm, lineHeight: 22 }]}>
@@ -210,7 +223,7 @@ export const TodayScreen: React.FC = () => {
                         },
                       ]}
                     >
-                      {wasJustWatered ? t('Completado ✓') : t('Regar')}
+                      {wasJustWatered ? t('Completado') : t('Regar')}
                     </Text>
                   </TouchableOpacity>
                 </View>

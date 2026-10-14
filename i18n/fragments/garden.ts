@@ -17,11 +17,23 @@ const fragment: Record<string, string> = {
   'Cargando pronóstico del clima': 'Loading weather forecast',
   'Sincronizando pronóstico Open-Meteo para tu ciudad...':
     'Syncing Open-Meteo forecast for your city...',
+  'Revisando el clima de tu zona...': 'Checking the weather in your area...',
   'No pudimos conectar con tu ubicación. Mostramos datos de respaldo: activa el GPS o revisa tu conexión para obtener recomendaciones reales.':
     "We couldn\'t connect to your location. Showing fallback data: enable GPS or check your connection for real recommendations.",
   'Clima en {ciudad}: {temperatura} grados, {alerta}':
     'Weather in {ciudad}: {temperatura} degrees, {alerta}',
   'Datos de respaldo': 'Fallback data',
+  'Clima estimado': 'Estimated weather',
+  '¿Eliminar {nombre} del jardín?': 'Remove {nombre} from the garden?',
+  'Se borrarán sus recordatorios y registros de cuidado.':
+    'Their reminders and care records will be deleted.',
+  'Planta eliminada': 'Plant removed',
+  'Regaste a {nombre}': 'You watered {nombre}',
+  'Deshacer': 'Undo',
+  '¿Eliminar zona "{zona}"?': 'Delete zone "{zona}"?',
+  'Las plantas asignadas quedarán sin zona.': 'Assigned plants will have no zone.',
+  'Zona eliminada': 'Zone deleted',
+  'Eliminar planta': 'Remove plant',
   'Consejo de hoy: {consejo}': "Today's tip: {consejo}",
   'Ver detalles de {nombre}': 'View details for {nombre}',
   'Hidratada hoy': 'Watered today',

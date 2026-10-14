@@ -22,6 +22,7 @@ import { PlantCardSkeleton } from '../components/SkeletonLoader';
 import { scheduleWateringReminder, scheduleCareTaskReminder } from '../services/notificationService';
 import { announce } from '../services/accessibilityService';
 import { useTranslation } from '../i18n';
+import { useFeedback } from '../context/FeedbackContext';
 
 type CalendarView = 'semana' | 'mes';
 type FilterTaskType = CareTaskType | 'todos';
@@ -79,6 +80,7 @@ const mondayIndex = (date: Date): number => (date.getDay() + 6) % 7;
 export const CareCalendarScreen: React.FC = () => {
   const { colors, isDark, spacing, typography, layout } = useAppTheme();
   const { plants, waterPlantToday, toggleTaskCompleted, removeCareTask } = useGarden();
+  const { showToast } = useFeedback();
   const navigation = useNavigation<any>();
   const { t } = useTranslation();
 
@@ -136,12 +138,10 @@ export const CareCalendarScreen: React.FC = () => {
     const id = await scheduleWateringReminder(plantName, daysInterval);
     if (id) {
       setErrorMessage(null);
-      Alert.alert(
-        t('🔔 Recordatorio Programado'),
-        t('Recibirás una notificación para regar "{planta}" en tu dispositivo.', {
-          planta: plantName,
-        })
-      );
+      showToast({
+        message: t('Recordatorio programado para regar "{planta}".', { planta: plantName }),
+        type: 'success',
+      });
     } else {
       setErrorMessage(
         t('Activa las notificaciones de EcoScan en los Ajustes de tu dispositivo para recibir recordatorios de riego.')
@@ -157,14 +157,14 @@ export const CareCalendarScreen: React.FC = () => {
     const id = await scheduleCareTaskReminder(task.plantName, task.type, task.title, daysFromNow);
     if (id) {
       setErrorMessage(null);
-      Alert.alert(
-        t('🔔 Recordatorio Programado'),
-        t('Se avisará "{tarea}" para {planta} en {dias} día(s).', {
+      showToast({
+        message: t('Se avisará "{tarea}" para {planta} en {dias} día(s).', {
           tarea: t(task.title),
           planta: task.plantName,
           dias: daysFromNow,
-        })
-      );
+        }),
+        type: 'success',
+      });
     } else {
       setErrorMessage(t('No se pudo programar el recordatorio. Revisa los permisos de notificación.'));
     }
@@ -174,6 +174,15 @@ export const CareCalendarScreen: React.FC = () => {
     try { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); } catch {}
     toggleTaskCompleted(plantId, taskId);
     announce(t('Tarea completada'));
+    showToast({
+      message: t('Tarea completada'),
+      actionLabel: t('Deshacer'),
+      durationMs: 5000,
+      onAction: () => {
+        toggleTaskCompleted(plantId, taskId);
+        announce(t('Acción deshecha'));
+      },
+    });
   };
 
   // Rejilla de días: semana actual o mes del ancla

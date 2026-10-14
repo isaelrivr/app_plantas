@@ -7,6 +7,7 @@ import { AppNavigator } from './navigation/AppNavigator';
 import { PremiumProvider, usePremium } from './context/PremiumContext';
 import { GardenProvider, useGarden } from './context/GardenContext';
 import { SettingsProvider, useSettings } from './context/SettingsContext';
+import { FeedbackProvider } from './context/FeedbackContext';
 import { OnboardingScreen } from './screens/OnboardingScreen';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { AppLoading } from './components/AppLoading';
@@ -89,9 +90,11 @@ export default function App() {
       <SettingsProvider>
         <PremiumProvider>
           <GardenProvider>
-            <ErrorBoundary>
-              <RootGate />
-            </ErrorBoundary>
+            <FeedbackProvider>
+              <ErrorBoundary>
+                <RootGate />
+              </ErrorBoundary>
+            </FeedbackProvider>
           </GardenProvider>
         </PremiumProvider>
       </SettingsProvider>

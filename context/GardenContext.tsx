@@ -167,11 +167,14 @@ interface GardenContextType {
   /** `true` cuando el estado persistido ya se cargó desde disco. */
   isHydrated: boolean;
   waterPlantToday: (id: string) => void;
+  undoWaterPlant: (id: string, previousLastWatered: string, previousIsWatered?: boolean) => void;
   addPlant: (plant: NewPlantInput, roomId?: string) => string;
   addPlants: (plants: NewPlantInput[], roomId?: string) => number;
   removePlant: (id: string) => void;
+  restorePlant: (plant: GardenPlant) => void;
   updatePlantHealth: (id: string, score: number, diagnosis: string) => void;
   toggleTaskCompleted: (plantId: string, taskId: string) => void;
+  setTaskCompletion: (plantId: string, taskId: string, completed: boolean) => void;
   removeCareTask: (plantId: string, taskId: string) => void;
   assignPlantToRoom: (plantId: string, roomId?: string) => void;
   createRoom: (name: string, icon?: Room['icon']) => Room;
@@ -268,6 +271,21 @@ export function GardenProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  const undoWaterPlant = (id: string, previousLastWatered: string, previousIsWatered = false) => {
+    setPlants((prev) =>
+      prev.map((plant) => {
+        if (plant.id === id) {
+          return { ...plant, lastWatered: previousLastWatered, isWateredToday: previousIsWatered };
+        }
+        return plant;
+      })
+    );
+    setStatsState((prev) => ({
+      ...prev,
+      totalWaterings: Math.max(0, prev.totalWaterings - 1),
+    }));
+  };
+
   const createPlantRecord = (newPlant: NewPlantInput, roomId: string | undefined, stamp: number): GardenPlant => ({
     ...newPlant,
     id: `plant-${stamp}-${Math.floor(Math.random() * 1000)}`,
@@ -295,6 +313,10 @@ export function GardenProvider({ children }: { children: ReactNode }) {
   const removePlant = (id: string) => {
     setPlants((prev) => prev.filter((p) => p.id !== id));
     deleteGrowthEntriesForPlant(id);
+  };
+
+  const restorePlant = (plant: GardenPlant) => {
+    setPlants((prev) => [plant, ...prev.filter((p) => p.id !== plant.id)]);
   };
 
   const updatePlantHealth = (id: string, score: number, diagnosis: string) => {
@@ -326,6 +348,21 @@ export function GardenProvider({ children }: { children: ReactNode }) {
     if (becameCompleted) {
       setStatsState((prev) => ({ ...prev, tasksCompleted: prev.tasksCompleted + 1 }));
     }
+  };
+
+  const setTaskCompletion = (plantId: string, taskId: string, completed: boolean) => {
+    setPlants((prev) =>
+      prev.map((p) => {
+        if (p.id !== plantId) return p;
+        return {
+          ...p,
+          careTasks: p.careTasks?.map((task) => {
+            if (task.id !== taskId) return task;
+            return { ...task, completed };
+          }),
+        };
+      })
+    );
   };
 
   const removeCareTask = (plantId: string, taskId: string) => {
@@ -405,11 +442,14 @@ export function GardenProvider({ children }: { children: ReactNode }) {
         stats,
         isHydrated,
         waterPlantToday,
+        undoWaterPlant,
         addPlant,
         addPlants,
         removePlant,
+        restorePlant,
         updatePlantHealth,
         toggleTaskCompleted,
+        setTaskCompletion,
         removeCareTask,
         assignPlantToRoom,
         createRoom,

@@ -7,12 +7,12 @@ import {
   TouchableOpacity,
   Switch,
   Platform,
-  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
 import { useAppTheme } from '../theme';
+import { useFeedback } from '../context/FeedbackContext';
 import { Card } from '../components/Card';
 import { Badge } from '../components/Badge';
 import { useSettings, ThemePreference, AppLanguage, LANGUAGES } from '../context/SettingsContext';
@@ -43,6 +43,7 @@ export const SettingsScreen: React.FC = () => {
   const { isPremium, setPremium } = usePremium();
   const { clearGarden } = useGarden();
   const { t } = useTranslation();
+  const { showToast, confirm } = useFeedback();
 
   const themeOptions: { key: ThemePreference; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
     { key: 'system', label: t('Sistema'), icon: 'phone-portrait-outline' },
@@ -59,39 +60,39 @@ export const SettingsScreen: React.FC = () => {
     }
   };
 
-  const handleDeleteData = () => {
-    Alert.alert(
-      t('Eliminar mis datos del dispositivo'),
-      t('Se borrarán de este dispositivo tu jardín, estadísticas, fotos, diario y ajustes. Esta acción no se puede deshacer.'),
-      [
-        { text: t('Cancelar'), style: 'cancel' },
-        {
-          text: t('Eliminar todo'),
-          style: 'destructive',
-          onPress: async () => {
-            // Borra también los datos persistidos en disco (no solo la memoria).
-            clearGrowthDiary();
-            await clearPersistedImages();
-            clearGarden();
-            setPremium(false);
-            resetSettings();
-            resetOnboarding();
-            await clearAllAppData();
-            try { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning); } catch {}
-            Alert.alert(t('Datos eliminados'), t('Los datos locales de este dispositivo se han eliminado.'));
-            navigation.goBack();
-          },
-        },
-      ]
-    );
+  const handleDeleteData = async () => {
+    const confirmed = await confirm({
+      title: t('Eliminar mis datos del dispositivo'),
+      message: t('Se borrarán de este dispositivo tu jardín, estadísticas, fotos, diario y ajustes. Esta acción no se puede deshacer.'),
+      confirmText: t('Eliminar todo'),
+      cancelText: t('Cancelar'),
+      isDestructive: true,
+    });
+    if (!confirmed) return;
+
+    // Borra también los datos persistidos en disco (no solo la memoria).
+    clearGrowthDiary();
+    await clearPersistedImages();
+    clearGarden();
+    setPremium(false);
+    resetSettings();
+    resetOnboarding();
+    await clearAllAppData();
+    try { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning); } catch {}
+    showToast({
+      message: t('Los datos de este dispositivo se han eliminado'),
+      type: 'info',
+    });
+    navigation.goBack();
   };
 
-  const handlePrivacy = () => {
-    Alert.alert(
-      t('Privacidad'),
-      t('En EcoScan las fotos se procesan para identificar plantas. En producción, la identificación se realiza mediante Cloud Functions y no se almacenan imágenes sin tu consentimiento. Puedes eliminar todos tus datos en cualquier momento desde esta pantalla.\n\nPolítica completa: ecoscan.app/privacidad'),
-      [{ text: t('Entendido') }]
-    );
+  const handlePrivacy = async () => {
+    await confirm({
+      title: t('Privacidad'),
+      message: t('En EcoScan tus fotos solo se usan para reconocer tus plantas y revisar su salud. No guardamos imágenes sin tu permiso ni compartimos tus datos con terceros. Puedes borrar toda tu información en cualquier momento desde esta pantalla.\n\nSitio web: ecoscan.app/privacidad'),
+      confirmText: t('Entendido'),
+      cancelText: null,
+    });
   };
 
   const renderSectionTitle = (title: string) => (
@@ -275,7 +276,7 @@ export const SettingsScreen: React.FC = () => {
         </Card>
 
         <Text style={[typography.caption2, { color: colors.textTertiary, textAlign: 'center', marginTop: spacing.xl }]}>
-          {t('EcoScan · Versión 1.0.0 (Expo SDK 57)')}
+          {t('EcoScan · Versión 1.0.0')}
         </Text>
       </ScrollView>
     </View>

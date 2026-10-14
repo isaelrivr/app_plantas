@@ -9,7 +9,6 @@ import {
   ActivityIndicator,
   Animated,
   Easing,
-  Alert,
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -36,9 +35,11 @@ import { useGarden } from '../context/GardenContext';
 import { usePlanLimits } from '../hooks/usePlanLimits';
 import { useTranslation } from '../i18n';
 import { announce } from '../services/accessibilityService';
+import { useFeedback } from '../context/FeedbackContext';
 
 export const HealthDiagnosisScreen: React.FC = () => {
   const { colors, isDark, spacing, typography, layout } = useAppTheme();
+  const { showToast, confirm } = useFeedback();
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { plants, updatePlantHealth, registerDiagnosis } = useGarden();
@@ -63,7 +64,7 @@ export const HealthDiagnosisScreen: React.FC = () => {
   const [lastAnalyzed, setLastAnalyzed] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isDiagnosing, setIsDiagnosing] = useState<boolean>(false);
-  const [diagnosisStepText, setDiagnosisStepText] = useState<string>(t('Analizando tejido foliar...'));
+  const [diagnosisStepText, setDiagnosisStepText] = useState<string>(t('Revisando las hojas...'));
   const [diagnosisResult, setDiagnosisResult] = useState<HealthDiagnosisResult | null>(null);
   const [treatmentMode, setTreatmentMode] = useState<'organic' | 'chemical'>('organic');
   const [treatmentScheduled, setTreatmentScheduled] = useState<boolean>(false);
@@ -91,8 +92,8 @@ export const HealthDiagnosisScreen: React.FC = () => {
       );
       anim.start();
 
-      const t1 = setTimeout(() => setDiagnosisStepText(t('Detectando manchas y parásitos...')), 500);
-      const t2 = setTimeout(() => setDiagnosisStepText(t('Consultando base de patología vegetal...')), 1000);
+      const t1 = setTimeout(() => setDiagnosisStepText(t('Revisando posibles plagas...')), 500);
+      const t2 = setTimeout(() => setDiagnosisStepText(t('Buscando tratamientos adecuados...')), 1000);
 
       return () => {
         anim.stop();
@@ -109,7 +110,10 @@ export const HealthDiagnosisScreen: React.FC = () => {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       const perm = await ImagePicker.requestCameraPermissionsAsync();
       if (!perm.granted) {
-        Alert.alert(t('Cámara'), t('Necesitas permiso de cámara para diagnosticar la planta.'));
+        showToast({
+          message: t('Necesitas permiso de cámara para diagnosticar la planta.'),
+          type: 'warning',
+        });
         return;
       }
       const shot = await ImagePicker.launchCameraAsync({
@@ -142,13 +146,13 @@ export const HealthDiagnosisScreen: React.FC = () => {
     }
   };
 
-  const handleUseSample = (issueKey?: string) => {
+  const handleUseSample = async (issueKey?: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const sampleUri = 'https://images.unsplash.com/photo-1598880940371-c756e015fea1?auto=format&fit=crop&w=600&q=80';
     if (issueKey) {
       const specific = getDiagnosisByKey(issueKey);
       if (specific) {
-        if (guardPestResult(specific)) {
+        if (await guardPestResult(specific)) {
           return;
         }
         setPhotoUri(sampleUri);
@@ -165,16 +169,17 @@ export const HealthDiagnosisScreen: React.FC = () => {
     processImage(sampleUri);
   };
 
-  const guardPestResult = (result: HealthDiagnosisResult): boolean => {
+  const guardPestResult = async (result: HealthDiagnosisResult): Promise<boolean> => {
     if (result.category === 'Plaga' && limits.isFeatureLocked('pestDiagnosis')) {
-      Alert.alert(
-        t('Diagnóstico de plagas Pro'),
-        t('Detectamos {nombre}. Identificar plagas con detalle y su tratamiento es exclusivo de EcoScan Pro.', { nombre: result.name }),
-        [
-          { text: t('Ahora no'), style: 'cancel' },
-          { text: t('Ver Pro'), onPress: () => navigation.navigate('Paywall') },
-        ]
-      );
+      const seePro = await confirm({
+        title: t('Diagnóstico de plagas Pro'),
+        message: t('Detectamos {nombre}. Identificar plagas con detalle y su tratamiento es exclusivo de EcoScan Pro.', { nombre: result.name }),
+        confirmText: t('Ver Pro'),
+        cancelText: t('Ahora no'),
+      });
+      if (seePro) {
+        navigation.navigate('Paywall');
+      }
       return true;
     }
     return false;
@@ -190,7 +195,7 @@ export const HealthDiagnosisScreen: React.FC = () => {
 
     try {
       const result = await diagnosePlantHealth([uri], plantName);
-      if (guardPestResult(result)) {
+      if (await guardPestResult(result)) {
         setDiagnosisResult(null);
         return;
       }
@@ -218,10 +223,13 @@ export const HealthDiagnosisScreen: React.FC = () => {
         const retry = err.retryAfterSeconds
           ? t(' Podrás volver a intentarlo en {min} min.', { min: Math.ceil(err.retryAfterSeconds / 60) })
           : '';
-        Alert.alert(t('Límite de diagnósticos'), `${err.message}${retry}`, [
-          { text: t('Entendido'), style: 'cancel' },
-          { text: t('Ver Pro'), onPress: () => navigation.navigate('Paywall') },
-        ]);
+        const wantPro = await confirm({
+          title: t('Límite de diagnósticos'),
+          message: `${err.message}${retry}`,
+          confirmText: t('Ver Pro'),
+          cancelText: t('Entendido'),
+        });
+        if (wantPro) navigation.navigate('Paywall');
         setErrorMessage(err.message);
       } else {
         setErrorMessage(t('No se pudo completar el análisis fitosanitario. Revisa tu conexión y vuelve a intentarlo.'));
@@ -265,13 +273,13 @@ export const HealthDiagnosisScreen: React.FC = () => {
     setErrorMessage(null);
     announce(t('Tratamiento programado'));
 
-    Alert.alert(
-      t('¡Tratamiento Programado!'),
-      t('Se ha creado un recordatorio local para aplicar "{tratamiento}" cada {frecuencia}', {
+    showToast({
+      message: t('Recordatorio programado para "{tratamiento}" cada {frecuencia}', {
         tratamiento: activeOption,
         frecuencia: diagnosisResult.treatment.frequency,
-      })
-    );
+      }),
+      type: 'success',
+    });
   };
 
   const getSeverityBadgeVariant = (severity: string): 'error' | 'warning' | 'success' => {
@@ -465,9 +473,6 @@ export const HealthDiagnosisScreen: React.FC = () => {
                           label={t('Severidad {nivel}', { nivel: t(diagnosisResult.severity).toUpperCase() })}
                           variant={getSeverityBadgeVariant(diagnosisResult.severity)}
                         />
-                        {diagnosisResult.source === 'mock' ? (
-                          <Badge label={t('Demo')} variant="neutral" />
-                        ) : null}
                       </View>
 
                       <Text style={[typography.title1, { color: colors.textPrimary, fontWeight: '700' }]}>
@@ -732,12 +737,12 @@ export const HealthDiagnosisScreen: React.FC = () => {
 
                 {/* BOTÓN: PROGRAMAR TRATAMIENTO CON RECORDATORIOS */}
                 <Button
-                  title={treatmentScheduled ? t('Tratamiento Programado con Éxito ✓') : t('Programar Recordatorio de Tratamiento 🔔')}
+                  title={treatmentScheduled ? t('Tratamiento programado') : t('Programar recordatorio')}
                   onPress={handleScheduleTreatment}
                   disabled={treatmentScheduled}
                   variant={treatmentScheduled ? 'secondary' : 'primary'}
                   size="lg"
-                  icon={<Ionicons name={treatmentScheduled ? 'checkmark-circle' : 'alarm'} size={20} color="#FFFFFF" />}
+                  icon={<Ionicons name={treatmentScheduled ? 'checkmark-circle' : 'notifications'} size={20} color={treatmentScheduled ? colors.primary : '#FFFFFF'} />}
                 />
               </View>
             )}

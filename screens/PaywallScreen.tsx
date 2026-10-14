@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
@@ -11,6 +11,7 @@ import { ErrorBanner } from '../components/ErrorBanner';
 import { usePremium } from '../context/PremiumContext';
 import { BILLING_PLANS, BillingPlanId } from '../services/billingService';
 import { useTranslation } from '../i18n';
+import { useFeedback } from '../context/FeedbackContext';
 
 interface ComparisonRow {
   label: string;
@@ -34,6 +35,7 @@ export const PaywallScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const { isPremium, purchase, restore, purchaseLoading, expiresAt } = usePremium();
   const { t } = useTranslation();
+  const { showToast } = useFeedback();
 
   const [selectedPlan, setSelectedPlan] = useState<BillingPlanId>('annual');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -63,7 +65,10 @@ export const PaywallScreen: React.FC = () => {
       if (result.entitlement.active) {
         setSuccess(true);
       } else {
-        Alert.alert(t('Restaurar compras'), t('No encontramos compras previas asociadas a tu cuenta.'));
+        showToast({
+          message: t('No encontramos compras previas asociadas a tu cuenta.'),
+          type: 'info',
+        });
       }
     } catch {
       setErrorMessage(t('No se pudieron restaurar las compras.'));

@@ -16,6 +16,7 @@ import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import { useTranslation } from '../i18n';
 import { useAppTheme } from '../theme';
+import { useFeedback } from '../context/FeedbackContext';
 import { announce } from '../services/accessibilityService';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
@@ -28,6 +29,8 @@ import {
   getGrowthEntries,
   getGrowthComparison,
   addGrowthEntry,
+  deleteGrowthEntry,
+  restoreGrowthEntry,
   formatEntryDate,
   GrowthEntry,
 } from '../services/growthDiaryService';
@@ -35,6 +38,7 @@ import {
 export const GrowthDiaryScreen: React.FC = () => {
   const { colors, layout, spacing, typography } = useAppTheme();
   const { t } = useTranslation();
+  const { showToast, confirm } = useFeedback();
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { plants } = useGarden();
@@ -93,6 +97,42 @@ export const GrowthDiaryScreen: React.FC = () => {
     announce(t('Entrada guardada en el diario de crecimiento'));
     setModalVisible(false);
     setPendingPhoto(null);
+  };
+
+  const handleDeleteEntry = async (entry: GrowthEntry) => {
+    try {
+      Haptics.selectionAsync();
+    } catch {}
+    const confirmed = await confirm({
+      title: t('¿Eliminar registro?'),
+      message: t('Se eliminará esta foto y sus notas del diario de crecimiento.'),
+      confirmText: t('Eliminar'),
+      cancelText: t('Cancelar'),
+      isDestructive: true,
+    });
+    if (!confirmed) return;
+
+    deleteGrowthEntry(plantId, entry.id);
+    setEntries((prev) => prev.filter((e) => e.id !== entry.id));
+    try {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch {}
+
+    showToast({
+      message: t('Registro eliminado'),
+      type: 'info',
+      actionLabel: t('Deshacer'),
+      durationMs: 5000,
+      onAction: () => {
+        restoreGrowthEntry(entry);
+        setEntries((prev) =>
+          [entry, ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+        );
+        try {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        } catch {}
+      },
+    });
   };
 
   const renderDelta = (label: string, value: number | null, suffix: string) => {
@@ -197,7 +237,7 @@ export const GrowthDiaryScreen: React.FC = () => {
                     accessible
                     accessibilityLabel={t('Foto del {fecha}', { fecha: formatEntryDate(entry.date) })}
                   />
-                  <View style={{ flex: 1, marginLeft: spacing.md }}>
+                  <View style={{ flex: 1, marginLeft: spacing.md, marginRight: spacing.xs }}>
                     <Text style={[typography.footnote, { color: colors.textTertiary }]}>
                       {formatEntryDate(entry.date)}
                     </Text>
@@ -206,17 +246,32 @@ export const GrowthDiaryScreen: React.FC = () => {
                     </Text>
                     <View style={styles.deltaRow}>
                       {entry.heightCm != null ? (
-                        <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-                          📏 {entry.heightCm} cm
-                        </Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                          <Ionicons name="resize-outline" size={13} color={colors.textSecondary} style={{ marginRight: 4 }} />
+                          <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+                            {entry.heightCm} cm
+                          </Text>
+                        </View>
                       ) : null}
                       {entry.leafCount != null ? (
-                        <Text style={[typography.caption1, { color: colors.textSecondary, marginLeft: 10 }]}>
-                          🍃 {t('{n} hojas', { n: entry.leafCount })}
-                        </Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: 10 }}>
+                          <Ionicons name="leaf-outline" size={13} color={colors.textSecondary} style={{ marginRight: 4 }} />
+                          <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+                            {t('{n} hojas', { n: entry.leafCount })}
+                          </Text>
+                        </View>
                       ) : null}
                     </View>
                   </View>
+                  <TouchableOpacity
+                    onPress={() => handleDeleteEntry(entry)}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('Eliminar registro del {fecha}', { fecha: formatEntryDate(entry.date) })}
+                    hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                    style={styles.deleteEntryBtn}
+                  >
+                    <Ionicons name="trash-outline" size={20} color={colors.error} />
+                  </TouchableOpacity>
                 </View>
               </Card>
             ))}
@@ -311,4 +366,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   modalActions: { flexDirection: 'row', marginTop: 16 },
+  deleteEntryBtn: {
+    minWidth: 48,
+    minHeight: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 4,
+  },
 });
