@@ -24,7 +24,7 @@ import { ErrorBanner } from '../components/ErrorBanner';
 import { BottomSheet } from '../components/BottomSheet';
 import { ListRow } from '../components/ListRow';
 import { GardenPlantCard } from '../components/garden/GardenPlantCard';
-import { AddPlantModal } from '../components/garden/AddPlantModal';
+import { AddPlantModal, ManualPlantData } from '../components/garden/AddPlantModal';
 import { PlantActionSheet } from '../components/garden/PlantActionSheet';
 import { resolveSpeciesId } from '../services/plantApi';
 import {
@@ -199,13 +199,20 @@ export const GardenScreen: React.FC = () => {
     }
   };
 
-  const handleAddManualPlant = (name: string) => {
-    addCustomPlant(name);
+  const handleAddManualPlant = (data: ManualPlantData | string) => {
+    const name = typeof data === 'string' ? data : data.name;
+    const nickname = typeof data === 'string' ? undefined : data.nickname;
+    const potSize = typeof data === 'string' ? undefined : data.potSize;
+    const imageUri = typeof data === 'string' ? undefined : data.imageUri;
+
+    addCustomPlant(name, { nickname, potSize, imageUri });
     try {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch {}
     showToast({
-      message: t('Añadida {nombre} a tu jardín', { nombre: name }),
+      message: nickname
+        ? t('Añadida {nombre} ("{apodo}") a tu jardín', { nombre: name, apodo: nickname })
+        : t('Añadida {nombre} a tu jardín', { nombre: name }),
       type: 'success',
     });
   };

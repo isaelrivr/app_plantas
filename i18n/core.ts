@@ -7,10 +7,14 @@
 
 import type { AppLanguage, TranslationParams } from './types';
 import { EN } from './translations';
+import { PT } from './translations_pt';
+import { FR } from './translations_fr';
 
 const DICTIONARIES: Record<AppLanguage, Record<string, string>> = {
   es: {}, // El español es la fuente: no necesita diccionario.
   en: EN,
+  pt: PT,
+  fr: FR,
 };
 
 let currentLanguage: AppLanguage = 'es';

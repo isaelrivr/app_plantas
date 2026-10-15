@@ -31,13 +31,17 @@ export interface Room {
   icon: keyof typeof Ionicons.glyphMap;
 }
 
+export type PotSize = 'small' | 'medium' | 'large' | 'planter';
+
 export interface GardenPlant {
   id: string;
   name: string;
+  nickname?: string;
   scientificName: string;
   lastWatered: string;
   isWateredToday: boolean;
   wateringFrequencyDays: number;
+  potSize?: PotSize;
   light: string;
   avatarEmoji: string;
   imageUri?: string;
@@ -190,7 +194,18 @@ interface GardenContextType {
   updateCareTask: (plantId: string, taskId: string, updates: Partial<CareTask>) => void;
   addCareTask: (plantId: string, task: Omit<CareTask, 'id' | 'completed'>) => void;
   removeCareTask: (plantId: string, taskId: string) => void;
-  addCustomPlant: (name: string, options?: { wateringFrequencyDays?: number; light?: string; roomId?: string; scientificName?: string }) => string;
+  addCustomPlant: (
+    name: string,
+    options?: {
+      nickname?: string;
+      potSize?: PotSize;
+      imageUri?: string;
+      wateringFrequencyDays?: number;
+      light?: string;
+      roomId?: string;
+      scientificName?: string;
+    }
+  ) => string;
   assignPlantToRoom: (plantId: string, roomId?: string) => void;
   createRoom: (name: string, icon?: Room['icon']) => Room;
   removeRoom: (roomId: string) => void;
@@ -199,6 +214,7 @@ interface GardenContextType {
   resetDefaultPlants: () => void;
   resetStats: () => void;
   clearGarden: () => void;
+  hydrateGarden: () => Promise<void>;
 }
 
 const GardenContext = createContext<GardenContextType | undefined>(undefined);
@@ -263,6 +279,18 @@ export function GardenProvider({ children }: { children: ReactNode }) {
       active = false;
     };
   }, []);
+
+  const hydrateGarden = async (): Promise<void> => {
+    const stored = await loadJSON<PersistedGarden | null>(STORAGE_KEYS.garden, null, validateGardenData);
+    const storedAchievements = await loadUnlockedAchievements();
+    setUnlockedAchievements(storedAchievements);
+    if (stored) {
+      setPlants(Array.isArray(stored.plants) ? stored.plants : []);
+      setRooms(stored.rooms && stored.rooms.length > 0 ? stored.rooms : DEFAULT_ROOMS);
+      const persistedStats = { ...INITIAL_STATS, ...(stored.stats ?? {}) };
+      setStatsState(persistedStats);
+    }
+  };
 
   // Normalizar el contador de identificaciones al cambiar de día (cuando la app vuelve a primer plano)
   useEffect(() => {
@@ -468,14 +496,25 @@ export function GardenProvider({ children }: { children: ReactNode }) {
 
   const addCustomPlant = (
     name: string,
-    options?: { wateringFrequencyDays?: number; light?: string; roomId?: string; scientificName?: string }
+    options?: {
+      nickname?: string;
+      potSize?: PotSize;
+      imageUri?: string;
+      wateringFrequencyDays?: number;
+      light?: string;
+      roomId?: string;
+      scientificName?: string;
+    }
   ): string => {
     const days = options?.wateringFrequencyDays ?? 7;
     const stamp = Date.now();
     const input: NewPlantInput = {
       name: name.trim(),
+      nickname: options?.nickname?.trim(),
       scientificName: options?.scientificName || `${name.trim()} sp.`,
       wateringFrequencyDays: days,
+      potSize: options?.potSize ?? 'medium',
+      imageUri: options?.imageUri,
       light: options?.light || t('Luz indirecta'),
       avatarEmoji: '🌿',
       roomId: options?.roomId,
@@ -585,6 +624,7 @@ export function GardenProvider({ children }: { children: ReactNode }) {
         resetDefaultPlants,
         resetStats,
         clearGarden,
+        hydrateGarden,
       }}
     >
       {children}

@@ -1,11 +1,29 @@
 rules_version = '2';
 
-// Plantae Fase 2: TODOS los datos (cuota, caché de fichas, futuros usuarios)
-// viven detrás del Admin SDK de las Cloud Functions. El cliente nunca habla
-// directamente con Firestore todavía, así que denegamos todo por defecto.
-// En Fase 4 se abrirán reglas concretas para `users/{uid}`.
+/**
+ * EcoScan Firestore Security Rules
+ *
+ * Principio de mínimo privilegio:
+ * 1. Cada usuario autenticado (incluyendo Auth anónimo de Firebase) solo puede
+ *    leer, escribir y borrar su propia subcolección en `users/{userId}`.
+ * 2. Se exige coincidencia estricta entre `request.auth.uid` y el ID del documento.
+ * 3. Todo acceso ajeno a `users/{userId}` o sin autenticación queda estrictamente denegado.
+ * 4. Las cuotas y catálogos globales son gestionados únicamente por el Admin SDK en Cloud Functions.
+ */
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // Reglas granulares de usuario (Jardín, diario, ajustes y respaldos)
+    match /users/{userId} {
+      allow read, write, delete: if request.auth != null && request.auth.uid == userId;
+
+      // Subcolecciones del usuario: plantas, diario de crecimiento y preferencias
+      match /{subcollection}/{document=**} {
+        allow read, write, delete: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+
+    // Denegación por defecto para cualquier otra ruta
     match /{document=**} {
       allow read, write: if false;
     }

@@ -7,8 +7,9 @@ import {
   TouchableOpacity,
   Switch,
   Platform,
-  Share,
   Linking,
+  Modal,
+  TextInput,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -21,17 +22,18 @@ import { useSettings, ThemePreference, AppLanguage, LANGUAGES } from '../context
 import { usePremium } from '../context/PremiumContext';
 import { useGarden } from '../context/GardenContext';
 import { requestNotificationPermissions } from '../services/notificationService';
-import { clearAllAppData } from '../services/storage';
-import { clearGrowthDiary } from '../services/growthDiaryService';
-import { clearPersistedImages } from '../services/mediaService';
 import { announce } from '../services/accessibilityService';
 import { useTranslation } from '../i18n';
 import {
   SUPPORTED_CITIES,
   getManualCity,
   setManualCity,
-  ManualCity,
 } from '../services/weatherService';
+import {
+  exportFullBackup,
+  importBackupFromJSON,
+  performFullAccountDeletion,
+} from '../services/backupService';
 
 const NOTIFICATION_HOURS = ['08:00', '09:00', '10:00', '18:00', '20:00'];
 
@@ -47,18 +49,22 @@ export const SettingsScreen: React.FC = () => {
     setNotificationsEnabled,
     easyMode,
     setEasyMode,
+    hasPets,
+    setHasPets,
     analyticsConsent,
     setAnalyticsConsent,
     resetOnboarding,
     resetSettings,
   } = useSettings();
   const { isPremium, setPremium } = usePremium();
-  const { plants, clearGarden } = useGarden();
+  const { plants, clearGarden, hydrateGarden } = useGarden();
   const { t } = useTranslation();
   const { showToast, confirm } = useFeedback();
 
   const [notificationHour, setNotificationHour] = useState('09:00');
   const [currentCityName, setCurrentCityName] = useState<string | null>(null);
+  const [isImportModalVisible, setIsImportModalVisible] = useState(false);
+  const [importJsonText, setImportJsonText] = useState('');
 
   React.useEffect(() => {
     getManualCity().then((city) => setCurrentCityName(city));
@@ -86,24 +92,13 @@ export const SettingsScreen: React.FC = () => {
   const handleExportData = async () => {
     try {
       Haptics.selectionAsync();
-      const exportPayload = {
-        app: 'EcoScan',
-        version: '1.0.0',
-        exportDate: new Date().toISOString(),
-        totalPlants: plants.length,
-        plants: plants.map((p) => ({
-          name: p.name,
-          scientificName: p.scientificName,
-          wateringFrequencyDays: p.wateringFrequencyDays,
-          healthScore: p.healthScore,
-          careTasks: p.careTasks,
-        })),
-      };
-
-      await Share.share({
-        title: t('Copia de seguridad de mi jardín - EcoScan'),
-        message: JSON.stringify(exportPayload, null, 2),
-      });
+      const success = await exportFullBackup();
+      if (!success) {
+        showToast({
+          message: t('No se pudo compartir la copia de seguridad'),
+          type: 'error',
+        });
+      }
     } catch {
       showToast({
         message: t('No se pudo compartir la copia de seguridad'),
@@ -112,26 +107,46 @@ export const SettingsScreen: React.FC = () => {
     }
   };
 
+  const handleExecuteImport = async () => {
+    if (!importJsonText.trim()) {
+      showToast({ message: t('Pega el texto JSON de la copia de seguridad'), type: 'warning' });
+      return;
+    }
+
+    const result = await importBackupFromJSON(importJsonText.trim());
+    if (result.success) {
+      setIsImportModalVisible(false);
+      setImportJsonText('');
+      await hydrateGarden();
+      try { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); } catch {}
+      showToast({
+        message: t('Copia restaurada: {total} plantas recuperadas', { total: result.totalPlants }),
+        type: 'success',
+      });
+    } else {
+      try { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error); } catch {}
+      showToast({ message: result.message, type: 'error' });
+    }
+  };
+
   const handleDeleteData = async () => {
     const confirmed = await confirm({
-      title: t('Eliminar mis datos del dispositivo'),
-      message: t('Se borrarán de este dispositivo tu jardín, estadísticas, fotos, diario y ajustes. Esta acción no se puede deshacer.'),
+      title: t('Eliminar cuenta y datos del dispositivo'),
+      message: t('Se borrarán de forma definitiva tu jardín, estadísticas, fotos, diario, ajustes y cualquier copia remota. Esta acción no se puede deshacer.'),
       confirmText: t('Eliminar todo'),
       cancelText: t('Cancelar'),
       isDestructive: true,
     });
     if (!confirmed) return;
 
-    clearGrowthDiary();
-    await clearPersistedImages();
     clearGarden();
     setPremium(false);
     resetSettings();
     resetOnboarding();
-    await clearAllAppData();
+    await performFullAccountDeletion();
     try { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning); } catch {}
     showToast({
-      message: t('Los datos de este dispositivo se han eliminado'),
+      message: t('Tus datos y cuenta se han eliminado por completo'),
       type: 'info',
     });
     navigation.goBack();
@@ -212,6 +227,31 @@ export const SettingsScreen: React.FC = () => {
               accessibilityHint={t('Texto y botones más grandes, menos animaciones y navegación simplificada')}
               trackColor={{ false: colors.border, true: colors.primaryLight }}
               thumbColor={easyMode ? colors.primary : '#FFFFFF'}
+            />
+          </View>
+        </Card>
+
+        {/* MASCOTAS EN EL HOGAR */}
+        {renderSectionTitle(t('Mascotas en el hogar'))}
+        <Card style={{ marginBottom: spacing.sm }}>
+          <View style={styles.row}>
+            <View style={{ flex: 1, paddingRight: spacing.sm }}>
+              <Text style={[typography.headline, { color: colors.textPrimary }]}>{t('Tengo perros o gatos en casa')}</Text>
+              <Text style={[typography.subheadline, { color: colors.textSecondary, marginTop: 4, lineHeight: 20 }]}>
+                {t('Te avisaremos al guardar o cuidar plantas que resulten tóxicas o peligrosas para tus animales.')}
+              </Text>
+            </View>
+            <Switch
+              value={hasPets}
+              onValueChange={(val) => {
+                try { Haptics.selectionAsync(); } catch {}
+                setHasPets(val);
+                announce(val ? t('Avisos de mascotas activados') : t('Avisos de mascotas desactivados'));
+              }}
+              accessibilityRole="switch"
+              accessibilityLabel={t('Tengo perros o gatos en casa')}
+              trackColor={{ false: colors.border, true: colors.primaryLight }}
+              thumbColor={hasPets ? colors.primary : '#FFFFFF'}
             />
           </View>
         </Card>
@@ -457,6 +497,16 @@ export const SettingsScreen: React.FC = () => {
             <Ionicons name="share-outline" size={20} color={colors.primary} />
           </TouchableOpacity>
           <View style={[styles.separator, { backgroundColor: colors.border }]} />
+          <TouchableOpacity onPress={() => setIsImportModalVisible(true)} accessibilityRole="button" accessibilityLabel={t('Importar copia de seguridad')} style={styles.rowTap}>
+            <View style={{ flex: 1 }}>
+              <Text style={[typography.body, { color: colors.textPrimary }]}>{t('Importar copia de seguridad')}</Text>
+              <Text style={[typography.caption1, { color: colors.textTertiary, marginTop: 2 }]}>
+                {t('Restaura tu jardín a partir de un texto JSON previo')}
+              </Text>
+            </View>
+            <Ionicons name="download-outline" size={20} color={colors.primary} />
+          </TouchableOpacity>
+          <View style={[styles.separator, { backgroundColor: colors.border }]} />
           <TouchableOpacity onPress={() => navigation.navigate('PrivacyPolicy')} accessibilityRole="button" accessibilityLabel={t('Política de privacidad')} style={styles.rowTap}>
             <Text style={[typography.body, { color: colors.textPrimary }]}>{t('Política de privacidad')}</Text>
             <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
@@ -472,8 +522,8 @@ export const SettingsScreen: React.FC = () => {
             <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
           </TouchableOpacity>
           <View style={[styles.separator, { backgroundColor: colors.border }]} />
-          <TouchableOpacity onPress={handleDeleteData} accessibilityRole="button" accessibilityLabel={t('Eliminar mis datos del dispositivo')} style={styles.rowTap}>
-            <Text style={[typography.body, { color: colors.error }]}>{t('Eliminar mis datos del dispositivo')}</Text>
+          <TouchableOpacity onPress={handleDeleteData} accessibilityRole="button" accessibilityLabel={t('Eliminar cuenta y datos del dispositivo')} style={styles.rowTap}>
+            <Text style={[typography.body, { color: colors.error }]}>{t('Eliminar cuenta y datos del dispositivo')}</Text>
             <Ionicons name="trash-outline" size={20} color={colors.error} />
           </TouchableOpacity>
         </Card>
@@ -517,6 +567,70 @@ export const SettingsScreen: React.FC = () => {
           </View>
         </Card>
       </ScrollView>
+
+      {/* MODAL DE IMPORTAR COPIA DE SEGURIDAD */}
+      <Modal
+        visible={isImportModalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setIsImportModalVisible(false)}
+      >
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 }}>
+          <View style={{ backgroundColor: colors.surface, borderRadius: 16, padding: 20, maxHeight: '80%' }}>
+            <Text style={[typography.headline, { color: colors.textPrimary, marginBottom: 8 }]}>
+              {t('Importar copia de seguridad')}
+            </Text>
+            <Text style={[typography.subheadline, { color: colors.textSecondary, marginBottom: 12 }]}>
+              {t('Pega a continuación el contenido JSON de tu copia de seguridad para restaurar tu jardín.')}
+            </Text>
+            <TextInput
+              multiline
+              value={importJsonText}
+              onChangeText={setImportJsonText}
+              placeholder='{"app": "EcoScan", ...}'
+              placeholderTextColor={colors.textTertiary}
+              style={{
+                height: 140,
+                borderWidth: 1,
+                borderColor: colors.border,
+                borderRadius: 8,
+                padding: 10,
+                color: colors.textPrimary,
+                textAlignVertical: 'top',
+                backgroundColor: colors.surfaceSecondary,
+                marginBottom: 16,
+              }}
+            />
+            <View style={{ flexDirection: 'row', gap: 12, justifyContent: 'flex-end' }}>
+              <TouchableOpacity
+                onPress={() => {
+                  setIsImportModalVisible(false);
+                  setImportJsonText('');
+                }}
+                style={{ minHeight: 48, minWidth: 48, justifyContent: 'center', paddingHorizontal: 16 }}
+                accessibilityRole="button"
+                accessibilityLabel={t('Cancelar')}
+              >
+                <Text style={[typography.body, { color: colors.textSecondary }]}>{t('Cancelar')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleExecuteImport}
+                style={{
+                  backgroundColor: colors.primary,
+                  borderRadius: 8,
+                  minHeight: 48,
+                  justifyContent: 'center',
+                  paddingHorizontal: 20,
+                }}
+                accessibilityRole="button"
+                accessibilityLabel={t('Restaurar mi jardín')}
+              >
+                <Text style={[typography.headline, { color: '#FFFFFF' }]}>{t('Restaurar')}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };

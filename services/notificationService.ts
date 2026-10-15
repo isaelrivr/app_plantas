@@ -61,9 +61,34 @@ export async function requestNotificationPermissions(): Promise<boolean> {
       });
     }
 
+    await setupInteractiveNotificationCategories();
+
     return true;
   } catch {
     return false;
+  }
+}
+
+export const WATERING_CATEGORY_ID = 'WATERING_REMINDER';
+export const ACTION_WATERED = 'ACTION_WATERED';
+
+/**
+ * Registra categorías de acciones rápidas para notificaciones.
+ * Permite al usuario marcar "Ya la regué" directamente desde la notificación sin abrir la app.
+ */
+export async function setupInteractiveNotificationCategories(): Promise<void> {
+  try {
+    await Notifications.setNotificationCategoryAsync(WATERING_CATEGORY_ID, [
+      {
+        identifier: ACTION_WATERED,
+        buttonTitle: t('Ya la regué'),
+        options: {
+          opensAppToForeground: false,
+        },
+      },
+    ]);
+  } catch (e) {
+    console.warn('[notifications] Error al registrar categoría interactiva:', e);
   }
 }
 
@@ -81,7 +106,8 @@ export async function cancelScheduledNotification(identifier: string): Promise<v
  */
 export async function scheduleWateringReminder(
   plantName: string,
-  daysInterval: number
+  daysInterval: number,
+  plantId?: string
 ): Promise<string | null> {
   try {
     const hasPermission = await requestNotificationPermissions();
@@ -92,12 +118,13 @@ export async function scheduleWateringReminder(
 
     const identifier = await Notifications.scheduleNotificationAsync({
       content: {
-        title: t('💧 Hora de regar tu {plantName}', { plantName }),
-        body: t('Tu planta necesita hidratación cada {interval} días. Revisa que el sustrato esté seco antes de regar.', {
+        title: t('Hora de regar tu {plantName}', { plantName }),
+        body: t('Tu planta necesita hidratación cada {interval} días. Toca "Ya la regué" al terminar.', {
           interval,
         }),
         sound: true,
-        data: { type: 'watering', plantName, intervalDays: interval },
+        categoryIdentifier: WATERING_CATEGORY_ID,
+        data: { type: 'watering', plantName, intervalDays: interval, plantId },
       },
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.DATE,

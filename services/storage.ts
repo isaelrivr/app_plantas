@@ -52,6 +52,19 @@ export function validateSettingsData(value: unknown): boolean {
   if (typeof value.themePreference === 'string' && !validThemes.includes(value.themePreference)) {
     return false;
   }
+  const validLangs = ['es', 'en', 'pt', 'fr'];
+  if (typeof value.language === 'string' && !validLangs.includes(value.language)) {
+    return false;
+  }
+  if (value.hasPets !== undefined && typeof value.hasPets !== 'boolean') {
+    return false;
+  }
+  if (value.easyMode !== undefined && typeof value.easyMode !== 'boolean') {
+    return false;
+  }
+  if (value.analyticsConsent !== undefined && typeof value.analyticsConsent !== 'boolean') {
+    return false;
+  }
   return true;
 }
 

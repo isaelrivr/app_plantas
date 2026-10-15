@@ -21,6 +21,8 @@ export type { AppLanguage } from '../i18n/types';
 export const LANGUAGES: { code: AppLanguage; label: string }[] = [
   { code: 'es', label: 'Español' },
   { code: 'en', label: 'English' },
+  { code: 'pt', label: 'Português' },
+  { code: 'fr', label: 'Français' },
 ];
 
 interface SettingsContextType {
@@ -29,6 +31,7 @@ interface SettingsContextType {
   notificationsEnabled: boolean;
   hasOnboarded: boolean;
   easyMode: boolean;
+  hasPets: boolean;
   userGoal?: UserGoal;
   analyticsConsent: boolean;
   resolvedScheme: 'light' | 'dark';
@@ -38,6 +41,7 @@ interface SettingsContextType {
   setLanguage: (value: AppLanguage) => void;
   setNotificationsEnabled: (value: boolean) => void;
   setEasyMode: (value: boolean) => void;
+  setHasPets: (value: boolean) => void;
   setUserGoal: (value: UserGoal) => void;
   setAnalyticsConsent: (value: boolean) => void;
   completeOnboarding: () => void;
@@ -53,6 +57,7 @@ interface PersistedSettings {
   notificationsEnabled: boolean;
   hasOnboarded: boolean;
   easyMode?: boolean;
+  hasPets?: boolean;
   userGoal?: UserGoal;
   analyticsConsent?: boolean;
 }
@@ -63,6 +68,7 @@ const DEFAULT_SETTINGS: PersistedSettings = {
   notificationsEnabled: true,
   hasOnboarded: false,
   easyMode: false,
+  hasPets: false,
   userGoal: 'watering',
   analyticsConsent: false,
 };
@@ -74,6 +80,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(true);
   const [hasOnboarded, setHasOnboarded] = useState<boolean>(false);
   const [easyMode, setEasyMode] = useState<boolean>(false);
+  const [hasPets, setHasPets] = useState<boolean>(false);
   const [userGoal, setUserGoal] = useState<UserGoal>('watering');
   const [analyticsConsent, setAnalyticsConsentState] = useState<boolean>(false);
   const [isHydrated, setIsHydrated] = useState<boolean>(false);
@@ -93,6 +100,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       setNotificationsEnabled(stored.notificationsEnabled ?? true);
       setHasOnboarded(stored.hasOnboarded ?? false);
       setEasyMode(Boolean(stored.easyMode));
+      setHasPets(Boolean(stored.hasPets));
       setUserGoal(stored.userGoal ?? 'watering');
 
       const consent = await initAnalytics();
@@ -118,10 +126,11 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       notificationsEnabled,
       hasOnboarded,
       easyMode,
+      hasPets,
       userGoal,
       analyticsConsent,
     });
-  }, [isHydrated, themePreference, language, notificationsEnabled, hasOnboarded, easyMode, userGoal, analyticsConsent]);
+  }, [isHydrated, themePreference, language, notificationsEnabled, hasOnboarded, easyMode, hasPets, userGoal, analyticsConsent]);
 
   // Mantiene el traductor global en sintonía con el idioma.
   useEffect(() => {
@@ -138,6 +147,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       notificationsEnabled,
       hasOnboarded,
       easyMode,
+      hasPets,
       userGoal,
       analyticsConsent,
       resolvedScheme,
@@ -146,6 +156,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       setLanguage,
       setNotificationsEnabled,
       setEasyMode,
+      setHasPets,
       setUserGoal,
       setAnalyticsConsent: handleSetAnalyticsConsent,
       completeOnboarding: () => setHasOnboarded(true),
@@ -155,11 +166,12 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         setLanguage('es');
         setNotificationsEnabled(true);
         setEasyMode(false);
+        setHasPets(false);
         setUserGoal('watering');
         handleSetAnalyticsConsent(false);
       },
     }),
-    [themePreference, language, notificationsEnabled, hasOnboarded, easyMode, userGoal, analyticsConsent, resolvedScheme, isHydrated]
+    [themePreference, language, notificationsEnabled, hasOnboarded, easyMode, hasPets, userGoal, analyticsConsent, resolvedScheme, isHydrated]
   );
 
   return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>;
@@ -177,6 +189,7 @@ export function useSettings(): SettingsContextType {
       notificationsEnabled: true,
       hasOnboarded: false,
       easyMode: false,
+      hasPets: false,
       userGoal: 'watering',
       analyticsConsent: false,
       resolvedScheme: fallbackScheme,
@@ -185,6 +198,7 @@ export function useSettings(): SettingsContextType {
       setLanguage: () => {},
       setNotificationsEnabled: () => {},
       setEasyMode: () => {},
+      setHasPets: () => {},
       setUserGoal: () => {},
       setAnalyticsConsent: () => {},
       completeOnboarding: () => {},

@@ -1,32 +1,105 @@
-# Checklist de verificación manual en dispositivo
+# Checklist de Verificación Manual en Dispositivo (QA y Usabilidad)
 
-Probar en una development build Android y otra iOS. Marcar cada resultado con fecha y versión.
+Documento exhaustivo para pruebas manuales en dispositivos físicos (Android e iOS).
+Ejecutar antes de enviar cada build a Google Play Console o Apple TestFlight.
 
-1. Instalar, abrir por primera vez y completar las 3 páginas de onboarding. Cerrar y abrir: no debe volver a aparecer.
-2. Denegar cámara. El escáner debe mostrar un mensaje claro y permitir reintentar o elegir galería.
-3. Conceder cámara, tomar una foto, añadir una segunda y ejecutar identificación por lote. Confirmar candidatos, guardar en jardín y volver a abrir la ficha.
-4. Repetir cuatro identificaciones en plan Free. La cuarta debe mostrar el límite y abrir Paywall sin bloquear la app.
-5. Cambiar la fecha del dispositivo al día siguiente o esperar el cambio real. Confirmar que el contador diario se reinicia.
-6. En Mi Jardín, regar una planta, moverla entre habitaciones, crear una zona y eliminarla. Cerrar y abrir: los cambios deben sobrevivir.
-7. Abrir clima con GPS permitido, denegado y sin conexión. Debe mostrar datos o fallback claro sin quedarse cargando.
-8. Abrir ficha botánica, cambiar todas las pestañas, ver toxicidad y mapa. En Free el gating debe llevar a Paywall.
-9. Diagnóstico: probar cámara, galería, permiso denegado y muestra inválida. Confirmar estados de carga, error y resultado.
-10. Calendario: completar, eliminar y programar una tarea. Verificar que la notificación llega; denegar permisos y confirmar mensaje de ajustes.
-11. Diario: agregar foto, guardar medidas, abrir comparador, borrar entrada y comprobar que la foto deja de ocupar el almacenamiento de la app.
-12. Asistente: enviar texto, tocar respuesta rápida, probar sin red y verificar fallback local o error amigable.
-13. Enciclopedia: combinar búsqueda, luz, dificultad, ambiente y mascotas; activar “Mis plantas”; comprobar lista vacía y lista larga.
-14. Logros: regar, completar tareas, identificar y diagnosticar. Confirmar progreso y que se conserva tras reiniciar.
-15. Ajustes: tema sistema/claro/oscuro, idioma español/inglés, notificaciones, reintroducción y borrado local. Tras borrar, no deben quedar plantas, fotos, diario, estadísticas ni Pro local.
-16. Activar modo avión durante cada flujo de red. Ninguna pantalla debe quedarse bloqueada indefinidamente.
-17. Llenar almacenamiento o revocar acceso a fotos y repetir guardado. Debe aparecer error recuperable, sin cierre de la app.
-18. Probar teclado, rotación (si se habilita en el build), fuente grande y lector de pantalla en controles principales.
+---
 
-## Mapa de hábitat
+## 1. Protocolos de Usabilidad Humana
 
-19. Abrir el mapa desde una ficha de planta Pro. Confirmar que la proyección cabe completa en vertical, en teléfono grande y en tablet.
-20. Pellizcar, arrastrar y usar `+`, `−` y `Restablecer vista`. Confirmar que el mapa mantiene sus límites y que el arrastre tiene desaceleración suave.
-21. Tocar dos veces un punto del mapa. Confirmar que el zoom se centra en el punto tocado; después seleccionar otra planta y comprobar que encuadra todas sus regiones nativas.
-22. Tocar un país resaltado y luego cerrar la tarjeta. Confirmar que aparecen el país, zona, clima, elevación y notas.
-23. Confirmar que los marcadores pulsan, que las etiquetas aparecen al acercar y que el resumen de regiones es leído por VoiceOver/TalkBack.
-24. Repetir en tema claro, oscuro y orientación horizontal. Verificar contraste, bordes nítidos y que no hay recortes.
-25. Abrir el mapa con un usuario Free. Confirmar que aparece la vista bloqueada y que el botón lleva al Paywall sin mostrar el mapa completo.
+### A. Prueba de los 5 Segundos (Claridad Inmediata)
+- [ ] **Pantalla Hoy**: Al abrir la app, en menos de 5 segundos se debe identificar claramente cuál es la tarea principal ("Regar Monstera") y cuál es el botón principal ("Ya la regué").
+- [ ] **Estado Vacío**: Sin plantas registradas, el botón principal debe ser obvio y enorme: "Escanea tu primera planta" y "o búscala por nombre".
+- [ ] **Ficha de Planta**: Se debe ver en el primer pantallazo: nombre común, nombre botánico, badge de toxicidad ("Segura" o "Tóxica") y la tarjeta "Qué hacer hoy".
+
+### B. Prueba con Adultos Mayores y Niños
+- [ ] **Modo Fácil**: Ir a Ajustes $\rightarrow$ Activar "Modo fácil".
+  - Todos los textos principales deben aumentar un 30% ($\ge 18$ sp).
+  - Los botones interactivos deben medir $\ge 56$ pt de alto.
+  - El contraste visual de las tarjetas y fuentes debe ser nítido y sin grises desvaídos.
+- [ ] **Comprensión Infantil**: Iconografía directa (gota de agua 💧 para riego, sol ☀️ para iluminación, pata 🐾 para mascotas, corazón ❤️ para salud) sin jerga técnica confusa.
+
+### C. Prueba de Escala de Fuente del Sistema al 200%
+- [ ] En los ajustes de accesibilidad del sistema operativo, subir la fuente al 200%.
+- [ ] Abrir EcoScan:
+  - La barra inferior de pestañas (Tab Bar) debe aumentar su altura automáticamente (`minHeight: 88`) sin cortar el texto de "Hoy", "Mi Jardín", "Escanear", "Explorar" o "Yo".
+  - Las tarjetas de plantas deben envolver el texto en varias líneas sin desbordar los bordes de la pantalla.
+  - Los botones con icono deben acomodarse verticalmente o reducir proporcionalmente el espaciado sin romperse.
+
+### D. Prueba con Lector de Pantalla (VoiceOver / TalkBack)
+- [ ] Activar TalkBack (Android) o VoiceOver (iOS).
+- [ ] Recorrer la pantalla Hoy:
+  - El botón "Ya la regué" debe leerse como: *"Ya la regué, botón"*.
+  - El botón de deshacer debe leerse como: *"Deshacer riego, botón"*.
+- [ ] Recorrer la Enciclopedia:
+  - La tarjeta de cada planta debe anunciar su nombre, especie y nivel de dificultad.
+  - Los conmutadores ("Modo sin conexión", "Seguras para mascotas") deben anunciar su rol de interruptor y estado activado/desactivado (`accessibilityState={{ checked }}`).
+
+### E. Prueba en Modo Avión (Resiliencia Offline-First)
+- [ ] Poner el teléfono en Modo Avión (sin Wi-Fi ni datos móviles).
+- [ ] Abrir la app:
+  - La pantalla Hoy y Mi Jardín cargan al instante desde AsyncStorage.
+  - El botón "Ya la regué" funciona sin error y guarda el estado localmente.
+  - La Enciclopedia permite buscar entre las 33 especies locales sin fallar.
+  - El clima muestra la última lectura guardada con su etiqueta de hora o fallback informativo sin quedarse en bucle de carga.
+  - Exportar copia de seguridad en JSON funciona 100% desconectado.
+
+---
+
+## 2. Flujo Completo de Fases y Funcionalidades Nuevas
+
+### Alta Manual de Plantas (Sin Cámara)
+- [ ] Ir a **Mi Jardín** $\rightarrow$ Pulsar botón flotante **(+) "Añadir planta"**.
+- [ ] Seleccionar **"Escribir nombre y cuidados"**.
+- [ ] Escribir nombre común (ej. "Monstera"), apodo (ej. "Monty") y elegir maceta (ej. "Mediana").
+- [ ] Adjuntar foto opcional desde la galería.
+- [ ] Si se escribe una planta tóxica teniendo "Mascotas en el hogar" activado en Ajustes, comprobar que aparece el aviso preventivo de toxicidad antes de guardar.
+- [ ] Pulsar **"Guardar planta"**: debe añadirse al jardín con su tarjeta, apodo y cuidados asignados.
+
+### Riego Inteligente y Adaptativo
+- [ ] Registrar una planta en maceta pequeña (`small`) y otra en maceta grande (`large`).
+- [ ] Comprobar que el intervalo de la maceta pequeña es inferior al de la maceta grande.
+- [ ] Simular o seleccionar ciudad con pronóstico de lluvia: verificar que la recomendación sugiere posponer el riego para evitar pudrición de raíces.
+- [ ] En ola de calor ($> 30^\circ\text{C}$): verificar que sugiere adelantar el riego.
+
+### Medidor de Luz Orientativo
+- [ ] Abrir ficha de cualquier planta $\rightarrow$ Pulsar el icono de sol ☀️ en la cabecera o el botón *"Comprobar luz con la cámara"*.
+- [ ] Debe abrirse el modal `LightMeterModal`.
+- [ ] Probar los botones de ambiente rápido:
+  - "Sombra" (~120 lx) $\rightarrow$ Barra azul, aviso de poca luz.
+  - "Luz filtrada" (~550 lx) $\rightarrow$ Barra verde, diagnóstico óptimo para plantas de interior.
+  - "Sol directo" (~1400 lx) $\rightarrow$ Barra naranja, advertencia sobre hojas sensibles.
+- [ ] Comprobar que el consejo botánico coincide con la iluminación recomendada de la especie activa.
+
+### Compartir Ficha Botánica
+- [ ] En la ficha botánica, pulsar el icono de compartir en la cabecera.
+- [ ] Debe abrirse `ShareCardModal` con la vista previa de la tarjeta: foto, nombre común, nombre botánico, badge de toxicidad para mascotas y requerimientos de riego/luz.
+- [ ] Pulsar "Compartir con amigos": debe desplegarse el menú nativo de compartir (`Share.share`) de iOS/Android con el texto formateado.
+
+### Respaldo e Importación de Datos
+- [ ] Ir a **Ajustes** $\rightarrow$ **"Exportar copia de mi jardín"**.
+  - Debe desplegar la hoja nativa para copiar o compartir el JSON completo.
+- [ ] Ir a **"Importar copia de seguridad"**:
+  - Pegar un JSON válido $\rightarrow$ Pulsar "Restaurar mi jardín" $\rightarrow$ Debe mostrar Toast de confirmación con el total de plantas recuperadas y refrescar el jardín.
+  - Pegar un texto corrupto o inválido $\rightarrow$ Debe rechazarlo con mensaje de error claro y sin cerrar la aplicación.
+
+### Eliminación Integral de Cuenta y Datos
+- [ ] Ir a **Ajustes** $\rightarrow$ **"Eliminar cuenta y datos del dispositivo"**.
+- [ ] Aparece el modal de confirmación destructiva con aviso de que no se puede deshacer.
+- [ ] Confirmar eliminación:
+  - Deben borrarse todas las plantas, historial de diario, fotos reconciliadas, logros, caché y ajustes.
+  - La app debe quedar como en su primera apertura limpia.
+
+### Internacionalización (4 Idiomas)
+- [ ] Ir a **Ajustes** $\rightarrow$ **"Idioma"**:
+  - Cambiar a **English**: toda la interfaz cambia al inglés ("Today", "My Garden", "Scan", etc.).
+  - Cambiar a **Português**: toda la interfaz cambia al portugués ("Hoje", "Meu Jardim", etc.).
+  - Cambiar a **Français**: toda la interfaz cambia al francés ("Aujourd'hui", "Mon Jardin", etc.).
+  - Volver a **Español**: traducción inmediata sin reiniciar la aplicación.
+
+### Deep Linking
+- [ ] Ejecutar comando de enlace profundo desde la terminal o navegador:
+  ```bash
+  npx uri-scheme open "ecoscan://planta/monstera" --android
+  ```
+- [ ] La aplicación debe abrirse y navegar directamente a la ficha botánica de la Monstera Deliciosa.

@@ -21,12 +21,15 @@ import { EmptyState } from '../components/EmptyState';
 import { SkeletonBox } from '../components/SkeletonLoader';
 import { PlantToxicityBanner } from '../components/plant/PlantToxicityBanner';
 import { PlantTodayActionCard } from '../components/plant/PlantTodayActionCard';
+import { PlantTimeline } from '../components/plant/PlantTimeline';
+import { ShareCardModal } from '../components/ShareCardModal';
+import { LightMeterModal } from '../components/LightMeterModal';
 import { resolvePlantForDetail, CatalogPlant } from '../services/plantApi';
-import { useGarden } from '../context/GardenContext';
+import { useGarden, GardenPlant } from '../context/GardenContext';
 import { useFeedback } from '../context/FeedbackContext';
 import { usePlanLimits } from '../hooks/usePlanLimits';
 
-type TabType = 'cuidados' | 'mas_info';
+type TabType = 'cuidados' | 'historia' | 'mas_info';
 
 export const PlantDetailScreen: React.FC = () => {
   const { colors, spacing, typography, layout } = useAppTheme();
@@ -46,6 +49,8 @@ export const PlantDetailScreen: React.FC = () => {
   const [plant, setPlant] = useState<CatalogPlant | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [isSaved, setIsSaved] = useState<boolean>(false);
+  const [shareModalVisible, setShareModalVisible] = useState<boolean>(false);
+  const [lightMeterVisible, setLightMeterVisible] = useState<boolean>(false);
 
   useEffect(() => {
     let active = true;
@@ -66,11 +71,14 @@ export const PlantDetailScreen: React.FC = () => {
     };
   }, [plantId, plantNameParam, scientificNameParam, confidenceParam]);
 
+  const matchingGardenPlant: GardenPlant | undefined = plant
+    ? plants.find((p) => p.name.toLowerCase().includes(plant.name.toLowerCase().split(' ')[0]))
+    : undefined;
+
   useEffect(() => {
     if (!plant) return;
-    const token = plant.name.toLowerCase().split(' ')[0];
-    setIsSaved(plants.some((p) => p.name.toLowerCase().includes(token)));
-  }, [plant, plants]);
+    setIsSaved(Boolean(matchingGardenPlant));
+  }, [plant, matchingGardenPlant]);
 
   const handleSaveToGarden = async () => {
     if (!plant) return;
@@ -182,11 +190,30 @@ export const PlantDetailScreen: React.FC = () => {
           </Text>
         </TouchableOpacity>
 
-        <Text style={[typography.headline, { color: colors.textPrimary }]} numberOfLines={1}>
+        <Text style={[typography.headline, { color: colors.textPrimary, flex: 1, textAlign: 'center' }]} numberOfLines={1}>
           {plant.name}
         </Text>
 
-        <View style={{ width: 60 }} />
+        <View style={styles.headerActions}>
+          <TouchableOpacity
+            onPress={() => setLightMeterVisible(true)}
+            style={styles.headerIconButton}
+            accessibilityRole="button"
+            accessibilityLabel={t('Medidor de luz')}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          >
+            <Ionicons name="sunny-outline" size={22} color={colors.textPrimary} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => setShareModalVisible(true)}
+            style={[styles.headerIconButton, { marginLeft: 6 }]}
+            accessibilityRole="button"
+            accessibilityLabel={t('Compartir')}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          >
+            <Ionicons name="share-social-outline" size={22} color={colors.textPrimary} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView contentContainerStyle={{ padding: spacing.md, paddingBottom: 110 }}>
@@ -214,10 +241,11 @@ export const PlantDetailScreen: React.FC = () => {
         {/* BLOQUE PRINCIPAL: QUÉ HACER HOY */}
         <PlantTodayActionCard plant={plant} />
 
-        {/* PESTAÑAS: CUIDADOS vs MÁS INFORMACIÓN */}
+        {/* PESTAÑAS: CUIDADOS vs HISTORIA vs MÁS INFORMACIÓN */}
         <SegmentedControl<TabType>
           options={[
             { key: 'cuidados', label: t('Cuidados') },
+            { key: 'historia', label: t('Historia') },
             { key: 'mas_info', label: t('Más información') },
           ]}
           selectedKey={activeTab}
@@ -242,6 +270,14 @@ export const PlantDetailScreen: React.FC = () => {
               <Text style={[typography.body, { color: colors.textSecondary, lineHeight: 22 }]}>
                 {plant.light}
               </Text>
+              <Button
+                title={t('Comprobar luz con la cámara')}
+                onPress={() => setLightMeterVisible(true)}
+                variant="secondary"
+                size="sm"
+                icon={<Ionicons name="sunny-outline" size={16} color={colors.primary} />}
+                style={{ marginTop: spacing.md }}
+              />
             </Card>
 
             {/* BOTÓN AL DIARIO DE CRECIMIENTO */}
@@ -267,6 +303,16 @@ export const PlantDetailScreen: React.FC = () => {
                 style={{ marginTop: spacing.md }}
               />
             </Card>
+          </View>
+        ) : activeTab === 'historia' ? (
+          <View style={{ gap: spacing.md }}>
+            <PlantTimeline
+              plantId={plant.id}
+              plantName={plant.name}
+              lastWatered={matchingGardenPlant?.lastWatered}
+              lastDiagnosis={matchingGardenPlant?.lastDiagnosis}
+              onNavigateGrowthDiary={() => navigation.navigate('GrowthDiary', { plantId: plant.id })}
+            />
           </View>
         ) : (
           <View style={{ gap: spacing.md }}>
@@ -349,6 +395,29 @@ export const PlantDetailScreen: React.FC = () => {
         secondaryTitle={isSaved ? t('Eliminar de Mi Jardín') : undefined}
         onSecondaryPress={isSaved ? handleRemoveFromGarden : undefined}
       />
+
+      {/* MODAL PARA COMPARTIR FICHA */}
+      <ShareCardModal
+        visible={shareModalVisible}
+        onClose={() => setShareModalVisible(false)}
+        plant={{
+          id: plant.id,
+          name: plant.name,
+          scientificName: plant.scientificName,
+          imageUri: plant.imageUri,
+          watering: plant.watering,
+          light: plant.light,
+          healthScore: plant.healthScore,
+        }}
+      />
+
+      {/* MODAL PARA MEDIR ILUMINACIÓN */}
+      <LightMeterModal
+        visible={lightMeterVisible}
+        onClose={() => setLightMeterVisible(false)}
+        plantName={plant.name}
+        recommendedLight={plant.light}
+      />
     </View>
   );
 };
@@ -368,6 +437,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     minHeight: 44,
     minWidth: 44,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerIconButton: {
+    minWidth: 44,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   heroImage: {
     width: '100%',

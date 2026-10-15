@@ -1,27 +1,18 @@
 /**
- * Plantae Billing Service (MOCK)
+ * EcoScan Billing & Subscriptions Service (RevenueCat Architecture)
  *
- * Toda la lógica de compra vive AQUÍ y no en los componentes de UI, de modo que
- * al conectar RevenueCat solo se reemplaza la implementación interna de estas
- * funciones (purchasePlan / restorePurchases) sin tocar las pantallas.
+ * Arquitectura unificada para compras in-app y suscripciones Premium.
  *
- * CONEXIÓN REAL (RevenueCat):
- * 1. npx expo install react-native-purchases
- * 2. Crea los productos en App Store Connect / Google Play Console con los
- *    productId de BILLING_PLANS (plantae_premium_monthly / plantae_premium_annual).
- * 3. En un Development Build, inicializa:
- *      Purchases.configure({ apiKey: '<REVENUECAT_PUBLIC_SDK_KEY>' });
- * 4. Reemplaza el cuerpo de `purchasePlan` por:
- *      const offerings = await Purchases.getOfferings();
- *      const pkg = offerings.current?.availablePackages.find(...);
- *      const { customerInfo } = await Purchases.purchasePackage(pkg);
- *      return { success: hasPremium(customerInfo) };
- *    y `restorePurchases` por `await Purchases.restorePurchases()`.
+ * En entornos de producción (Development Build / Standalone):
+ * - Se conecta con RevenueCat (`react-native-purchases`) mediante las claves públicas por plataforma.
+ * - Gestiona el entitlement 'EcoScan Pro'.
  *
- * NOTA DE SEGURIDAD: la SDK key pública de RevenueCat es segura en el cliente;
- * las llaves de App Store/Play y de validación de recibos van en Firebase
- * Cloud Functions / el servidor de RevenueCat, nunca en el bundle.
+ * En desarrollo local / Expo Go:
+ * - Detecta automáticamente la ausencia del módulo nativo o de claves y conmuta
+ *   al simulador de pruebas sin romper el flujo de la aplicación ni la UI.
  */
+
+import { Platform } from 'react-native';
 
 export type BillingPlanId = 'monthly' | 'annual';
 
@@ -29,14 +20,11 @@ export interface BillingPlan {
   id: BillingPlanId;
   title: string;
   productId: string;
-  /** Precio de referencia mostrado al usuario */
   priceLabel: string;
   pricePerMonthLabel: string;
   periodLabel: string;
-  /** Solo en el plan anual */
   savingsLabel?: string;
   badge?: string;
-  /** Días de prueba gratis */
   trialDays: number;
 }
 
@@ -56,11 +44,17 @@ export interface BillingResult {
 
 export const PREMIUM_ENTITLEMENT_ID = 'EcoScan Pro';
 
+// Claves públicas de RevenueCat (seguras en cliente; se pueden sobrescribir vía variables de entorno)
+export const REVENUECAT_KEYS = {
+  apple: process.env.EXPO_PUBLIC_RC_APPLE || '',
+  google: process.env.EXPO_PUBLIC_RC_GOOGLE || '',
+};
+
 export const BILLING_PLANS: BillingPlan[] = [
   {
     id: 'annual',
     title: 'Anual',
-    productId: 'plantae_premium_annual',
+    productId: 'ecoscan_pro_annual',
     priceLabel: '$249 MXN',
     pricePerMonthLabel: '$20.75 MXN / mes',
     periodLabel: 'por año',
@@ -71,7 +65,7 @@ export const BILLING_PLANS: BillingPlan[] = [
   {
     id: 'monthly',
     title: 'Mensual',
-    productId: 'plantae_premium_monthly',
+    productId: 'ecoscan_pro_monthly',
     priceLabel: '$29 MXN',
     pricePerMonthLabel: '$29 MXN / mes',
     periodLabel: 'por mes',
@@ -89,6 +83,44 @@ const INACTIVE: BillingEntitlement = {
   expiresAt: null,
 };
 
+let isConfigured = false;
+
+async function getPurchasesModule(): Promise<any> {
+  try {
+    // @ts-expect-error dependencia nativa opcional en Expo Go
+    const mod = await import('react-native-purchases');
+    return mod.default || mod;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Inicializa RevenueCat si el SDK nativo y las claves están presentes.
+ */
+export async function initializeBilling(): Promise<boolean> {
+  const apiKey = Platform.OS === 'ios' ? REVENUECAT_KEYS.apple : REVENUECAT_KEYS.google;
+  if (!apiKey) {
+    // Modo simulación de desarrollo local
+    return false;
+  }
+
+  try {
+    const Purchases = await getPurchasesModule();
+    if (!Purchases) {
+      isConfigured = false;
+      return false;
+    }
+    Purchases.configure({ apiKey });
+    isConfigured = true;
+    return true;
+  } catch {
+    // Expo Go o entorno web
+    isConfigured = false;
+    return false;
+  }
+}
+
 const simulateLatency = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const expiryFor = (plan: BillingPlan, from: Date = new Date()): string => {
@@ -102,12 +134,55 @@ const expiryFor = (plan: BillingPlan, from: Date = new Date()): string => {
 };
 
 /**
- * Inicia la compra/prueba de un plan.
- * MOCK: simula latencia y devuelve un entitlement activo con periodo de prueba.
+ * Inicia la compra o periodo de prueba de un plan Pro.
  */
 export async function purchasePlan(planId: BillingPlanId): Promise<BillingResult> {
   const plan = getPlanById(planId);
-  await simulateLatency(900);
+
+  if (isConfigured) {
+    try {
+      const Purchases = await getPurchasesModule();
+      if (!Purchases) throw new Error('RevenueCat no disponible');
+      const offerings = await Purchases.getOfferings();
+      const currentOffering = offerings.current;
+
+      if (!currentOffering) {
+        throw new Error('No hay ofertas disponibles en RevenueCat.');
+      }
+
+      const targetPkg =
+        planId === 'annual' ? currentOffering.annual : currentOffering.monthly;
+
+      if (!targetPkg) {
+        throw new Error(`Paquete ${planId} no encontrado en RevenueCat.`);
+      }
+
+      const { customerInfo } = await Purchases.purchasePackage(targetPkg);
+      const isPro = typeof customerInfo.entitlements.active[PREMIUM_ENTITLEMENT_ID] !== 'undefined';
+
+      return {
+        success: isPro,
+        entitlement: {
+          active: isPro,
+          planId: isPro ? planId : null,
+          isTrial: false,
+          expiresAt: customerInfo.entitlements.active[PREMIUM_ENTITLEMENT_ID]?.expirationDate ?? null,
+        },
+      };
+    } catch (error: any) {
+      if (error?.userCancelled) {
+        return { success: false, cancelled: true, entitlement: { ...INACTIVE } };
+      }
+      return {
+        success: false,
+        errorMessage: error?.message || 'Error al procesar la compra',
+        entitlement: { ...INACTIVE },
+      };
+    }
+  }
+
+  // Fallback de desarrollo local / Expo Go
+  await simulateLatency(800);
   return {
     success: true,
     entitlement: {
@@ -120,22 +195,44 @@ export async function purchasePlan(planId: BillingPlanId): Promise<BillingResult
 }
 
 /**
- * Restaura compras previas del usuario.
- * MOCK: en este entorno no hay compras guardadas (siempre inactivo).
+ * Restaura compras previas del usuario en la tienda.
  */
 export async function restorePurchases(): Promise<BillingResult> {
-  await simulateLatency(800);
+  if (isConfigured) {
+    try {
+      const Purchases = await getPurchasesModule();
+      if (!Purchases) throw new Error('RevenueCat no disponible');
+      const customerInfo = await Purchases.restorePurchases();
+      const isPro = typeof customerInfo.entitlements.active[PREMIUM_ENTITLEMENT_ID] !== 'undefined';
+
+      return {
+        success: true,
+        entitlement: {
+          active: isPro,
+          planId: isPro ? 'annual' : null,
+          isTrial: false,
+          expiresAt: customerInfo.entitlements.active[PREMIUM_ENTITLEMENT_ID]?.expirationDate ?? null,
+        },
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        errorMessage: error?.message || 'No se pudieron restaurar las compras',
+        entitlement: { ...INACTIVE },
+      };
+    }
+  }
+
+  // Fallback simulado
+  await simulateLatency(600);
   return {
     success: true,
     entitlement: { ...INACTIVE },
   };
 }
 
-/**
- * Cancela la suscripción activa (solo para pruebas internas).
- */
 export async function cancelSubscription(): Promise<BillingEntitlement> {
-  await simulateLatency(400);
+  await simulateLatency(300);
   return { ...INACTIVE };
 }
 

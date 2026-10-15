@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { StyleSheet } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
-import { AppNavigator } from './navigation/AppNavigator';
+import { NavigationContainer, DefaultTheme, DarkTheme, LinkingOptions } from '@react-navigation/native';
+import { AppNavigator, RootStackParamList } from './navigation/AppNavigator';
 import { PremiumProvider, usePremium } from './context/PremiumContext';
 import { GardenProvider, useGarden } from './context/GardenContext';
 import { SettingsProvider, useSettings } from './context/SettingsContext';
@@ -14,6 +14,32 @@ import { AppLoading } from './components/AppLoading';
 import { useAppTheme } from './theme';
 import { runStorageMigrations } from './services/storage';
 import { hydrateGrowthDiary, isGrowthDiaryHydrated } from './services/growthDiaryService';
+
+const linking: LinkingOptions<any> = {
+  prefixes: ['ecoscan://', 'https://ecoscan.app'],
+  config: {
+    screens: {
+      MainTabs: {
+        screens: {
+          Today: 'hoy',
+          Garden: 'jardin',
+          Scan: 'escanear',
+          Explore: 'explorar',
+          Profile: 'perfil',
+        },
+      },
+      PlantDetail: 'planta/:plantId',
+      Encyclopedia: 'enciclopedia',
+      CareCalendar: 'calendario',
+      GrowthDiary: 'diario/:plantId',
+      Paywall: 'pro',
+      Settings: 'ajustes',
+      Help: 'ayuda',
+      PrivacyPolicy: 'privacidad',
+      TermsOfService: 'terminos',
+    },
+  },
+};
 
 function MainApp() {
   const { isDark, colors } = useAppTheme();
@@ -34,7 +60,7 @@ function MainApp() {
   return (
     <SafeAreaView style={[styles.root, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
-      <NavigationContainer theme={navigationTheme}>
+      <NavigationContainer theme={navigationTheme} linking={linking}>
         <AppNavigator />
       </NavigationContainer>
     </SafeAreaView>

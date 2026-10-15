@@ -20,6 +20,7 @@ import { BottomSheet } from '../components/BottomSheet';
 import { FilterChip } from '../components/FilterChip';
 import { EmptyState } from '../components/EmptyState';
 import { useGarden } from '../context/GardenContext';
+import { useSettings } from '../context/SettingsContext';
 import {
   DEFAULT_FILTERS,
   EncyclopediaFilters,
@@ -42,11 +43,13 @@ export const EncyclopediaScreen: React.FC = () => {
   const { colors, layout, spacing, typography } = useAppTheme();
   const navigation = useNavigation<any>();
   const { plants } = useGarden();
+  const { hasPets } = useSettings();
   const { t } = useTranslation();
 
   const [filters, setFilters] = useState<EncyclopediaFilters>(DEFAULT_FILTERS);
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const [offlineOnly, setOfflineOnly] = useState(false);
+  const [petSafeOnly, setPetSafeOnly] = useState(false);
 
   const savedSpeciesIds = useMemo(
     () =>
@@ -61,17 +64,23 @@ export const EncyclopediaScreen: React.FC = () => {
   );
 
   const results = useMemo(() => {
+    let list: CatalogPlant[] = [];
     if (offlineOnly) {
       const saved = getPlantsByIds(savedSpeciesIds);
       const q = normalizeDiacritics(filters.query);
-      return q
+      list = q
         ? saved.filter((p) =>
             normalizeDiacritics(`${p.name} ${p.scientificName} ${p.family}`).includes(q)
           )
         : saved;
+    } else {
+      list = searchEncyclopedia(filters);
     }
-    return searchEncyclopedia(filters);
-  }, [filters, offlineOnly, savedSpeciesIds]);
+    if (petSafeOnly) {
+      list = list.filter((p) => isPetSafe(p.id));
+    }
+    return list;
+  }, [filters, offlineOnly, petSafeOnly, savedSpeciesIds]);
 
   const activeFilters = countActiveFilters(filters);
 
@@ -252,37 +261,70 @@ export const EncyclopediaScreen: React.FC = () => {
           </TouchableOpacity>
         </View>
 
-        {/* TOGGLE MODO SIN CONEXIÓN */}
-        <TouchableOpacity
-          onPress={() => setOfflineOnly((v) => !v)}
-          activeOpacity={0.75}
-          accessibilityRole="switch"
-          accessibilityState={{ checked: offlineOnly }}
-          accessibilityLabel={t('Modo sin conexión: solo mis plantas guardadas')}
-          style={[
-            styles.offlineToggle,
-            {
-              backgroundColor: offlineOnly ? colors.primaryLight : colors.surfaceSecondary,
-              borderColor: offlineOnly ? colors.primary : 'transparent',
-              borderRadius: layout.borderRadius.full,
-            },
-          ]}
-        >
-          <Ionicons
-            name={offlineOnly ? 'cloud-offline' : 'cloud-offline-outline'}
-            size={16}
-            color={offlineOnly ? colors.primary : colors.textSecondary}
-            style={{ marginRight: 6 }}
-          />
-          <Text
+        {/* TOGGLES RÁPIDOS: MODO SIN CONEXIÓN Y SEGURAS PARA MASCOTAS */}
+        <View style={styles.togglesRow}>
+          <TouchableOpacity
+            onPress={() => setOfflineOnly((v) => !v)}
+            activeOpacity={0.75}
+            accessibilityRole="switch"
+            accessibilityState={{ checked: offlineOnly }}
+            accessibilityLabel={t('Modo sin conexión: solo mis plantas guardadas')}
             style={[
-              typography.caption1,
-              { color: offlineOnly ? colors.primaryDark : colors.textSecondary, fontWeight: '600' },
+              styles.toggleChip,
+              {
+                backgroundColor: offlineOnly ? colors.primaryLight : colors.surfaceSecondary,
+                borderColor: offlineOnly ? colors.primary : 'transparent',
+                borderRadius: layout.borderRadius.full,
+              },
             ]}
           >
-            {t('Mis plantas guardadas ({total})', { total: savedSpeciesIds.length })}
-          </Text>
-        </TouchableOpacity>
+            <Ionicons
+              name={offlineOnly ? 'cloud-offline' : 'cloud-offline-outline'}
+              size={15}
+              color={offlineOnly ? colors.primary : colors.textSecondary}
+              style={{ marginRight: 6 }}
+            />
+            <Text
+              style={[
+                typography.caption1,
+                { color: offlineOnly ? colors.primaryDark : colors.textSecondary, fontWeight: '600' },
+              ]}
+            >
+              {t('Mis plantas ({total})', { total: savedSpeciesIds.length })}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => setPetSafeOnly((v) => !v)}
+            activeOpacity={0.75}
+            accessibilityRole="switch"
+            accessibilityState={{ checked: petSafeOnly }}
+            accessibilityLabel={t('Filtrar plantas seguras para mascotas')}
+            style={[
+              styles.toggleChip,
+              {
+                backgroundColor: petSafeOnly ? '#E8F5E9' : colors.surfaceSecondary,
+                borderColor: petSafeOnly ? '#2E7D32' : 'transparent',
+                borderRadius: layout.borderRadius.full,
+              },
+            ]}
+          >
+            <Ionicons
+              name="paw"
+              size={15}
+              color={petSafeOnly ? '#2E7D32' : colors.textSecondary}
+              style={{ marginRight: 6 }}
+            />
+            <Text
+              style={[
+                typography.caption1,
+                { color: petSafeOnly ? '#1B5E20' : colors.textSecondary, fontWeight: '600' },
+              ]}
+            >
+              {t('Seguras para mascotas')}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* LISTA VIRTUALIZADA CON FLATLIST */}
@@ -480,14 +522,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  offlineToggle: {
+  togglesRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    alignSelf: 'flex-start',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 8,
+  },
+  toggleChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderWidth: 1,
-    marginTop: 8,
   },
   resultsCountBar: {
     flexDirection: 'row',
