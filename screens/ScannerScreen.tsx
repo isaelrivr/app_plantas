@@ -52,6 +52,7 @@ export const ScannerScreen: React.FC = () => {
   const [torchEnabled, setTorchEnabled] = useState<boolean>(false);
 
   // Estados del escaneo
+  const [scanMode, setScanMode] = useState<'identify' | 'diagnose'>('identify');
   const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
   const [isIdentifying, setIsIdentifying] = useState<boolean>(false);
   const [scanStepText, setScanStepText] = useState<string>(t('Buscando tu planta...'));
@@ -139,6 +140,10 @@ export const ScannerScreen: React.FC = () => {
       });
 
       if (photo?.uri) {
+        if (scanMode === 'diagnose') {
+          navigation.navigate('HealthDiagnosis', { photoUri: photo.uri });
+          return;
+        }
         setCapturedPhoto(photo.uri);
         analyzePhoto(photo.uri);
       }
@@ -161,6 +166,10 @@ export const ScannerScreen: React.FC = () => {
 
       if (!res.canceled && res.assets?.[0]?.uri) {
         const uri = res.assets[0].uri;
+        if (scanMode === 'diagnose') {
+          navigation.navigate('HealthDiagnosis', { photoUri: uri });
+          return;
+        }
         setCapturedPhoto(uri);
         analyzePhoto(uri);
       }
@@ -412,6 +421,77 @@ export const ScannerScreen: React.FC = () => {
           </TouchableOpacity>
         </View>
 
+        {/* SELECTOR DE MODO: IDENTIFICAR vs ENFERMEDADES */}
+        <View style={styles.modeSelectorContainer}>
+          <TouchableOpacity
+            style={[
+              styles.modeSegment,
+              scanMode === 'identify' && styles.modeSegmentActive,
+            ]}
+            onPress={() => {
+              try {
+                Haptics.selectionAsync();
+              } catch {}
+              setScanMode('identify');
+            }}
+            accessibilityRole="button"
+            accessibilityLabel={t('Identificar planta')}
+            accessibilityState={{ selected: scanMode === 'identify' }}
+          >
+            <Ionicons
+              name="leaf"
+              size={15}
+              color={scanMode === 'identify' ? '#FFFFFF' : 'rgba(255,255,255,0.7)'}
+              style={{ marginRight: 6 }}
+            />
+            <Text
+              style={[
+                typography.footnote,
+                {
+                  color: scanMode === 'identify' ? '#FFFFFF' : 'rgba(255,255,255,0.7)',
+                  fontWeight: scanMode === 'identify' ? '700' : '500',
+                },
+              ]}
+            >
+              {t('Identificar planta')}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.modeSegment,
+              scanMode === 'diagnose' && styles.modeSegmentActive,
+            ]}
+            onPress={() => {
+              try {
+                Haptics.selectionAsync();
+              } catch {}
+              setScanMode('diagnose');
+            }}
+            accessibilityRole="button"
+            accessibilityLabel={t('Mi planta está enferma')}
+            accessibilityState={{ selected: scanMode === 'diagnose' }}
+          >
+            <Ionicons
+              name="medkit"
+              size={15}
+              color={scanMode === 'diagnose' ? '#FFFFFF' : 'rgba(255,255,255,0.7)'}
+              style={{ marginRight: 6 }}
+            />
+            <Text
+              style={[
+                typography.footnote,
+                {
+                  color: scanMode === 'diagnose' ? '#FFFFFF' : 'rgba(255,255,255,0.7)',
+                  fontWeight: scanMode === 'diagnose' ? '700' : '500',
+                },
+              ]}
+            >
+              {t('Mi planta está enferma')}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
         {/* ÁREA CENTRAL CON RETÍCULA Y AYUDA CONTEXTUAL */}
         <View style={styles.centerArea}>
           <View style={styles.reticle}>
@@ -445,11 +525,22 @@ export const ScannerScreen: React.FC = () => {
             activeOpacity={0.8}
             style={styles.contextTip}
             accessibilityRole="button"
-            accessibilityLabel={t('Acércate a una hoja con buena luz. Ver ejemplo.')}
+            accessibilityLabel={
+              scanMode === 'diagnose'
+                ? t('Acércate a la hoja con manchas, plagas o daño visible')
+                : t('Acércate a una hoja con buena luz')
+            }
           >
-            <Ionicons name="information-circle" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
+            <Ionicons
+              name={scanMode === 'diagnose' ? 'medkit' : 'information-circle'}
+              size={18}
+              color="#FFFFFF"
+              style={{ marginRight: 6 }}
+            />
             <Text style={[typography.caption1, { color: '#FFFFFF', fontWeight: '600' }]}>
-              {t('Acércate a una hoja con buena luz')}
+              {scanMode === 'diagnose'
+                ? t('Acércate a la hoja con manchas, plagas o daño visible')
+                : t('Acércate a una hoja con buena luz')}
             </Text>
             <Ionicons name="chevron-forward" size={14} color="#FFFFFF" style={{ marginLeft: 4 }} />
           </TouchableOpacity>
@@ -484,9 +575,28 @@ export const ScannerScreen: React.FC = () => {
             activeOpacity={0.85}
             style={styles.shutterButtonOuter}
             accessibilityRole="button"
-            accessibilityLabel={t('Capturar foto de la planta')}
+            accessibilityLabel={
+              scanMode === 'diagnose'
+                ? t('Diagnosticar hoja enferma')
+                : t('Capturar foto de la planta')
+            }
           >
-            <View style={[styles.shutterButtonInner, { backgroundColor: colors.primary }]} />
+            <View
+              style={[
+                styles.shutterButtonInner,
+                {
+                  backgroundColor: scanMode === 'diagnose' ? '#F57C00' : colors.primary,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                },
+              ]}
+            >
+              <Ionicons
+                name={scanMode === 'diagnose' ? 'medkit' : 'camera'}
+                size={26}
+                color="#FFFFFF"
+              />
+            </View>
           </TouchableOpacity>
 
           {/* LADO DERECHO: CAMBIAR CÁMARA */}
@@ -629,5 +739,24 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.45)',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  modeSelectorContainer: {
+    flexDirection: 'row',
+    alignSelf: 'center',
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    borderRadius: 24,
+    padding: 3,
+    marginTop: 12,
+  },
+  modeSegment: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    minHeight: 44,
+  },
+  modeSegmentActive: {
+    backgroundColor: 'rgba(255,255,255,0.25)',
   },
 });

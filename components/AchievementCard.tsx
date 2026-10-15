@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Animated, StyleProp, ViewStyle } from 'react-native';
+import { View, Text, StyleSheet, Animated, StyleProp, ViewStyle, TouchableOpacity, Share } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '../theme';
 import { useTranslation } from '../i18n';
@@ -106,15 +106,38 @@ export const AchievementCard: React.FC<AchievementCardProps> = ({ achievement, s
         />
       </View>
 
-      <Text style={[typography.caption1, { color: colors.textTertiary, marginTop: spacing.xs }]}>
-        {achievement.unlocked
-          ? `✓ ${achievement.reward}${
-              achievement.unlockedAt
-                ? ` · ${new Date(achievement.unlockedAt).toLocaleDateString()}`
-                : ''
-            }`
-          : `${achievement.progress} / ${achievement.target}`}
-      </Text>
+      <View style={styles.footerRow}>
+        <Text style={[typography.caption1, { color: colors.textTertiary }]}>
+          {achievement.unlocked
+            ? `✓ ${achievement.reward}${
+                achievement.unlockedAt
+                  ? ` · ${new Date(achievement.unlockedAt).toLocaleDateString()}`
+                  : ''
+              }`
+            : `${achievement.progress} / ${achievement.target}`}
+        </Text>
+        {achievement.unlocked ? (
+          <TouchableOpacity
+            onPress={async () => {
+              try {
+                await Share.share({
+                  title: achievement.title,
+                  message: `🏆 ¡Desbloqueé el logro "${achievement.title}" en EcoScan! ${achievement.description} 🌿`,
+                });
+              } catch {}
+            }}
+            accessibilityRole="button"
+            accessibilityLabel={t('Compartir logro')}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            style={styles.shareBadgeBtn}
+          >
+            <Ionicons name="share-social-outline" size={15} color={colors.primary} />
+            <Text style={[typography.caption2, { color: colors.primary, fontWeight: '700', marginLeft: 4 }]}>
+              {t('Compartir')}
+            </Text>
+          </TouchableOpacity>
+        ) : null}
+      </View>
     </Animated.View>
   );
 };
@@ -140,5 +163,18 @@ const styles = StyleSheet.create({
   },
   fill: {
     height: 8,
+  },
+  footerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 8,
+  },
+  shareBadgeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
   },
 });

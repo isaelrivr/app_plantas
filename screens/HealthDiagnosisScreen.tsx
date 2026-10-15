@@ -239,12 +239,12 @@ export const HealthDiagnosisScreen: React.FC = () => {
     }
   };
 
-  const initialPhotoUri = route.params?.initialPhotoUri;
+  const incomingPhoto = route.params?.photoUri || route.params?.initialPhotoUri;
   useEffect(() => {
-    if (initialPhotoUri && !photoUri && !diagnosisResult && !isDiagnosing) {
-      processImage(initialPhotoUri);
+    if (incomingPhoto && !photoUri && !diagnosisResult && !isDiagnosing) {
+      processImage(incomingPhoto);
     }
-  }, [initialPhotoUri]);
+  }, [incomingPhoto]);
 
   const handleRetryDiagnosis = () => {
     if (lastAnalyzed) {

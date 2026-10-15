@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, Animated } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, Animated, Share } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from '../i18n';
@@ -43,6 +43,21 @@ export const AchievementsScreen: React.FC = () => {
   const gradeColor =
     summary.grade === 'S' ? colors.premiumGold : summary.grade === 'A' ? colors.primary : colors.accent;
 
+  const handleShareSummary = async () => {
+    try {
+      await Share.share({
+        title: t('Mis logros en EcoScan'),
+        message: t(
+          '¡Llevo una racha de {dias} días cuidando mis plantas en EcoScan y he conseguido {desbloqueados} logros! 🌿🔥',
+          {
+            dias: stats.currentStreak,
+            desbloqueados: unlockedCount,
+          }
+        ),
+      });
+    } catch {}
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View
@@ -62,7 +77,15 @@ export const AchievementsScreen: React.FC = () => {
           <Text style={[typography.body, { color: colors.primary, fontWeight: '600' }]}>{t('Atrás')}</Text>
         </TouchableOpacity>
         <Text style={[typography.headline, { color: colors.textPrimary }]}>{t('Logros')}</Text>
-        <View style={styles.actionHeaderBtn} />
+        <TouchableOpacity
+          onPress={handleShareSummary}
+          style={styles.actionHeaderBtn}
+          accessibilityRole="button"
+          accessibilityLabel={t('Compartir logros y racha')}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Ionicons name="share-social-outline" size={24} color={colors.primary} />
+        </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxxl }}>
@@ -162,7 +185,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   backButton: { flexDirection: 'row', alignItems: 'center', minHeight: 48, minWidth: 48 },
-  actionHeaderBtn: { width: 60 },
+  actionHeaderBtn: { width: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center' },
   streakCard: { flexDirection: 'row', alignItems: 'center', borderWidth: 1.5 },
   summaryTop: { flexDirection: 'row', alignItems: 'center' },
   gradeCircle: {

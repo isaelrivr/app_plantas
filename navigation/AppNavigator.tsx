@@ -42,7 +42,12 @@ export type RootStackParamList = {
     scientificName?: string;
     confidence?: number;
   };
-  HealthDiagnosis: { plantId?: string; plantName?: string; scientificName?: string };
+  HealthDiagnosis: {
+    plantId?: string;
+    plantName?: string;
+    scientificName?: string;
+    photoUri?: string;
+  };
   CareCalendar: undefined;
   GrowthDiary: { plantId: string };
   Assistant: { plantName?: string; initialQuestion?: string } | undefined;

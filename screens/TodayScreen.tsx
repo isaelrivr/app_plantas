@@ -110,6 +110,17 @@ export const TodayScreen: React.FC = () => {
       <ScreenHeader
         title={t('Hoy')}
         subtitle={formattedDate.toUpperCase()}
+        rightAction={
+          <TouchableOpacity
+            onPress={() => navigation.navigate('CareCalendar')}
+            accessibilityRole="button"
+            accessibilityLabel={t('Abrir calendario de cuidados')}
+            style={styles.calendarHeaderBtn}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Ionicons name="calendar-outline" size={24} color={colors.primary} />
+          </TouchableOpacity>
+        }
       />
 
       {/* SALUDO Y MOTIVACIÓN */}
@@ -425,6 +436,12 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  calendarHeaderBtn: {
+    minWidth: 44,
+    minHeight: 44,
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -205,6 +205,15 @@ export const PlantDetailScreen: React.FC = () => {
             <Ionicons name="sunny-outline" size={22} color={colors.textPrimary} />
           </TouchableOpacity>
           <TouchableOpacity
+            onPress={() => navigation.navigate('Assistant', { plantName: plant.name })}
+            style={[styles.headerIconButton, { marginLeft: 4 }]}
+            accessibilityRole="button"
+            accessibilityLabel={t('Pregúntale a EcoScan')}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          >
+            <Ionicons name="chatbubble-ellipses-outline" size={22} color={colors.primary} />
+          </TouchableOpacity>
+          <TouchableOpacity
             onPress={() => setShareModalVisible(true)}
             style={[styles.headerIconButton, { marginLeft: 6 }]}
             accessibilityRole="button"
@@ -303,6 +312,31 @@ export const PlantDetailScreen: React.FC = () => {
                 style={{ marginTop: spacing.md }}
               />
             </Card>
+
+            {/* PREGÚNTALE A ECOSCAN */}
+            <Card style={{ backgroundColor: colors.surface }}>
+              <View style={styles.actionCardRow}>
+                <View style={[styles.actionIconBox, { backgroundColor: colors.primaryLight }]}>
+                  <Ionicons name="chatbubbles" size={24} color={colors.primary} />
+                </View>
+                <View style={{ flex: 1, marginLeft: spacing.md }}>
+                  <Text style={[typography.headline, { color: colors.textPrimary }]}>
+                    {t('Pregúntale a EcoScan')}
+                  </Text>
+                  <Text style={[typography.caption1, { color: colors.textSecondary, marginTop: 2 }]}>
+                    {t('Resuelve dudas sobre riego, luz, plagas o abono con tu asistente')}
+                  </Text>
+                </View>
+              </View>
+              <Button
+                title={t('Consultar al Asistente')}
+                onPress={() => navigation.navigate('Assistant', { plantName: plant.name })}
+                variant="secondary"
+                size="md"
+                icon={<Ionicons name="sparkles-outline" size={18} color={colors.primary} />}
+                style={{ marginTop: spacing.md }}
+              />
+            </Card>
           </View>
         ) : activeTab === 'historia' ? (
           <View style={{ gap: spacing.md }}>
@@ -379,6 +413,23 @@ export const PlantDetailScreen: React.FC = () => {
           </View>
         )}
       </ScrollView>
+
+      {/* BOTÓN FLOTANTE: PREGÚNTALE A ECOSCAN */}
+      <TouchableOpacity
+        onPress={() => navigation.navigate('Assistant', { plantName: plant.name })}
+        style={[
+          styles.floatingAssistantBtn,
+          { backgroundColor: colors.primary },
+        ]}
+        activeOpacity={0.85}
+        accessibilityRole="button"
+        accessibilityLabel={t('Pregúntale a EcoScan')}
+      >
+        <Ionicons name="chatbubble-ellipses" size={20} color="#FFFFFF" style={{ marginRight: 6 }} />
+        <Text style={[typography.subheadline, { color: '#FFFFFF', fontWeight: '700' }]}>
+          {t('Preguntar')}
+        </Text>
+      </TouchableOpacity>
 
       {/* BARRA INFERIOR DE ACCIÓN PRINCIPAL */}
       <PrimaryActionBar
@@ -466,5 +517,20 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  floatingAssistantBtn: {
+    position: 'absolute',
+    bottom: 96,
+    right: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 18,
+    borderRadius: 28,
+    elevation: 6,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    zIndex: 10,
   },
 });
