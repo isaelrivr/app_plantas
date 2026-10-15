@@ -112,8 +112,15 @@ npx expo start
 ✔ normalizeDiacritics strips accents and lowercases correctly
 ✔ diacritic-insensitive matching finds plants regardless of user typing accents
 ✔ manual plant creation generates valid care structure
-✔ fase 4 translations for onboarding and garden are complete
 ✔ project exposes verification scripts
+✔ widget: calculateWidgetSnapshot handles empty garden gracefully
+✔ widget: calculateWidgetSnapshot correctly identifies pending plant and deep link
+✔ widget: calculateWidgetSnapshot shows completion state when all plants are watered
+✔ widget: updateWidgetData and getSavedWidgetData persist snapshot
+✔ auth: signInWithEmail and signUpWithEmail create valid session and update state
+✔ auth: signInAnonymously establishes temporary guest session
+✔ sync: uploadGardenToCloud and downloadGardenFromCloud persist remote state
+✔ sync: syncGardenWithCloud merges remote and local plants without duplicates
 
-Total: 29 tests passing (100% éxito)
+Total: 37 tests passing (100% éxito)
 ```

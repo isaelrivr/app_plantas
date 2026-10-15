@@ -13,6 +13,7 @@ import {
 } from '../services/gamificationService';
 import { deleteImage, reconcileOrphanImages } from '../services/mediaService';
 import { AchievementCelebrationModal } from '../components/AchievementCelebrationModal';
+import { updateWidgetData } from '../services/widgetService';
 
 export type CareTaskType = 'riego' | 'fertilizante' | 'poda' | 'trasplante';
 
@@ -329,6 +330,7 @@ export function GardenProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!isHydrated) return;
     void saveJSON<PersistedGarden>(STORAGE_KEYS.garden, { plants, rooms, stats: statsState });
+    void updateWidgetData(plants);
   }, [isHydrated, plants, rooms, statsState]);
 
   const waterPlantToday = (id: string) => {

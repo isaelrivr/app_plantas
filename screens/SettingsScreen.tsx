@@ -34,6 +34,9 @@ import {
   importBackupFromJSON,
   performFullAccountDeletion,
 } from '../services/backupService';
+import { AuthModal } from '../components/AuthModal';
+import { WidgetPreviewCard } from '../components/WidgetPreviewCard';
+import { getCurrentUser, onAuthStateChanged, UserProfile } from '../services/authService';
 
 const NOTIFICATION_HOURS = ['08:00', '09:00', '10:00', '18:00', '20:00'];
 
@@ -65,9 +68,13 @@ export const SettingsScreen: React.FC = () => {
   const [currentCityName, setCurrentCityName] = useState<string | null>(null);
   const [isImportModalVisible, setIsImportModalVisible] = useState(false);
   const [importJsonText, setImportJsonText] = useState('');
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(getCurrentUser());
+  const [isAuthModalVisible, setIsAuthModalVisible] = useState(false);
 
   React.useEffect(() => {
     getManualCity().then((city) => setCurrentCityName(city));
+    const unsubscribe = onAuthStateChanged((usr) => setCurrentUser(usr));
+    return unsubscribe;
   }, []);
 
   const themeOptions: { key: ThemePreference; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
@@ -143,7 +150,7 @@ export const SettingsScreen: React.FC = () => {
     setPremium(false);
     resetSettings();
     resetOnboarding();
-    await performFullAccountDeletion();
+    await performFullAccountDeletion(currentUser?.uid);
     try { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning); } catch {}
     showToast({
       message: t('Tus datos y cuenta se han eliminado por completo'),
@@ -255,6 +262,10 @@ export const SettingsScreen: React.FC = () => {
             />
           </View>
         </Card>
+
+        {/* WIDGET DE PANTALLA DE INICIO */}
+        {renderSectionTitle(t('Widget'))}
+        <WidgetPreviewCard />
 
         {/* 2. APARIENCIA */}
         {renderSectionTitle(t('Apariencia'))}
@@ -465,6 +476,39 @@ export const SettingsScreen: React.FC = () => {
           </TouchableOpacity>
         </Card>
 
+        {/* CUENTA Y NUBE */}
+        {renderSectionTitle(t('Cuenta y nube'))}
+        <Card>
+          <TouchableOpacity
+            onPress={() => {
+              try { Haptics.selectionAsync(); } catch {}
+              setIsAuthModalVisible(true);
+            }}
+            accessibilityRole="button"
+            accessibilityLabel={currentUser ? t('Gestionar cuenta y sincronización') : t('Iniciar sesión o registrarse')}
+            style={styles.rowTap}
+          >
+            <View style={{ flex: 1 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Text style={[typography.body, { color: colors.textPrimary, fontWeight: '600' }]}>
+                  {currentUser ? (currentUser.displayName || currentUser.email || t('Cuenta activa')) : t('Cuenta opcional')}
+                </Text>
+                {currentUser ? (
+                  <Badge label={t('Sincronizado')} variant="success" style={{ marginLeft: 8 }} />
+                ) : (
+                  <Badge label={t('Modo local')} variant="neutral" style={{ marginLeft: 8 }} />
+                )}
+              </View>
+              <Text style={[typography.caption1, { color: colors.textTertiary, marginTop: 2 }]}>
+                {currentUser
+                  ? t('Jardín respaldado en la nube. Toca para sincronizar.')
+                  : t('Crea una cuenta para sincronizar tus plantas entre dispositivos.')}
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
+          </TouchableOpacity>
+        </Card>
+
         {/* 6. PRIVACIDAD Y DATOS */}
         {renderSectionTitle(t('Privacidad y datos'))}
         <Card>
@@ -631,6 +675,11 @@ export const SettingsScreen: React.FC = () => {
           </View>
         </View>
       </Modal>
+
+      <AuthModal
+        visible={isAuthModalVisible}
+        onClose={() => setIsAuthModalVisible(false)}
+      />
     </View>
   );
 };

@@ -144,12 +144,17 @@ export async function performFullAccountDeletion(userId?: string | null): Promis
     // 1. Si hubiera sesión remota en Firebase Auth / Firestore, se elimina el árbol del usuario
     if (userId) {
       try {
-        // En producción: await deleteUserRemoteData(userId);
-        console.log(`[backupService] Purgando datos remotos de Firestore para ${userId}`);
+        const { deleteRemoteUserData } = await import('./syncService');
+        await deleteRemoteUserData(userId);
       } catch (remoteError) {
         console.warn('[backupService] Advertencia al eliminar datos remotos:', remoteError);
       }
     }
+
+    try {
+      const { deleteUserAccount } = await import('./authService');
+      await deleteUserAccount();
+    } catch {}
 
     // 2. Purga total local: fotos físicas del sistema de archivos
     await clearPersistedImages();

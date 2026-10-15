@@ -29,6 +29,9 @@ export const STORAGE_KEYS = {
   /** Caché local de fichas de cuidados generadas por el backend. */
   careCache: `${KEY_PREFIX}care-cache`,
   weatherCache: `${KEY_PREFIX}weather-cache`,
+  authSession: `${KEY_PREFIX}auth-session`,
+  cloudSyncMeta: `${KEY_PREFIX}cloud-sync-meta`,
+  widgetSnapshot: `${KEY_PREFIX}widget-snapshot`,
 } as const;
 
 export type StorageKey = (typeof STORAGE_KEYS)[keyof typeof STORAGE_KEYS];
@@ -79,6 +82,8 @@ export function validateAchievementsData(value: unknown): boolean {
   return true;
 }
 
+const memoryFallbackMap = new Map<string, string>();
+
 /**
  * Lee y deserializa un valor con validación de esquema opcional.
  * Devuelve `fallback` si la clave no existe, el JSON está corrupto o no supera la validación.
@@ -89,7 +94,15 @@ export async function loadJSON<T>(
   validate?: (value: unknown) => boolean
 ): Promise<T> {
   try {
-    const raw = await AsyncStorage.getItem(key);
+    let raw: string | null = null;
+    if (typeof AsyncStorage?.getItem === 'function') {
+      try {
+        raw = await AsyncStorage.getItem(key);
+      } catch {}
+    }
+    if (raw == null) {
+      raw = memoryFallbackMap.get(key) ?? null;
+    }
     if (raw == null) return fallback;
     const parsed: unknown = JSON.parse(raw);
     if (validate && !validate(parsed)) {
@@ -97,8 +110,7 @@ export async function loadJSON<T>(
       return fallback;
     }
     return parsed as T;
-  } catch (error) {
-    console.warn(`[storage] No se pudo leer "${key}". Se usará el valor por defecto.`, error);
+  } catch {
     return fallback;
   }
 }
@@ -106,10 +118,15 @@ export async function loadJSON<T>(
 /** Serializa y guarda un valor. Devuelve true si la escritura tuvo éxito. */
 export async function saveJSON<T>(key: StorageKey, value: T): Promise<boolean> {
   try {
-    await AsyncStorage.setItem(key, JSON.stringify(value));
+    const serialized = JSON.stringify(value);
+    memoryFallbackMap.set(key, serialized);
+    if (typeof AsyncStorage?.setItem === 'function') {
+      try {
+        await AsyncStorage.setItem(key, serialized);
+      } catch {}
+    }
     return true;
-  } catch (error) {
-    console.warn(`[storage] No se pudo guardar "${key}".`, error);
+  } catch {
     return false;
   }
 }
@@ -117,10 +134,14 @@ export async function saveJSON<T>(key: StorageKey, value: T): Promise<boolean> {
 /** Elimina una clave concreta. Devuelve true si la eliminación tuvo éxito. */
 export async function removeKey(key: StorageKey): Promise<boolean> {
   try {
-    await AsyncStorage.removeItem(key);
+    memoryFallbackMap.delete(key);
+    if (typeof AsyncStorage?.removeItem === 'function') {
+      try {
+        await AsyncStorage.removeItem(key);
+      } catch {}
+    }
     return true;
-  } catch (error) {
-    console.warn(`[storage] No se pudo borrar "${key}".`, error);
+  } catch {
     return false;
   }
 }

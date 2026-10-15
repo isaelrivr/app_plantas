@@ -5,10 +5,10 @@
  * 'Watering' en inglés. Admite interpolación con marcadores `{nombre}`.
  */
 
-import type { AppLanguage, TranslationParams } from './types';
-import { EN } from './translations';
-import { PT } from './translations_pt';
-import { FR } from './translations_fr';
+import type { AppLanguage, TranslationParams } from './types.ts';
+import { EN } from './translations.ts';
+import { PT } from './translations_pt.ts';
+import { FR } from './translations_fr.ts';
 
 const DICTIONARIES: Record<AppLanguage, Record<string, string>> = {
   es: {}, // El español es la fuente: no necesita diccionario.
