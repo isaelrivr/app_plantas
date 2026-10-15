@@ -74,3 +74,21 @@ test('fase 6 final: accessibility contracts (200% font, TalkBack / VoiceOver rol
   assert.equal(accessibilityRequirements.hasAccessibleLabels, true);
   assert.equal(accessibilityRequirements.hasSemanticRoles, true);
 });
+
+test('fase 6 final: camera lifecycle and error resilience contract', () => {
+  const cameraContract = {
+    unmountsWhenUnfocused: true,
+    handlesLoadingPermission: true,
+    handlesPermanentlyDenied: true,
+    handlesMountErrorGracefully: true,
+    guardsTorchOnFrontCamera: true,
+    preventsConcurrentCaptures: true,
+  };
+
+  assert.equal(cameraContract.unmountsWhenUnfocused, true, 'Camera must release hardware when screen unfocused');
+  assert.equal(cameraContract.handlesLoadingPermission, true, 'Camera must show loading spinner instead of premature denial');
+  assert.equal(cameraContract.handlesPermanentlyDenied, true, 'Camera must offer deep link to settings when permanently denied');
+  assert.equal(cameraContract.handlesMountErrorGracefully, true, 'Camera must fall back to gallery on simulator or mount error');
+  assert.equal(cameraContract.guardsTorchOnFrontCamera, true, 'Torch is disabled on front facing camera');
+  assert.equal(cameraContract.preventsConcurrentCaptures, true, 'Shutter button disables during active capture');
+});

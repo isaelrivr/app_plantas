@@ -10,12 +10,13 @@ import {
   Animated,
   Easing,
   Platform,
+  Linking,
 } from 'react-native';
 import { CameraView, useCameraPermissions, CameraType } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useIsFocused } from '@react-navigation/native';
 import { useAppTheme } from '../theme';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
@@ -44,12 +45,16 @@ export const ScannerScreen: React.FC = () => {
   const { addPlant, registerIdentification } = useGarden();
   const limits = usePlanLimits();
   const navigation = useNavigation<any>();
+  const isFocused = useIsFocused();
 
   // Permisos y cámara
   const [permission, requestPermission] = useCameraPermissions();
   const cameraRef = useRef<CameraView>(null);
   const [facing, setFacing] = useState<CameraType>('back');
   const [torchEnabled, setTorchEnabled] = useState<boolean>(false);
+  const [isCameraReady, setIsCameraReady] = useState<boolean>(false);
+  const [isCapturing, setIsCapturing] = useState<boolean>(false);
+  const [mountError, setMountError] = useState<string | null>(null);
 
   // Estados del escaneo
   const [scanMode, setScanMode] = useState<'identify' | 'diagnose'>('identify');
@@ -102,10 +107,24 @@ export const ScannerScreen: React.FC = () => {
     try {
       Haptics.selectionAsync();
     } catch {}
-    setFacing((prev) => (prev === 'back' ? 'front' : 'back'));
+    setIsCameraReady(false);
+    setFacing((prev) => {
+      const next = prev === 'back' ? 'front' : 'back';
+      if (next === 'front') {
+        setTorchEnabled(false);
+      }
+      return next;
+    });
   };
 
   const toggleTorch = () => {
+    if (facing === 'front') {
+      showToast({
+        message: t('La linterna solo está disponible en la cámara trasera.'),
+        type: 'info',
+      });
+      return;
+    }
     try {
       Haptics.selectionAsync();
     } catch {}
@@ -114,6 +133,16 @@ export const ScannerScreen: React.FC = () => {
 
   const handleCapture = async () => {
     if (!cameraRef.current) return;
+
+    if (!isCameraReady) {
+      showToast({
+        message: t('Preparando la cámara... Intenta en un segundo.'),
+        type: 'info',
+      });
+      return;
+    }
+
+    if (isCapturing) return;
 
     // Verificar límite gratuito
     if (!limits.isPremium && limits.identificationsToday >= limits.identificationLimit) {
@@ -132,11 +161,11 @@ export const ScannerScreen: React.FC = () => {
       return;
     }
 
+    setIsCapturing(true);
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
       const photo = await cameraRef.current.takePictureAsync({
         quality: 0.8,
-        skipProcessing: false,
       });
 
       if (photo?.uri) {
@@ -147,11 +176,14 @@ export const ScannerScreen: React.FC = () => {
         setCapturedPhoto(photo.uri);
         analyzePhoto(photo.uri);
       }
-    } catch {
+    } catch (err) {
+      console.warn('Error capturando foto con la cámara:', err);
       showToast({
-        message: t('No se pudo capturar la imagen. Intenta de nuevo.'),
+        message: t('No se pudo capturar la imagen. Intenta de nuevo o elige una foto de la galería.'),
         type: 'error',
       });
+    } finally {
+      setIsCapturing(false);
     }
   };
 
@@ -160,7 +192,7 @@ export const ScannerScreen: React.FC = () => {
       Haptics.selectionAsync();
       const res = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images'],
-        allowsEditing: true,
+        allowsEditing: false,
         quality: 0.8,
       });
 
@@ -173,7 +205,8 @@ export const ScannerScreen: React.FC = () => {
         setCapturedPhoto(uri);
         analyzePhoto(uri);
       }
-    } catch {
+    } catch (err) {
+      console.warn('Error al acceder a la galería:', err);
       showToast({
         message: t('No se pudo acceder a las fotos.'),
         type: 'error',
@@ -280,8 +313,58 @@ export const ScannerScreen: React.FC = () => {
     setIsIdentifying(false);
   };
 
-  // CASO: PERMISO DE CÁMARA PENDIENTE O DENEGADO
-  if (!permission?.granted) {
+  // CASO 1: CARGANDO PERMISOS ASÍNCRONOS
+  if (!permission) {
+    return (
+      <View style={[styles.permissionContainer, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
+  // CASO 2: ERROR DE MONTAJE DE CÁMARA (SIMULADOR O HARDWARE NO DISPONIBLE)
+  if (mountError) {
+    return (
+      <View style={[styles.permissionContainer, { backgroundColor: colors.background }]}>
+        <View style={[styles.permissionIconCircle, { backgroundColor: colors.surfaceSecondary }]}>
+          <Ionicons name="camera-outline" size={54} color={colors.textSecondary} />
+        </View>
+        <Text style={[typography.title1, styles.permissionTitle, { color: colors.textPrimary }]}>
+          {t('Cámara no disponible')}
+        </Text>
+        <Text
+          style={[
+            typography.body,
+            styles.permissionSubtitle,
+            { color: colors.textSecondary, marginBottom: spacing.xl },
+          ]}
+        >
+          {t('No se pudo iniciar la cámara en este dispositivo. Puedes seleccionar fotos de tu galería o reintentar.')}
+        </Text>
+
+        <Button
+          title={t('Elegir de la galería')}
+          onPress={handlePickGallery}
+          variant="primary"
+          size="lg"
+          style={{ width: '100%', marginBottom: spacing.md }}
+        />
+
+        <Button
+          title={t('Reintentar')}
+          onPress={() => setMountError(null)}
+          variant="secondary"
+          size="lg"
+          style={{ width: '100%' }}
+        />
+      </View>
+    );
+  }
+
+  // CASO 3: PERMISO DE CÁMARA NO OTORGADO
+  if (!permission.granted) {
+    const isPermanentlyDenied = !permission.canAskAgain && permission.status === 'denied';
+
     return (
       <View style={[styles.permissionContainer, { backgroundColor: colors.background }]}>
         <View style={[styles.permissionIconCircle, { backgroundColor: colors.primaryLight }]}>
@@ -297,12 +380,20 @@ export const ScannerScreen: React.FC = () => {
             { color: colors.textSecondary, marginBottom: spacing.xl },
           ]}
         >
-          {t('EcoScan necesita acceso a tu cámara para identificar plantas y revisar la salud de sus hojas.')}
+          {isPermanentlyDenied
+            ? t('El permiso de cámara fue denegado. Para identificar plantas con la cámara, actívalo en los ajustes de tu teléfono.')
+            : t('EcoScan necesita acceso a tu cámara para identificar plantas y revisar la salud de sus hojas.')}
         </Text>
 
         <Button
-          title={t('Activar cámara')}
-          onPress={requestPermission}
+          title={isPermanentlyDenied ? t('Abrir ajustes del dispositivo') : t('Activar cámara')}
+          onPress={async () => {
+            if (isPermanentlyDenied) {
+              await Linking.openSettings();
+            } else {
+              await requestPermission();
+            }
+          }}
           variant="primary"
           size="lg"
           style={{ width: '100%', marginBottom: spacing.md }}
@@ -317,6 +408,11 @@ export const ScannerScreen: React.FC = () => {
         />
       </View>
     );
+  }
+
+  // CASO 4: PANTALLA NO ENFOCADA (liberar hardware de cámara cuando se navega a otra pestaña)
+  if (!isFocused) {
+    return <View style={[styles.container, { backgroundColor: colors.background }]} />;
   }
 
   // CASO: RESULTADO DE IDENTIFICACIÓN
@@ -382,7 +478,13 @@ export const ScannerScreen: React.FC = () => {
         ref={cameraRef}
         style={StyleSheet.absoluteFill}
         facing={facing}
-        enableTorch={torchEnabled}
+        enableTorch={facing === 'back' && torchEnabled}
+        active={isFocused}
+        onCameraReady={() => setIsCameraReady(true)}
+        onMountError={(e) => {
+          console.warn('Camera preview mount error:', e);
+          setMountError(e.message || t('No se pudo iniciar la cámara en este dispositivo.'));
+        }}
       >
         {/* BARRA SUPERIOR SOBRE LA CÁMARA */}
         <View style={styles.cameraTopBar}>
@@ -573,7 +675,8 @@ export const ScannerScreen: React.FC = () => {
           <TouchableOpacity
             onPress={handleCapture}
             activeOpacity={0.85}
-            style={styles.shutterButtonOuter}
+            disabled={isCapturing || isIdentifying}
+            style={[styles.shutterButtonOuter, (isCapturing || isIdentifying) && { opacity: 0.6 }]}
             accessibilityRole="button"
             accessibilityLabel={
               scanMode === 'diagnose'
@@ -591,11 +694,15 @@ export const ScannerScreen: React.FC = () => {
                 },
               ]}
             >
-              <Ionicons
-                name={scanMode === 'diagnose' ? 'medkit' : 'camera'}
-                size={26}
-                color="#FFFFFF"
-              />
+              {isCapturing ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Ionicons
+                  name={scanMode === 'diagnose' ? 'medkit' : 'camera'}
+                  size={26}
+                  color="#FFFFFF"
+                />
+              )}
             </View>
           </TouchableOpacity>
 

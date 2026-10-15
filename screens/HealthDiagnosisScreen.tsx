@@ -10,6 +10,7 @@ import {
   Animated,
   Easing,
   Platform,
+  Linking,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRoute, useNavigation } from '@react-navigation/native';
@@ -110,6 +111,18 @@ export const HealthDiagnosisScreen: React.FC = () => {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       const perm = await ImagePicker.requestCameraPermissionsAsync();
       if (!perm.granted) {
+        if (!perm.canAskAgain) {
+          const openSettings = await confirm({
+            title: t('Permiso de cámara necesario'),
+            message: t('Para diagnosticar plantas con la cámara, activa el permiso en los ajustes de tu teléfono.'),
+            confirmText: t('Abrir ajustes'),
+            cancelText: t('Ahora no'),
+          });
+          if (openSettings) {
+            await Linking.openSettings();
+          }
+          return;
+        }
         showToast({
           message: t('Necesitas permiso de cámara para diagnosticar la planta.'),
           type: 'warning',
@@ -118,14 +131,15 @@ export const HealthDiagnosisScreen: React.FC = () => {
       }
       const shot = await ImagePicker.launchCameraAsync({
         mediaTypes: ['images'],
-        allowsEditing: true,
+        allowsEditing: false,
         quality: 0.8,
       });
-      if (!shot.canceled && shot.assets[0]?.uri) {
+      if (!shot.canceled && shot.assets?.[0]?.uri) {
         processImage(shot.assets[0].uri);
       }
-    } catch {
-      setErrorMessage(t('No se pudo abrir la cámara.'));
+    } catch (err) {
+      console.warn('Error al abrir la cámara:', err);
+      setErrorMessage(t('No se pudo abrir la cámara. Puedes elegir una foto de la galería.'));
     }
   };
 
@@ -134,14 +148,15 @@ export const HealthDiagnosisScreen: React.FC = () => {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       const pickerResult = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images'],
-        allowsEditing: true,
+        allowsEditing: false,
         quality: 0.8,
       });
 
-      if (!pickerResult.canceled && pickerResult.assets[0]?.uri) {
+      if (!pickerResult.canceled && pickerResult.assets?.[0]?.uri) {
         processImage(pickerResult.assets[0].uri);
       }
-    } catch {
+    } catch (err) {
+      console.warn('Error al abrir la galería:', err);
       setErrorMessage(t('No se pudo abrir la galería de imágenes.'));
     }
   };

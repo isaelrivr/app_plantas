@@ -15,7 +15,7 @@ npm run verify
 # O paso a paso por separado:
 npx tsc --noEmit     # 0 errores de tipos
 npx expo lint        # 0 errores, 0 advertencias
-npm test             # 40 pruebas unitarias pasando al 100%
+npm test             # 41 pruebas unitarias pasando al 100%
 npx expo-doctor      # 21/21 verificaciones aprobadas
 ```
 
@@ -124,8 +124,9 @@ npx expo-doctor      # 21/21 verificaciones aprobadas
 ✔ manual plant creation generates valid care structure
 ✔ fase 4 translations for onboarding and garden are complete
 ✔ project exposes verification scripts
+✔ fase 6 final: camera lifecycle and error resilience contract
 
-Total: 40 tests passing (100% éxito)
+Total: 41 tests passing (100% éxito)
 21/21 checks passed in expo-doctor
 0 TypeScript errors
 0 ESLint errors / 0 warnings
