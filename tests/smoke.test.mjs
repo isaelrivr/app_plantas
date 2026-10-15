@@ -6,4 +6,5 @@ test('project exposes verification scripts', () => {
   assert.equal(typeof packageJson.scripts.typecheck, 'string');
   assert.equal(typeof packageJson.scripts.lint, 'string');
   assert.equal(typeof packageJson.scripts.test, 'string');
+  assert.equal(typeof packageJson.scripts.verify, 'string');
 });

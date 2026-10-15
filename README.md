@@ -16,6 +16,12 @@ npx expo start
 npm run typecheck
 npm run lint
 npm test
+npm run verify
+```
+
+Para asegurar que ningún push rompa el CI, activa el hook pre-push local:
+```bash
+git config core.hooksPath .githooks
 ```
 
 Las variables públicas se documentan en `.env.example`. No pongas claves privadas en variables `EXPO_PUBLIC_*`.

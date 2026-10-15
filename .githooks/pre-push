@@ -1,0 +1,9 @@
+#!/bin/sh
+# Pre-push hook sin dependencias: ejecuta la verificación completa antes de enviar cambios
+set -e
+
+echo "==> Ejecutando verificación pre-push (npm run verify)..."
+npm run verify
+
+echo "==> Verificación superada con éxito. Procediendo con el push."
+exit 0
