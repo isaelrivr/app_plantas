@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "EcoScan",
-    "slug": "ecoscan-app",
+    "slug": "plantae-app",
     "version": "1.0.0",
     "scheme": "ecoscan",
     "orientation": "portrait",
