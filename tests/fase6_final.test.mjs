@@ -1,5 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
 import scannerFragment from '../i18n/fragments/scanner.ts';
 import { PT } from '../i18n/translations_pt.ts';
 import { FR } from '../i18n/translations_fr.ts';
@@ -83,6 +85,7 @@ test('fase 6 final: camera lifecycle and error resilience contract', () => {
     handlesMountErrorGracefully: true,
     guardsTorchOnFrontCamera: true,
     preventsConcurrentCaptures: true,
+    noChildrenInCameraView: true,
   };
 
   assert.equal(cameraContract.unmountsWhenUnfocused, true, 'Camera must release hardware when screen unfocused');
@@ -91,4 +94,9 @@ test('fase 6 final: camera lifecycle and error resilience contract', () => {
   assert.equal(cameraContract.handlesMountErrorGracefully, true, 'Camera must fall back to gallery on simulator or mount error');
   assert.equal(cameraContract.guardsTorchOnFrontCamera, true, 'Torch is disabled on front facing camera');
   assert.equal(cameraContract.preventsConcurrentCaptures, true, 'Shutter button disables during active capture');
+  assert.equal(cameraContract.noChildrenInCameraView, true, 'CameraView must be self-closing with zero children (SDK 57 contract)');
+
+  // Verify ScannerScreen.tsx directly has self-closing <CameraView and no </CameraView>
+  const scannerCode = fs.readFileSync(path.join(process.cwd(), 'screens', 'ScannerScreen.tsx'), 'utf-8');
+  assert.ok(!scannerCode.includes('</CameraView>'), 'ScannerScreen must not wrap children in CameraView');
 });

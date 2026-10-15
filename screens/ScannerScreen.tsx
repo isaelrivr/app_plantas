@@ -485,7 +485,10 @@ export const ScannerScreen: React.FC = () => {
           console.warn('Camera preview mount error:', e);
           setMountError(e.message || t('No se pudo iniciar la cámara en este dispositivo.'));
         }}
-      >
+      />
+
+      {/* CONTROLES Y ELEMENTOS SUPERPUESTOS EN POSICIÓN ABSOLUTA (CameraView en SDK 57 no admite children) */}
+      <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
         {/* BARRA SUPERIOR SOBRE LA CÁMARA */}
         <View style={styles.cameraTopBar}>
           <TouchableOpacity
@@ -717,7 +720,7 @@ export const ScannerScreen: React.FC = () => {
             <Ionicons name="camera-reverse" size={26} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
-      </CameraView>
+      </View>
 
       {/* MODAL GUÍA VISUAL */}
       <PhotoGuideModal visible={guideVisible} onClose={() => setGuideVisible(false)} />
