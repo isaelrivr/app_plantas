@@ -35,7 +35,7 @@ export type RootTabParamList = {
 
 export type RootStackParamList = {
   MainTabs: { screen?: keyof RootTabParamList } | undefined;
-  HabitatMap: { plantId: string };
+  HabitatMap: { plantId: string; plantName?: string; speciesId?: string };
   PlantDetail: {
     plantId: string;
     plantName?: string;

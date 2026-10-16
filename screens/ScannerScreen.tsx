@@ -445,7 +445,7 @@ export const ScannerScreen: React.FC = () => {
           }
           onViewHabitatMap={() =>
             navigation.navigate('HabitatMap', {
-              speciesId: selectedCandidate.id,
+              plantId: selectedCandidate.id,
               plantName: selectedCandidate.name,
             })
           }

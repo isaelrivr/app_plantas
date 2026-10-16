@@ -367,7 +367,7 @@ export const PlantDetailScreen: React.FC = () => {
               </View>
               <Button
                 title={t('Abrir Mapa de Hábitat')}
-                onPress={() => navigation.navigate('HabitatMap', { speciesId: plant.id, plantName: plant.name })}
+                onPress={() => navigation.navigate('HabitatMap', { plantId: plant.id, plantName: plant.name })}
                 variant="secondary"
                 size="md"
                 style={{ marginTop: spacing.md }}

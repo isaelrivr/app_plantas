@@ -27,12 +27,22 @@ export const HabitatMapScreen: React.FC = () => {
   const navigation = useNavigation<MapNavigation>();
   const route = useRoute<MapRoute>();
   const limits = usePlanLimits();
-  const [plantId, setPlantId] = useState(route.params?.plantId || 'monstera');
+  const [plantId, setPlantId] = useState(
+    route.params?.plantId || (route.params as any)?.speciesId || 'monstera'
+  );
   const [habitatData, setHabitatData] = useState<PlantHabitatInfo | null>(null);
   const [selectedRegion, setSelectedRegion] = useState<HabitatRegionDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [resetToken, setResetToken] = useState(0);
+
+  useEffect(() => {
+    const incoming = route.params?.plantId || (route.params as any)?.speciesId;
+    if (incoming && incoming !== plantId) {
+      setPlantId(incoming);
+      setResetToken((token) => token + 1);
+    }
+  }, [route.params?.plantId, (route.params as any)?.speciesId, plantId]);
 
   const plant = getPlantById(plantId);
   const loadHabitat = useCallback(async () => {
