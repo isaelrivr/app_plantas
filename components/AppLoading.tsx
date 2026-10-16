@@ -1,6 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { View, Text, StyleSheet, ActivityIndicator, Image } from 'react-native';
 import { useAppTheme } from '../theme';
 import { useTranslation } from '../i18n';
 
@@ -18,10 +17,14 @@ export const AppLoading: React.FC = () => {
       accessible
       accessibilityLabel={t('Cargando EcoScan')}
     >
-      <View style={[styles.logoCircle, { backgroundColor: colors.primaryLight }]}>
-        <Ionicons name="leaf" size={56} color={colors.primary} />
-      </View>
-      <Text style={[typography.title2, { color: colors.textPrimary, marginTop: spacing.lg }]}>EcoScan</Text>
+      <Image
+        source={require('../assets/logo.png')}
+        style={styles.logoImage}
+        resizeMode="contain"
+        accessible
+        accessibilityLabel={t('Logotipo oficial de EcoScan')}
+      />
+      <Text style={[typography.title2, { color: colors.textPrimary, marginTop: spacing.md }]}>EcoScan</Text>
       <Text style={[typography.subheadline, { color: colors.textSecondary, marginTop: spacing.xs }]}>
         {t('Preparando tu jardín…')}
       </Text>
@@ -37,11 +40,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 24,
   },
-  logoCircle: {
-    width: 112,
-    height: 112,
-    borderRadius: 56,
-    alignItems: 'center',
-    justifyContent: 'center',
+  logoImage: {
+    width: 120,
+    height: 120,
   },
 });

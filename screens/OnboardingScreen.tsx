@@ -9,6 +9,7 @@ import {
   Animated,
   NativeSyntheticEvent,
   NativeScrollEvent,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -99,9 +100,13 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
       >
         {/* PASO 1: Bienvenida e Idioma */}
         <View style={[styles.page, { width }]}>
-          <View style={[styles.iconCircle, { backgroundColor: colors.primaryLight }]}>
-            <Ionicons name="leaf" size={64} color={colors.primary} />
-          </View>
+          <Image
+            source={require('../assets/logo.png')}
+            style={styles.logoImage}
+            resizeMode="contain"
+            accessible
+            accessibilityLabel={t('Logotipo oficial de EcoScan')}
+          />
           <Text style={[typography.title1, styles.title, { color: colors.textPrimary }]}>
             {t('Bienvenido a EcoScan')}
           </Text>
@@ -297,6 +302,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 24,
+  },
+  logoImage: {
+    width: 130,
+    height: 130,
+    borderRadius: 26,
+    marginBottom: 20,
   },
   iconCircle: {
     width: 140,

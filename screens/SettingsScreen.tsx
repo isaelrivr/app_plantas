@@ -10,6 +10,7 @@ import {
   Linking,
   Modal,
   TextInput,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -598,17 +599,22 @@ export const SettingsScreen: React.FC = () => {
 
         {/* 8. ACERCA DE */}
         {renderSectionTitle(t('Acerca de'))}
-        <Card style={{ marginBottom: spacing.xl }}>
-          <View style={styles.row}>
-            <Text style={[typography.body, { color: colors.textPrimary }]}>{t('Versión de EcoScan')}</Text>
-            <Text style={[typography.subheadline, { color: colors.textSecondary }]}>1.0.0</Text>
-          </View>
-          <View style={[styles.separator, { backgroundColor: colors.border }]} />
-          <View style={styles.row}>
-            <Text style={[typography.subheadline, { color: colors.textSecondary, lineHeight: 20 }]}>
-              {t('EcoScan · Creado con cariño para ayudarte a cuidar tus plantas de forma fácil y natural.')}
-            </Text>
-          </View>
+        <Card style={{ marginBottom: spacing.xl, alignItems: 'center', paddingVertical: spacing.lg }}>
+          <Image
+            source={require('../assets/logo.png')}
+            style={styles.aboutLogo}
+            resizeMode="contain"
+            accessible
+            accessibilityLabel={t('Logotipo oficial de EcoScan')}
+          />
+          <Text style={[typography.headline, { color: colors.textPrimary, marginTop: spacing.sm }]}>EcoScan</Text>
+          <Text style={[typography.footnote, { color: colors.textSecondary, marginTop: 2, marginBottom: spacing.sm }]}>
+            {t('Versión {version}', { version: '1.0.0' })}
+          </Text>
+          <View style={[styles.separator, { backgroundColor: colors.border, width: '100%', marginVertical: spacing.xs }]} />
+          <Text style={[typography.subheadline, { color: colors.textSecondary, textAlign: 'center', lineHeight: 20, paddingHorizontal: spacing.sm, marginTop: spacing.xs }]}>
+            {t('EcoScan · Creado con cariño para ayudarte a cuidar tus plantas de forma fácil y natural.')}
+          </Text>
         </Card>
       </ScrollView>
 
@@ -743,5 +749,10 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1,
     minHeight: 40,
+  },
+  aboutLogo: {
+    width: 80,
+    height: 80,
+    borderRadius: 18,
   },
 });

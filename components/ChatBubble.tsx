@@ -1,6 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { useAppTheme } from '../theme';
 import { AssistantMessage } from '../services/assistantService';
 
@@ -20,14 +19,16 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({ message, onQuickReply })
   return (
     <View style={[styles.row, isUser ? styles.rowUser : styles.rowAssistant]}>
       {!isUser ? (
-        <View
+        <Image
+          source={require('../assets/logo.png')}
           style={[
             styles.avatar,
-            { backgroundColor: colors.primaryLight, borderRadius: layout.borderRadius.full },
+            { borderRadius: layout.borderRadius.full },
           ]}
-        >
-          <Ionicons name="leaf" size={16} color={colors.primary} />
-        </View>
+          resizeMode="contain"
+          accessible
+          accessibilityLabel="EcoScan"
+        />
       ) : null}
 
       <View style={styles.bubbleColumn}>

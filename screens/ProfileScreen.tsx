@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   useColorScheme,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -112,30 +113,39 @@ export const ProfileScreen: React.FC = () => {
         ]}
       >
         <View style={styles.planHeader}>
-          <View>
-            <Badge
-              label={isPremium ? t('PLAN PRO ACTIVO') : t('PLAN BÁSICO GRATUITO')}
-              variant={isPremium ? 'premium' : 'neutral'}
-              icon={
-                <Ionicons
-                  name={isPremium ? 'sparkles' : 'person'}
-                  size={13}
-                  color={isPremium ? colors.premiumGold : colors.textSecondary}
-                />
-              }
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Image
+              source={require('../assets/logo.png')}
+              style={{ width: 44, height: 44, borderRadius: 10, marginRight: spacing.sm }}
+              resizeMode="contain"
+              accessible
+              accessibilityLabel={t('Logotipo de EcoScan')}
             />
-            <Text
-              style={[
-                typography.title1,
-                {
-                  color: colors.textPrimary,
-                  marginTop: spacing.xs,
-                  fontWeight: '700',
-                },
-              ]}
-            >
-              {isPremium ? 'EcoScan Pro' : 'EcoScan Free'}
-            </Text>
+            <View>
+              <Badge
+                label={isPremium ? t('PLAN PRO ACTIVO') : t('PLAN BÁSICO GRATUITO')}
+                variant={isPremium ? 'premium' : 'neutral'}
+                icon={
+                  <Ionicons
+                    name={isPremium ? 'sparkles' : 'person'}
+                    size={13}
+                    color={isPremium ? colors.premiumGold : colors.textSecondary}
+                  />
+                }
+              />
+              <Text
+                style={[
+                  typography.title2,
+                  {
+                    color: colors.textPrimary,
+                    marginTop: spacing.xxs,
+                    fontWeight: '700',
+                  },
+                ]}
+              >
+                {isPremium ? 'EcoScan Pro' : 'EcoScan Free'}
+              </Text>
+            </View>
           </View>
 
           <View style={styles.priceContainer}>

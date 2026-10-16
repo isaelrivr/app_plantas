@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, Linking } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, Linking, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
@@ -156,9 +156,13 @@ export const PaywallScreen: React.FC = () => {
 
         {/* HERO */}
         <View style={styles.hero}>
-          <View style={[styles.heroIcon, { backgroundColor: colors.premiumGoldLight }]}>
-            <Ionicons name="leaf" size={40} color={colors.premiumGold} />
-          </View>
+          <Image
+            source={require('../assets/logo.png')}
+            style={styles.heroLogo}
+            resizeMode="contain"
+            accessible
+            accessibilityLabel={t('Logotipo oficial de EcoScan Pro')}
+          />
           <Text style={[typography.largeTitle, { color: colors.textPrimary, textAlign: 'center', marginTop: spacing.md }]}>
             EcoScan Pro
           </Text>
@@ -321,12 +325,11 @@ const styles = StyleSheet.create({
   },
   closeButton: { width: 48, height: 48, alignItems: 'flex-start', justifyContent: 'center' },
   hero: { alignItems: 'center', marginTop: 12, marginBottom: 8 },
-  heroIcon: {
-    width: 76,
-    height: 76,
-    borderRadius: 38,
-    alignItems: 'center',
-    justifyContent: 'center',
+  heroLogo: {
+    width: 90,
+    height: 90,
+    borderRadius: 20,
+    alignSelf: 'center',
   },
   bulletRow: {
     flexDirection: 'row',
