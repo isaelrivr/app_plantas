@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, Linking, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -127,8 +127,13 @@ export const PaywallScreen: React.FC = () => {
 
   const selectedBillingPlan = BILLING_PLANS.find((p) => p.id === selectedPlan);
 
+  useEffect(() => {
+    if (isPremium) {
+      navigation.goBack();
+    }
+  }, [isPremium, navigation]);
+
   if (isPremium) {
-    navigation.goBack();
     return null;
   }
 

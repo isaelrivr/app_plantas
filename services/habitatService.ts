@@ -27,6 +27,7 @@
  */
 
 import { t } from '../i18n';
+import { getPlantById } from './plantApi';
 
 export type HabitatZoneType = 'native' | 'naturalized' | 'cultivated';
 
@@ -60,6 +61,15 @@ export const WORLD_ATLAS_COUNTRY_IDS: Readonly<Record<string, string>> = {
   'mexico': '484', 'nigeria': '566', 'panama': '591', 'peru': '604',
   'philippines': '608', 'spain': '724', 'taiwan': '158', 'tunisia': '788',
   'turkey': '792', 'united states of america': '840', 'venezuela': '862',
+  'algeria': '012', 'argentina': '032', 'australia': '036', 'belize': '084',
+  'china': '156', 'congo': '178', 'cuba': '192', 'egypt': '818',
+  'eswatini': '748', 'france': '250', 'india': '356', 'iran': '364',
+  'japan': '392', 'kenya': '404', 'korea': '410', 'south korea': '410',
+  'madagascar': '450', 'malaysia': '458', 'mauritius': '480', 'morocco': '504',
+  'mozambique': '508', 'myanmar': '104', 'namibia': '516', 'nepal': '524',
+  'oman': '512', 'pacific islands': '242', 'pakistan': '586', 'portugal': '620',
+  'saudi arabia': '682', 'south africa': '710', 'tanzania': '834', 'thailand': '764',
+  'united kingdom': '826', 'united states': '840', 'yemen': '887', 'zimbabwe': '716',
 };
 
 export interface HabitatCountry {
@@ -706,14 +716,38 @@ export async function getPlantHabitat(plantId: string): Promise<PlantHabitatInfo
   // Simulación realista con respuesta inmediata desde la base biogeográfica local
   return new Promise((resolve) => {
     setTimeout(() => {
-      const data = HABITAT_DATABASE[plantId] || {
-        plantId,
-        scientificName: '',
-        originSummary: '',
-        globalCoverage: '',
-        conservationStatus: '',
-        regions: [],
-      };
+      let data = HABITAT_DATABASE[plantId];
+      if (!data) {
+        const catalogPlant = getPlantById(plantId);
+        if (catalogPlant && catalogPlant.nativeRegions && catalogPlant.nativeRegions.length > 0) {
+          data = {
+            plantId,
+            scientificName: catalogPlant.scientificName,
+            originSummary: catalogPlant.habitatSummary || `${catalogPlant.name} es originaria de ${catalogPlant.nativeRegions.join(', ')}.`,
+            globalCoverage: `Nativa en ${catalogPlant.nativeRegions.join(', ')}; cultivada y apreciada a nivel mundial.`,
+            conservationStatus: 'Preocupación Menor (LC)',
+            regions: catalogPlant.nativeRegions.map((regionName) => ({
+              countryName: regionName,
+              zoneType: 'native' as HabitatZoneType,
+              climate: catalogPlant.climateTip || 'Clima favorable para la especie',
+              floweringSeason: 'Primavera a Verano',
+              biogeographicZone: regionName,
+              elevationMeters: '0 - 1,500 m s.n.m.',
+              notes: catalogPlant.habitatSummary || `Hábitat natural y distribución silvestre en ${regionName}.`,
+            })),
+          };
+        }
+      }
+      if (!data) {
+        data = {
+          plantId,
+          scientificName: '',
+          originSummary: '',
+          globalCoverage: '',
+          conservationStatus: '',
+          regions: [],
+        };
+      }
       resolve(localizeHabitat(data));
     }, 350);
   });
