@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, Animated, Share } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Platform, Animated, Share } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from '../i18n';
 import { useAppTheme } from '../theme';
 import { Card } from '../components/Card';
@@ -13,6 +14,7 @@ import { getAchievements, getWeeklySummary, streakTier } from '../services/gamif
 export const AchievementsScreen: React.FC = () => {
   const { colors, layout, spacing, typography } = useAppTheme();
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const { stats, unlockedAchievements } = useGarden();
 
@@ -63,32 +65,38 @@ export const AchievementsScreen: React.FC = () => {
       <View
         style={[
           styles.header,
-          { backgroundColor: colors.surface, borderBottomColor: colors.border, paddingTop: Platform.OS === 'ios' ? 12 : 16 },
+          {
+            backgroundColor: colors.surface,
+            borderBottomColor: colors.border,
+            paddingTop: insets.top + (Platform.OS === 'ios' ? 8 : 12),
+          },
         ]}
       >
-        <TouchableOpacity
+        <Pressable
           onPress={() => navigation.goBack()}
-          style={styles.backButton}
+          style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.7 }]}
+          android_ripple={{ color: colors.primaryLight, borderless: true, radius: 24 }}
           accessibilityRole="button"
           accessibilityLabel={t('Volver')}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <Ionicons name="chevron-back" size={26} color={colors.primary} />
           <Text style={[typography.body, { color: colors.primary, fontWeight: '600' }]}>{t('Atrás')}</Text>
-        </TouchableOpacity>
+        </Pressable>
         <Text style={[typography.headline, { color: colors.textPrimary }]}>{t('Logros')}</Text>
-        <TouchableOpacity
+        <Pressable
           onPress={handleShareSummary}
-          style={styles.actionHeaderBtn}
+          style={({ pressed }) => [styles.actionHeaderBtn, pressed && { opacity: 0.7 }]}
+          android_ripple={{ color: colors.primaryLight, borderless: true, radius: 24 }}
           accessibilityRole="button"
           accessibilityLabel={t('Compartir logros y racha')}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <Ionicons name="share-social-outline" size={24} color={colors.primary} />
-        </TouchableOpacity>
+        </Pressable>
       </View>
 
-      <ScrollView contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxxl }}>
+      <ScrollView contentContainerStyle={{ padding: spacing.md, paddingBottom: insets.bottom + spacing.xxxl }}>
         {loading ? (
           <>
             <SkeletonBox width="100%" height={140} borderRadius={18} />

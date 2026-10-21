@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Platform, ScrollView, StyleSheet, Text, Pressable, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import worldData from 'world-atlas/countries-110m.json';
 import { useTranslation } from '../i18n';
@@ -24,6 +25,7 @@ type MapNavigation = NativeStackNavigationProp<RootStackParamList, 'HabitatMap'>
 export const HabitatMapScreen: React.FC = () => {
   const { colors, isDark, spacing, typography } = useAppTheme();
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   const navigation = useNavigation<MapNavigation>();
   const route = useRoute<MapRoute>();
   const limits = usePlanLimits();
@@ -87,24 +89,46 @@ export const HabitatMapScreen: React.FC = () => {
   };
 
   const header = (
-    <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border, paddingTop: Platform.OS === 'ios' ? 12 : 16 }]}>
-      <TouchableOpacity
+    <View
+      style={[
+        styles.header,
+        {
+          backgroundColor: colors.surface,
+          borderBottomColor: colors.border,
+          paddingTop: insets.top + (Platform.OS === 'ios' ? 8 : 12),
+        },
+      ]}
+    >
+      <Pressable
         onPress={() => navigation.goBack()}
-        style={styles.backButton}
+        style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.7 }]}
+        android_ripple={{ color: colors.primaryLight, borderless: true, radius: 24 }}
         accessibilityRole="button"
         accessibilityLabel={t('Volver a la pantalla anterior')}
         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
       >
         <Ionicons name="chevron-back" size={26} color={colors.primary} />
         <Text style={[typography.body, { color: colors.primary, fontWeight: '600' }]}>{t('Atrás')}</Text>
-      </TouchableOpacity>
-      <View style={styles.titleWrap}><Text style={[typography.headline, { color: colors.textPrimary }]} numberOfLines={1}>{t('Origen en el Mundo')}</Text><Text style={[typography.footnote, { color: colors.textSecondary }]} numberOfLines={1}>{plant?.scientificName || t('Lugar de origen')}</Text></View>
+      </Pressable>
+      <View style={styles.titleWrap}>
+        <Text style={[typography.headline, { color: colors.textPrimary }]} numberOfLines={1}>{t('Origen en el Mundo')}</Text>
+        <Text style={[typography.footnote, { color: colors.textSecondary }]} numberOfLines={1}>{plant?.scientificName || t('Lugar de origen')}</Text>
+      </View>
       <View style={styles.headerPlaceholder} />
     </View>
   );
 
   if (limits.isFeatureLocked('animatedMap')) {
-    return <View style={[styles.container, { backgroundColor: colors.background }]}>{header}<LockedPreview locked feature="animatedMap" onUnlock={() => navigation.navigate('Paywall')} style={{ flex: 1 }}><View style={{ padding: spacing.md }}><EmptyState iconName="earth-outline" title={t('Mapa de origen Pro')} description={t('Descubre de qué parte del mundo proviene cada especie con un mapa interactivo.')} /></View></LockedPreview></View>;
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        {header}
+        <LockedPreview locked feature="animatedMap" onUnlock={() => navigation.navigate('Paywall')} style={{ flex: 1 }}>
+          <View style={{ padding: spacing.md }}>
+            <EmptyState iconName="earth-outline" title={t('Mapa de origen Pro')} description={t('Descubre de qué parte del mundo proviene cada especie con un mapa interactivo.')} />
+          </View>
+        </LockedPreview>
+      </View>
+    );
   }
 
   return (
@@ -113,7 +137,28 @@ export const HabitatMapScreen: React.FC = () => {
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.selector} accessibilityLabel={t('Selector de planta')}>
         {BOTANICAL_KNOWLEDGE_BASE.map((candidate) => {
           const active = candidate.id === plantId;
-          return <TouchableOpacity key={candidate.id} onPress={() => changePlant(candidate.id)} style={[styles.chip, { backgroundColor: active ? colors.primary : colors.surface, borderColor: active ? colors.primary : colors.border }]} accessibilityRole="button" accessibilityLabel={t('Mostrar hábitat de {especie}', { especie: candidate.name })}><Text style={{ color: active ? '#FFFFFF' : colors.textPrimary, fontWeight: '700', fontSize: 14 }}>{candidate.name}</Text></TouchableOpacity>;
+          return (
+            <Pressable
+              key={candidate.id}
+              onPress={() => changePlant(candidate.id)}
+              android_ripple={{ color: active ? '#FFFFFF33' : colors.primaryLight, borderless: false }}
+              style={({ pressed }) => [
+                styles.chip,
+                {
+                  backgroundColor: active ? colors.primary : colors.surface,
+                  borderColor: active ? colors.primary : colors.border,
+                  overflow: 'hidden',
+                },
+                pressed && { opacity: 0.8 },
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel={t('Mostrar hábitat de {especie}', { especie: candidate.name })}
+            >
+              <Text style={{ color: active ? '#FFFFFF' : colors.textPrimary, fontWeight: '700', fontSize: 14 }}>
+                {candidate.name}
+              </Text>
+            </Pressable>
+          );
         })}
       </ScrollView>
       <View style={[styles.legend, { backgroundColor: isDark ? '#1C1C1E' : '#F1F3F4' }]}>
@@ -127,7 +172,9 @@ export const HabitatMapScreen: React.FC = () => {
               : <WorldMap topology={worldData as never} highlightedIds={highlightedIds} focusIds={focusIds} onCountryPress={(country) => { const region = mappedCountries.find((item) => item.id === country.id)?.region; if (region) setSelectedRegion(region); }} colors={mapColors} accessibilitySummary={t('Mapa mundial de {especie}. Regiones nativas: {regiones}', { especie: plant?.name || t('esta planta'), regiones: nativeCountries.map((country) => country.name).join(', ') })} resetToken={resetToken} />}
       </View>
       {selectedRegion ? <RegionCard plantName={plant?.name || t('Esta planta')} region={selectedRegion} onClose={() => setSelectedRegion(null)} colors={colors} labels={{ native: t('Zona nativa'), naturalized: t('Naturalizada'), cultivated: t('Cultivada'), close: t('Cerrar detalle de región') }} /> : null}
-      <Text style={[styles.hint, { color: colors.textTertiary }]}>{t('Pellizca para acercar, arrastra para explorar y toca dos veces para enfocar.')}</Text>
+      <Text style={[styles.hint, { color: colors.textTertiary, marginBottom: Math.max(insets.bottom, 12) }]}>
+        {t('Pellizca para acercar, arrastra para explorar y toca dos veces para enfocar.')}
+      </Text>
     </View>
   );
 };

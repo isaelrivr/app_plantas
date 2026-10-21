@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, Pressable, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 interface MapControlsProps {
@@ -15,27 +15,46 @@ export const MapControls: React.FC<MapControlsProps> = ({
   onZoomIn, onZoomOut, onReset, canZoomOut, colors, labels,
 }) => (
   <View style={styles.container}>
-    <TouchableOpacity
-      style={[styles.button, { backgroundColor: colors.surface, borderColor: colors.border }]}
+    <Pressable
+      style={({ pressed }) => [
+        styles.button,
+        { backgroundColor: colors.surface, borderColor: colors.border, overflow: 'hidden' },
+        pressed && { opacity: 0.75 },
+      ]}
+      android_ripple={{ color: colors.border, borderless: false }}
       onPress={onZoomIn}
       accessibilityRole="button"
       accessibilityLabel={labels.zoomIn}
       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
     >
       <Ionicons name="add" size={24} color={colors.textPrimary} />
-    </TouchableOpacity>
-    <TouchableOpacity
+    </Pressable>
+    <Pressable
       disabled={!canZoomOut}
-      style={[styles.button, { backgroundColor: colors.surface, borderColor: colors.border, opacity: canZoomOut ? 1 : 0.45 }]}
+      style={({ pressed }) => [
+        styles.button,
+        {
+          backgroundColor: colors.surface,
+          borderColor: colors.border,
+          opacity: canZoomOut ? (pressed ? 0.75 : 1) : 0.45,
+          overflow: 'hidden',
+        },
+      ]}
+      android_ripple={{ color: colors.border, borderless: false }}
       onPress={onZoomOut}
       accessibilityRole="button"
       accessibilityLabel={labels.zoomOut}
       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
     >
       <Ionicons name="remove" size={24} color={colors.textPrimary} />
-    </TouchableOpacity>
-    <TouchableOpacity
-      style={[styles.reset, { backgroundColor: colors.surface, borderColor: colors.border }]}
+    </Pressable>
+    <Pressable
+      style={({ pressed }) => [
+        styles.reset,
+        { backgroundColor: colors.surface, borderColor: colors.border, overflow: 'hidden' },
+        pressed && { opacity: 0.75 },
+      ]}
+      android_ripple={{ color: colors.border, borderless: false }}
       onPress={onReset}
       accessibilityRole="button"
       accessibilityLabel={labels.reset}
@@ -43,7 +62,7 @@ export const MapControls: React.FC<MapControlsProps> = ({
     >
       <Ionicons name="scan-outline" size={18} color={colors.primary} />
       <Text style={[styles.resetText, { color: colors.primary }]}>{labels.reset}</Text>
-    </TouchableOpacity>
+    </Pressable>
   </View>
 );
 

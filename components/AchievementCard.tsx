@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Animated, StyleProp, ViewStyle, TouchableOpacity, Share } from 'react-native';
+import { View, Text, StyleSheet, Animated, StyleProp, ViewStyle, Pressable, Share } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '../theme';
 import { useTranslation } from '../i18n';
@@ -117,7 +117,7 @@ export const AchievementCard: React.FC<AchievementCardProps> = ({ achievement, s
             : `${achievement.progress} / ${achievement.target}`}
         </Text>
         {achievement.unlocked ? (
-          <TouchableOpacity
+          <Pressable
             onPress={async () => {
               try {
                 await Share.share({
@@ -126,16 +126,21 @@ export const AchievementCard: React.FC<AchievementCardProps> = ({ achievement, s
                 });
               } catch {}
             }}
+            android_ripple={{ color: colors.primaryLight, borderless: false }}
+            style={({ pressed }) => [
+              styles.shareBadgeBtn,
+              { backgroundColor: colors.surfaceSecondary, overflow: 'hidden' },
+              pressed && { opacity: 0.75 },
+            ]}
             accessibilityRole="button"
             accessibilityLabel={t('Compartir logro')}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            style={styles.shareBadgeBtn}
           >
             <Ionicons name="share-social-outline" size={15} color={colors.primary} />
             <Text style={[typography.caption2, { color: colors.primary, fontWeight: '700', marginLeft: 4 }]}>
               {t('Compartir')}
             </Text>
-          </TouchableOpacity>
+          </Pressable>
         ) : null}
       </View>
     </Animated.View>

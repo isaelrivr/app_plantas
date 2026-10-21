@@ -5,12 +5,13 @@ import {
   StyleSheet,
   TextInput,
   FlatList,
-  TouchableOpacity,
+  Pressable,
   Image,
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useAppTheme } from '../theme';
 import { Card } from '../components/Card';
@@ -41,6 +42,7 @@ import { useTranslation } from '../i18n';
 
 export const EncyclopediaScreen: React.FC = () => {
   const { colors, layout, spacing, typography } = useAppTheme();
+  const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const { plants } = useGarden();
   const { hasPets } = useSettings();
@@ -101,13 +103,13 @@ export const EncyclopediaScreen: React.FC = () => {
   const renderPlantItem = ({ item }: { item: CatalogPlant }) => {
     const petSafe = isPetSafe(item.id);
     return (
-      <Card elevated style={[styles.itemCard, { backgroundColor: colors.surface }]}>
-        <TouchableOpacity
+      <Card elevated style={[styles.itemCard, { backgroundColor: colors.surface, overflow: 'hidden' }]}>
+        <Pressable
           onPress={() => handleOpenDetail(item)}
-          activeOpacity={0.85}
+          android_ripple={{ color: colors.primaryLight }}
           accessibilityRole="button"
           accessibilityLabel={`${item.name}, ${item.scientificName}. ${t('Dificultad')} ${item.difficulty}`}
-          style={styles.itemRow}
+          style={({ pressed }) => [styles.itemRow, pressed && { opacity: 0.85 }]}
         >
           {item.imageUri ? (
             <Image
@@ -158,7 +160,7 @@ export const EncyclopediaScreen: React.FC = () => {
           </View>
 
           <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} style={{ marginLeft: 8 }} />
-        </TouchableOpacity>
+        </Pressable>
       </Card>
     );
   };
@@ -172,13 +174,14 @@ export const EncyclopediaScreen: React.FC = () => {
           {
             backgroundColor: colors.surface,
             borderBottomColor: colors.border,
-            paddingTop: Platform.OS === 'ios' ? 44 : 16,
+            paddingTop: insets.top + (Platform.OS === 'ios' ? 8 : 12),
           },
         ]}
       >
-        <TouchableOpacity
+        <Pressable
           onPress={() => navigation.goBack()}
-          style={styles.backButton}
+          style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.7 }]}
+          android_ripple={{ color: colors.primaryLight, borderless: true, radius: 24 }}
           accessibilityRole="button"
           accessibilityLabel={t('Volver')}
           hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
@@ -187,7 +190,7 @@ export const EncyclopediaScreen: React.FC = () => {
           <Text style={[typography.body, { color: colors.primary, fontWeight: '600' }]}>
             {t('Atrás')}
           </Text>
-        </TouchableOpacity>
+        </Pressable>
         <Text style={[typography.headline, { color: colors.textPrimary }]}>
           {t('Enciclopedia')}
         </Text>
@@ -217,27 +220,32 @@ export const EncyclopediaScreen: React.FC = () => {
               accessibilityLabel={t('Buscar plantas')}
             />
             {filters.query.length > 0 ? (
-              <TouchableOpacity
+              <Pressable
                 onPress={() => update('query', '')}
+                android_ripple={{ color: colors.border, borderless: true, radius: 18 }}
+                style={({ pressed }) => [pressed && { opacity: 0.7 }]}
                 accessibilityRole="button"
                 accessibilityLabel={t('Borrar búsqueda')}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
                 <Ionicons name="close-circle" size={18} color={colors.textTertiary} />
-              </TouchableOpacity>
+              </Pressable>
             ) : null}
           </View>
 
           {/* BOTÓN DE FILTROS CON CONTADOR */}
-          <TouchableOpacity
+          <Pressable
             onPress={() => setFilterSheetOpen(true)}
-            style={[
+            android_ripple={{ color: colors.primaryLight }}
+            style={({ pressed }) => [
               styles.filterButton,
               {
                 backgroundColor: activeFilters > 0 ? colors.primaryLight : colors.surfaceSecondary,
                 borderColor: activeFilters > 0 ? colors.primary : colors.border,
                 borderRadius: layout.borderRadius.md,
+                overflow: 'hidden',
               },
+              pressed && { opacity: 0.75 },
             ]}
             accessibilityRole="button"
             accessibilityLabel={
@@ -258,24 +266,26 @@ export const EncyclopediaScreen: React.FC = () => {
                 </Text>
               </View>
             ) : null}
-          </TouchableOpacity>
+          </Pressable>
         </View>
 
         {/* TOGGLES RÁPIDOS: MODO SIN CONEXIÓN Y SEGURAS PARA MASCOTAS */}
         <View style={styles.togglesRow}>
-          <TouchableOpacity
+          <Pressable
             onPress={() => setOfflineOnly((v) => !v)}
-            activeOpacity={0.75}
+            android_ripple={{ color: colors.primaryLight }}
             accessibilityRole="switch"
             accessibilityState={{ checked: offlineOnly }}
             accessibilityLabel={t('Modo sin conexión: solo mis plantas guardadas')}
-            style={[
+            style={({ pressed }) => [
               styles.toggleChip,
               {
                 backgroundColor: offlineOnly ? colors.primaryLight : colors.surfaceSecondary,
                 borderColor: offlineOnly ? colors.primary : 'transparent',
                 borderRadius: layout.borderRadius.full,
+                overflow: 'hidden',
               },
+              pressed && { opacity: 0.75 },
             ]}
           >
             <Ionicons
@@ -292,21 +302,23 @@ export const EncyclopediaScreen: React.FC = () => {
             >
               {t('Mis plantas ({total})', { total: savedSpeciesIds.length })}
             </Text>
-          </TouchableOpacity>
+          </Pressable>
 
-          <TouchableOpacity
+          <Pressable
             onPress={() => setPetSafeOnly((v) => !v)}
-            activeOpacity={0.75}
+            android_ripple={{ color: '#C8E6C9' }}
             accessibilityRole="switch"
             accessibilityState={{ checked: petSafeOnly }}
             accessibilityLabel={t('Filtrar plantas seguras para mascotas')}
-            style={[
+            style={({ pressed }) => [
               styles.toggleChip,
               {
                 backgroundColor: petSafeOnly ? '#E8F5E9' : colors.surfaceSecondary,
                 borderColor: petSafeOnly ? '#2E7D32' : 'transparent',
                 borderRadius: layout.borderRadius.full,
+                overflow: 'hidden',
               },
+              pressed && { opacity: 0.75 },
             ]}
           >
             <Ionicons
@@ -323,7 +335,7 @@ export const EncyclopediaScreen: React.FC = () => {
             >
               {t('Seguras para mascotas')}
             </Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </View>
 
@@ -332,7 +344,7 @@ export const EncyclopediaScreen: React.FC = () => {
         data={results}
         keyExtractor={(item) => item.id}
         renderItem={renderPlantItem}
-        contentContainerStyle={{ padding: spacing.md, paddingBottom: 40 }}
+        contentContainerStyle={{ padding: spacing.md, paddingBottom: insets.bottom + 40 }}
         initialNumToRender={8}
         maxToRenderPerBatch={8}
         windowSize={5}
@@ -345,8 +357,10 @@ export const EncyclopediaScreen: React.FC = () => {
                 : t('{total} especies encontradas', { total: results.length })}
             </Text>
             {activeFilters > 0 && !offlineOnly ? (
-              <TouchableOpacity
+              <Pressable
                 onPress={() => setFilters(DEFAULT_FILTERS)}
+                android_ripple={{ color: colors.primaryLight, borderless: true, radius: 20 }}
+                style={({ pressed }) => [pressed && { opacity: 0.7 }]}
                 accessibilityRole="button"
                 accessibilityLabel={t('Limpiar filtros')}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -354,7 +368,7 @@ export const EncyclopediaScreen: React.FC = () => {
                 <Text style={[typography.footnote, { color: colors.primary, fontWeight: '700' }]}>
                   {t('Limpiar filtros')}
                 </Text>
-              </TouchableOpacity>
+              </Pressable>
             ) : null}
           </View>
         }

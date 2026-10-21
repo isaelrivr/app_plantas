@@ -4,7 +4,7 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
+  Pressable,
   Image,
   Platform,
   Modal,
@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import { useTranslation } from '../i18n';
@@ -39,6 +40,7 @@ export const GrowthDiaryScreen: React.FC = () => {
   const { colors, layout, spacing, typography } = useAppTheme();
   const { t } = useTranslation();
   const { showToast, confirm } = useFeedback();
+  const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { plants } = useGarden();
@@ -162,27 +164,28 @@ export const GrowthDiaryScreen: React.FC = () => {
           {
             backgroundColor: colors.surface,
             borderBottomColor: colors.border,
-            paddingTop: Platform.OS === 'ios' ? 12 : 16,
+            paddingTop: insets.top + (Platform.OS === 'ios' ? 8 : 12),
           },
         ]}
       >
-        <TouchableOpacity
+        <Pressable
           onPress={() => navigation.goBack()}
-          style={styles.backButton}
+          style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.7 }]}
+          android_ripple={{ color: colors.primaryLight, borderless: true, radius: 24 }}
           accessibilityRole="button"
           accessibilityLabel={t('Volver')}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <Ionicons name="chevron-back" size={26} color={colors.primary} />
           <Text style={[typography.body, { color: colors.primary, fontWeight: '600' }]}>{t('Atrás')}</Text>
-        </TouchableOpacity>
+        </Pressable>
         <Text style={[typography.headline, { color: colors.textPrimary }]} numberOfLines={1}>
           {t('Diario de Crecimiento')}
         </Text>
         <View style={styles.actionHeaderBtn} />
       </View>
 
-      <ScrollView contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxxl }}>
+      <ScrollView contentContainerStyle={{ padding: spacing.md, paddingBottom: insets.bottom + spacing.xxxl }}>
         <Text style={[typography.title2, { color: colors.textPrimary }]}>{plantName}</Text>
         <Text style={[typography.subheadline, { color: colors.textSecondary, marginBottom: spacing.md }]}>
           {t('{n} registros · sigue la evolución de tu planta', { n: entries.length })}
@@ -263,15 +266,16 @@ export const GrowthDiaryScreen: React.FC = () => {
                       ) : null}
                     </View>
                   </View>
-                  <TouchableOpacity
+                  <Pressable
                     onPress={() => handleDeleteEntry(entry)}
+                    android_ripple={{ color: colors.error + '25', borderless: true, radius: 20 }}
+                    style={({ pressed }) => [styles.deleteEntryBtn, pressed && { opacity: 0.7 }]}
                     accessibilityRole="button"
                     accessibilityLabel={t('Eliminar registro del {fecha}', { fecha: formatEntryDate(entry.date) })}
                     hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-                    style={styles.deleteEntryBtn}
                   >
                     <Ionicons name="trash-outline" size={20} color={colors.error} />
-                  </TouchableOpacity>
+                  </Pressable>
                 </View>
               </Card>
             ))}

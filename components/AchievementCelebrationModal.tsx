@@ -4,7 +4,7 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
+  Pressable,
   Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -113,16 +113,19 @@ export const AchievementCelebrationModal: React.FC<AchievementCelebrationModalPr
           </View>
 
           {/* BOTÓN GENIAL */}
-          <TouchableOpacity
+          <Pressable
             onPress={onDismiss}
-            style={[
+            android_ripple={{ color: colors.primaryDark }}
+            style={({ pressed }) => [
               styles.dismissBtn,
               {
                 backgroundColor: colors.primary,
-                minHeight: layout.minTouchTarget,
+                minHeight: Math.max(layout.minTouchTarget, 48),
                 borderRadius: layout.borderRadius.md,
                 marginTop: spacing.xl,
+                overflow: 'hidden',
               },
+              pressed && { opacity: 0.85 },
             ]}
             accessibilityRole="button"
             accessibilityLabel={t('Cerrar celebración de logro')}
@@ -130,7 +133,7 @@ export const AchievementCelebrationModal: React.FC<AchievementCelebrationModalPr
             <Text style={[typography.headline, { color: '#FFFFFF', fontWeight: '700' }]}>
               {t('¡Genial!')}
             </Text>
-          </TouchableOpacity>
+          </Pressable>
         </Animated.View>
       </View>
     </Modal>

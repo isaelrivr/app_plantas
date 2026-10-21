@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, Pressable, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { HabitatRegionDetail } from '../services/habitatService';
 
@@ -20,9 +20,15 @@ export const RegionCard: React.FC<RegionCardProps> = ({ plantName, region, onClo
           <Text style={[styles.eyebrow, { color: colors.primary }]}>{zoneLabel}</Text>
           <Text style={[styles.title, { color: colors.textPrimary }]}>{plantName} · {region.countryName}</Text>
         </View>
-        <TouchableOpacity onPress={onClose} style={styles.close} accessibilityRole="button" accessibilityLabel={labels.close}>
+        <Pressable
+          onPress={onClose}
+          style={({ pressed }) => [styles.close, pressed && { opacity: 0.7 }]}
+          android_ripple={{ color: colors.border, borderless: true, radius: 24 }}
+          accessibilityRole="button"
+          accessibilityLabel={labels.close}
+        >
           <Ionicons name="close" size={20} color={colors.textSecondary} />
-        </TouchableOpacity>
+        </Pressable>
       </View>
       <Text style={[styles.body, { color: colors.textSecondary }]}>{region.climate}</Text>
       <Text style={[styles.note, { color: colors.textSecondary }]}>{region.biogeographicZone} · {region.elevationMeters}</Text>
@@ -38,5 +44,5 @@ const styles = StyleSheet.create({
   title: { fontSize: 16, fontWeight: '800', marginTop: 2 },
   body: { fontSize: 14, lineHeight: 20, marginTop: 10 },
   note: { fontSize: 12, lineHeight: 17, marginTop: 5 },
-  close: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  close: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
 });

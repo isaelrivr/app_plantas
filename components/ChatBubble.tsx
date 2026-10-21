@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Image } from 'react-native';
 import { useAppTheme } from '../theme';
 import { AssistantMessage } from '../services/assistantService';
 
@@ -57,21 +57,27 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({ message, onQuickReply })
         {!isUser && message.quickReplies && message.quickReplies.length > 0 && onQuickReply ? (
           <View style={styles.quickReplies}>
             {message.quickReplies.map((reply) => (
-              <TouchableOpacity
+              <Pressable
                 key={reply}
                 onPress={() => onQuickReply(reply)}
-                activeOpacity={0.7}
+                android_ripple={{ color: colors.primaryLight, borderless: false }}
                 accessibilityRole="button"
                 accessibilityLabel={`Sugerencia: ${reply}`}
-                style={[
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                style={({ pressed }) => [
                   styles.quickChip,
-                  { borderColor: colors.primary, borderRadius: layout.borderRadius.full },
+                  {
+                    borderColor: colors.primary,
+                    borderRadius: layout.borderRadius.full,
+                    overflow: 'hidden',
+                  },
+                  pressed && { opacity: 0.75 },
                 ]}
               >
                 <Text style={[typography.footnote, { color: colors.primary, fontWeight: '600' }]}>
                   {reply}
                 </Text>
-              </TouchableOpacity>
+              </Pressable>
             ))}
           </View>
         ) : null}
@@ -129,9 +135,9 @@ const styles = StyleSheet.create({
   },
   quickChip: {
     borderWidth: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    minHeight: 32,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    minHeight: 40,
     justifyContent: 'center',
   },
 });

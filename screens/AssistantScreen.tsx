@@ -4,7 +4,7 @@ import {
   Text,
   StyleSheet,
   TextInput,
-  TouchableOpacity,
+  Pressable,
   ScrollView,
   KeyboardAvoidingView,
   Platform,
@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useAppTheme } from '../theme';
 import { ChatBubble } from '../components/ChatBubble';
@@ -28,6 +29,7 @@ import { announce } from '../services/accessibilityService';
 
 export const AssistantScreen: React.FC = () => {
   const { colors, layout, spacing, typography } = useAppTheme();
+  const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { plants } = useGarden();
@@ -105,20 +107,21 @@ export const AssistantScreen: React.FC = () => {
           {
             backgroundColor: colors.surface,
             borderBottomColor: colors.border,
-            paddingTop: Platform.OS === 'ios' ? 12 : 16,
+            paddingTop: insets.top + (Platform.OS === 'ios' ? 8 : 12),
           },
         ]}
       >
-        <TouchableOpacity
+        <Pressable
           onPress={() => navigation.goBack()}
-          style={styles.backButton}
+          style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.7 }]}
+          android_ripple={{ color: colors.primaryLight, borderless: true, radius: 24 }}
           accessibilityRole="button"
           accessibilityLabel={t('Volver')}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <Ionicons name="chevron-back" size={26} color={colors.primary} />
           <Text style={[typography.body, { color: colors.primary, fontWeight: '600' }]}>{t('Atrás')}</Text>
-        </TouchableOpacity>
+        </Pressable>
         <View style={{ alignItems: 'center' }}>
           <Text style={[typography.headline, { color: colors.textPrimary }]}>{t('Asistente de Plantas')}</Text>
           <Text style={[typography.footnote, { color: colors.textSecondary }]}>{t('Respuestas botánicas al instante')}</Text>
@@ -170,19 +173,25 @@ export const AssistantScreen: React.FC = () => {
               </Text>
               <View style={styles.suggestions}>
                 {SUGGESTED_QUESTIONS.map((q) => (
-                  <TouchableOpacity
+                  <Pressable
                     key={q}
                     onPress={() => handleSend(q)}
-                    activeOpacity={0.7}
+                    android_ripple={{ color: colors.primaryLight, borderless: false }}
                     accessibilityRole="button"
                     accessibilityLabel={t('Preguntar: {pregunta}', { pregunta: t(q) })}
-                    style={[
+                    style={({ pressed }) => [
                       styles.suggestionChip,
-                      { borderColor: colors.border, backgroundColor: colors.surface, borderRadius: layout.borderRadius.md },
+                      {
+                        borderColor: colors.border,
+                        backgroundColor: colors.surface,
+                        borderRadius: layout.borderRadius.md,
+                        overflow: 'hidden',
+                      },
+                      pressed && { opacity: 0.75 },
                     ]}
                   >
                     <Text style={[typography.footnote, { color: colors.textPrimary }]}>{t(q)}</Text>
-                  </TouchableOpacity>
+                  </Pressable>
                 ))}
               </View>
             </View>
@@ -192,7 +201,12 @@ export const AssistantScreen: React.FC = () => {
         <View
           style={[
             styles.inputBar,
-            { backgroundColor: colors.surface, borderTopColor: colors.border, paddingHorizontal: spacing.md },
+            {
+              backgroundColor: colors.surface,
+              borderTopColor: colors.border,
+              paddingHorizontal: spacing.md,
+              paddingBottom: Math.max(insets.bottom, 10),
+            },
           ]}
         >
           <TextInput
@@ -212,21 +226,24 @@ export const AssistantScreen: React.FC = () => {
             onSubmitEditing={() => handleSend(input)}
             returnKeyType="send"
           />
-          <TouchableOpacity
+          <Pressable
             onPress={() => handleSend(input)}
             disabled={!input.trim() || typing}
+            android_ripple={{ color: '#FFFFFF33', borderless: true, radius: 24 }}
             accessibilityRole="button"
             accessibilityLabel={t('Enviar mensaje')}
-            style={[
+            style={({ pressed }) => [
               styles.sendButton,
               {
                 backgroundColor: input.trim() && !typing ? colors.primary : colors.border,
                 borderRadius: layout.borderRadius.full,
+                overflow: 'hidden',
               },
+              pressed && input.trim() && !typing && { opacity: 0.8 },
             ]}
           >
             <Ionicons name="send" size={18} color="#FFFFFF" />
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </KeyboardAvoidingView>
     </View>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, StyleProp, ViewStyle } from 'react-native';
+import { View, Text, StyleSheet, Pressable, StyleProp, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '../theme';
 import { useTranslation } from '../i18n';
@@ -72,26 +72,28 @@ export const LockedPreview: React.FC<LockedPreviewProps> = ({
               {meta.description}
             </Text>
           ) : null}
-          <TouchableOpacity
+          <Pressable
             onPress={onUnlock}
-            activeOpacity={0.8}
+            android_ripple={{ color: '#00000025' }}
             accessibilityRole="button"
             accessibilityLabel={t('Desbloquear con EcoScan Pro')}
-            style={[
+            style={({ pressed }) => [
               styles.cta,
               {
                 backgroundColor: colors.premiumGold,
                 borderRadius: layout.borderRadius.md,
                 paddingHorizontal: spacing.lg,
                 marginTop: spacing.md,
+                overflow: 'hidden',
               },
+              pressed && { opacity: 0.8 },
             ]}
           >
             <Ionicons name="sparkles" size={16} color="#1C1C1E" />
             <Text style={[styles.ctaText, { color: '#1C1C1E', marginLeft: spacing.xs }]}>
               {t('Desbloquear con Pro')}
             </Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
       ) : null}
     </View>
@@ -118,7 +120,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 44,
+    minHeight: 48,
   },
   ctaText: {
     fontSize: 15,
