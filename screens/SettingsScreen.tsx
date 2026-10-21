@@ -4,13 +4,14 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
+  Pressable,
   Platform,
   Linking,
   Modal,
   TextInput,
   Image,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
@@ -44,6 +45,7 @@ const NOTIFICATION_HOURS = ['08:00', '09:00', '10:00', '18:00', '20:00'];
 export const SettingsScreen: React.FC = () => {
   const { colors, layout, spacing, typography } = useAppTheme();
   const navigation = useNavigation<any>();
+  const insets = useSafeAreaInsets();
   const {
     themePreference,
     setThemePreference,
@@ -195,24 +197,37 @@ export const SettingsScreen: React.FC = () => {
       <View
         style={[
           styles.header,
-          { backgroundColor: colors.surface, borderBottomColor: colors.border, paddingTop: Platform.OS === 'ios' ? 12 : 16 },
+          {
+            backgroundColor: colors.surface,
+            borderBottomColor: colors.border,
+            paddingTop: Math.max(insets.top, Platform.OS === 'ios' ? 12 : 16),
+          },
         ]}
       >
-        <TouchableOpacity
+        <Pressable
           onPress={() => navigation.goBack()}
-          style={styles.backButton}
+          style={({ pressed }) => [
+            styles.backButton,
+            { opacity: pressed && Platform.OS === 'ios' ? 0.7 : 1 },
+          ]}
+          android_ripple={{ color: colors.primary + '20', borderless: true, radius: 24 }}
           accessibilityRole="button"
           accessibilityLabel={t('Volver')}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <Ionicons name="chevron-back" size={26} color={colors.primary} />
           <Text style={[typography.body, { color: colors.primary, fontWeight: '600' }]}>{t('Atrás')}</Text>
-        </TouchableOpacity>
+        </Pressable>
         <Text style={[typography.headline, { color: colors.textPrimary }]}>{t('Ajustes')}</Text>
         <View style={styles.actionHeaderBtn} />
       </View>
 
-      <ScrollView contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxxl }}>
+      <ScrollView
+        contentContainerStyle={{
+          padding: spacing.md,
+          paddingBottom: Math.max(insets.bottom + 24, spacing.xxxl),
+        }}
+      >
         {/* 1. MODO FÁCIL */}
         {renderSectionTitle(t('Modo fácil'))}
         <Card style={{ marginBottom: spacing.sm }}>
@@ -273,7 +288,7 @@ export const SettingsScreen: React.FC = () => {
             {themeOptions.map((option) => {
               const selected = themePreference === option.key;
               return (
-                <TouchableOpacity
+                <Pressable
                   key={option.key}
                   onPress={() => {
                     Haptics.selectionAsync();
@@ -282,12 +297,15 @@ export const SettingsScreen: React.FC = () => {
                   accessibilityRole="radio"
                   accessibilityState={{ selected }}
                   accessibilityLabel={t('Tema {theme}', { theme: option.label })}
-                  style={[
+                  android_ripple={{ color: colors.primary + '25' }}
+                  style={({ pressed }) => [
                     styles.segment,
                     {
                       borderColor: selected ? colors.primary : colors.border,
                       backgroundColor: selected ? colors.primaryLight : colors.surface,
                       borderRadius: layout.borderRadius.md,
+                      overflow: 'hidden',
+                      opacity: pressed && Platform.OS === 'ios' ? 0.8 : 1,
                     },
                   ]}
                 >
@@ -295,7 +313,7 @@ export const SettingsScreen: React.FC = () => {
                   <Text style={[typography.footnote, { color: selected ? colors.primary : colors.textSecondary, marginLeft: 6, fontWeight: '600' }]}>
                     {option.label}
                   </Text>
-                </TouchableOpacity>
+                </Pressable>
               );
             })}
           </View>
@@ -308,7 +326,7 @@ export const SettingsScreen: React.FC = () => {
             const selected = language === lang.code;
             return (
               <View key={lang.code}>
-                <TouchableOpacity
+                <Pressable
                   onPress={() => {
                     Haptics.selectionAsync();
                     setLanguage(lang.code as AppLanguage);
@@ -316,11 +334,19 @@ export const SettingsScreen: React.FC = () => {
                   accessibilityRole="radio"
                   accessibilityState={{ selected }}
                   accessibilityLabel={t('Idioma {lenguaje}', { lenguaje: lang.label })}
-                  style={styles.rowTap}
+                  android_ripple={{ color: colors.primary + '18' }}
+                  style={({ pressed }) => [
+                    styles.rowTap,
+                    {
+                      borderRadius: 8,
+                      overflow: 'hidden',
+                      opacity: pressed && Platform.OS === 'ios' ? 0.7 : 1,
+                    },
+                  ]}
                 >
                   <Text style={[typography.body, { color: colors.textPrimary }]}>{lang.label}</Text>
                   {selected ? <Ionicons name="checkmark-circle" size={20} color={colors.primary} /> : null}
-                </TouchableOpacity>
+                </Pressable>
                 {index < LANGUAGES.length - 1 ? <View style={[styles.separator, { backgroundColor: colors.border }]} /> : null}
               </View>
             );
@@ -353,26 +379,29 @@ export const SettingsScreen: React.FC = () => {
                   {NOTIFICATION_HOURS.map((hour) => {
                     const active = notificationHour === hour;
                     return (
-                      <TouchableOpacity
+                      <Pressable
                         key={hour}
                         onPress={() => {
                           try { Haptics.selectionAsync(); } catch {}
                           setNotificationHour(hour);
                         }}
-                        style={[
+                        style={({ pressed }) => [
                           styles.hourPill,
                           {
                             backgroundColor: active ? colors.primary : colors.surfaceSecondary,
                             borderColor: active ? colors.primary : colors.border,
+                            overflow: 'hidden',
+                            opacity: pressed && Platform.OS === 'ios' ? 0.8 : 1,
                           },
                         ]}
+                        android_ripple={{ color: active ? 'rgba(255,255,255,0.3)' : colors.primary + '20' }}
                         accessibilityRole="button"
                         accessibilityState={{ selected: active }}
                       >
                         <Text style={[typography.caption1, { color: active ? '#FFFFFF' : colors.textPrimary, fontWeight: active ? '700' : '500' }]}>
                           {hour}
                         </Text>
-                      </TouchableOpacity>
+                      </Pressable>
                     );
                   })}
                 </View>
@@ -393,20 +422,23 @@ export const SettingsScreen: React.FC = () => {
             </View>
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingVertical: 8 }}>
-            <TouchableOpacity
+            <Pressable
               onPress={() => {
                 try { Haptics.selectionAsync(); } catch {}
                 setManualCity(null);
                 setCurrentCityName(null);
                 showToast({ message: t('Ubicación fijada en automática'), type: 'success' });
               }}
-              style={[
+              style={({ pressed }) => [
                 styles.cityPill,
                 {
                   backgroundColor: !currentCityName ? colors.primary : colors.surfaceSecondary,
                   borderColor: !currentCityName ? colors.primary : colors.border,
+                  overflow: 'hidden',
+                  opacity: pressed && Platform.OS === 'ios' ? 0.8 : 1,
                 },
               ]}
+              android_ripple={{ color: !currentCityName ? 'rgba(255,255,255,0.3)' : colors.primary + '20' }}
               accessibilityRole="button"
               accessibilityState={{ selected: !currentCityName }}
               accessibilityLabel={t('Ubicación automática por GPS')}
@@ -415,11 +447,11 @@ export const SettingsScreen: React.FC = () => {
               <Text style={[typography.caption1, { color: !currentCityName ? '#FFFFFF' : colors.textPrimary, fontWeight: !currentCityName ? '700' : '500' }]}>
                 {t('Automática')}
               </Text>
-            </TouchableOpacity>
+            </Pressable>
             {SUPPORTED_CITIES.map((c) => {
               const isSelected = currentCityName?.toLowerCase() === c.name.toLowerCase();
               return (
-                <TouchableOpacity
+                <Pressable
                   key={c.name}
                   onPress={() => {
                     try { Haptics.selectionAsync(); } catch {}
@@ -427,13 +459,16 @@ export const SettingsScreen: React.FC = () => {
                     setCurrentCityName(c.name);
                     showToast({ message: t('Ubicación fijada en {ciudad}', { ciudad: c.name }), type: 'success' });
                   }}
-                  style={[
+                  style={({ pressed }) => [
                     styles.cityPill,
                     {
                       backgroundColor: isSelected ? colors.primary : colors.surfaceSecondary,
                       borderColor: isSelected ? colors.primary : colors.border,
+                      overflow: 'hidden',
+                      opacity: pressed && Platform.OS === 'ios' ? 0.8 : 1,
                     },
                   ]}
+                  android_ripple={{ color: isSelected ? 'rgba(255,255,255,0.3)' : colors.primary + '20' }}
                   accessibilityRole="button"
                   accessibilityState={{ selected: isSelected }}
                   accessibilityLabel={t('Fijar ciudad en {ciudad}', { ciudad: c.name })}
@@ -441,7 +476,7 @@ export const SettingsScreen: React.FC = () => {
                   <Text style={[typography.caption1, { color: isSelected ? '#FFFFFF' : colors.textPrimary, fontWeight: isSelected ? '700' : '500' }]}>
                     {c.name}
                   </Text>
-                </TouchableOpacity>
+                </Pressable>
               );
             })}
           </ScrollView>
@@ -450,11 +485,19 @@ export const SettingsScreen: React.FC = () => {
         {/* 5. PLAN */}
         {renderSectionTitle(t('Plan'))}
         <Card>
-          <TouchableOpacity
+          <Pressable
             onPress={() => navigation.navigate('Paywall')}
             accessibilityRole="button"
             accessibilityLabel={isPremium ? t('Gestionar suscripción') : t('Ver planes Premium')}
-            style={styles.rowTap}
+            android_ripple={{ color: colors.primary + '18' }}
+            style={({ pressed }) => [
+              styles.rowTap,
+              {
+                borderRadius: 8,
+                overflow: 'hidden',
+                opacity: pressed && Platform.OS === 'ios' ? 0.7 : 1,
+              },
+            ]}
           >
             <View style={{ flex: 1 }}>
               <Text style={[typography.body, { color: colors.textPrimary, fontWeight: '600' }]}>
@@ -465,20 +508,28 @@ export const SettingsScreen: React.FC = () => {
               </Text>
             </View>
             {isPremium ? <Badge label="PRO" variant="premium" /> : <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />}
-          </TouchableOpacity>
+          </Pressable>
         </Card>
 
         {/* CUENTA Y NUBE */}
         {renderSectionTitle(t('Cuenta y nube'))}
         <Card>
-          <TouchableOpacity
+          <Pressable
             onPress={() => {
               try { Haptics.selectionAsync(); } catch {}
               setIsAuthModalVisible(true);
             }}
             accessibilityRole="button"
             accessibilityLabel={currentUser ? t('Gestionar cuenta y sincronización') : t('Iniciar sesión o registrarse')}
-            style={styles.rowTap}
+            android_ripple={{ color: colors.primary + '18' }}
+            style={({ pressed }) => [
+              styles.rowTap,
+              {
+                borderRadius: 8,
+                overflow: 'hidden',
+                opacity: pressed && Platform.OS === 'ios' ? 0.7 : 1,
+              },
+            ]}
           >
             <View style={{ flex: 1 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -498,7 +549,7 @@ export const SettingsScreen: React.FC = () => {
               </Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
-          </TouchableOpacity>
+          </Pressable>
         </Card>
 
         {/* 6. PRIVACIDAD Y DATOS */}
@@ -521,7 +572,16 @@ export const SettingsScreen: React.FC = () => {
             />
           </View>
           <View style={[styles.separator, { backgroundColor: colors.border }]} />
-          <TouchableOpacity onPress={handleExportData} accessibilityRole="button" accessibilityLabel={t('Exportar copia de mi jardín')} style={styles.rowTap}>
+          <Pressable
+            onPress={handleExportData}
+            accessibilityRole="button"
+            accessibilityLabel={t('Exportar copia de mi jardín')}
+            android_ripple={{ color: colors.primary + '18' }}
+            style={({ pressed }) => [
+              styles.rowTap,
+              { borderRadius: 8, overflow: 'hidden', opacity: pressed && Platform.OS === 'ios' ? 0.7 : 1 },
+            ]}
+          >
             <View style={{ flex: 1 }}>
               <Text style={[typography.body, { color: colors.textPrimary }]}>{t('Exportar copia de mi jardín')}</Text>
               <Text style={[typography.caption1, { color: colors.textTertiary, marginTop: 2 }]}>
@@ -529,9 +589,18 @@ export const SettingsScreen: React.FC = () => {
               </Text>
             </View>
             <Ionicons name="share-outline" size={20} color={colors.primary} />
-          </TouchableOpacity>
+          </Pressable>
           <View style={[styles.separator, { backgroundColor: colors.border }]} />
-          <TouchableOpacity onPress={() => setIsImportModalVisible(true)} accessibilityRole="button" accessibilityLabel={t('Importar copia de seguridad')} style={styles.rowTap}>
+          <Pressable
+            onPress={() => setIsImportModalVisible(true)}
+            accessibilityRole="button"
+            accessibilityLabel={t('Importar copia de seguridad')}
+            android_ripple={{ color: colors.primary + '18' }}
+            style={({ pressed }) => [
+              styles.rowTap,
+              { borderRadius: 8, overflow: 'hidden', opacity: pressed && Platform.OS === 'ios' ? 0.7 : 1 },
+            ]}
+          >
             <View style={{ flex: 1 }}>
               <Text style={[typography.body, { color: colors.textPrimary }]}>{t('Importar copia de seguridad')}</Text>
               <Text style={[typography.caption1, { color: colors.textTertiary, marginTop: 2 }]}>
@@ -539,33 +608,78 @@ export const SettingsScreen: React.FC = () => {
               </Text>
             </View>
             <Ionicons name="download-outline" size={20} color={colors.primary} />
-          </TouchableOpacity>
+          </Pressable>
           <View style={[styles.separator, { backgroundColor: colors.border }]} />
-          <TouchableOpacity onPress={() => navigation.navigate('PrivacyPolicy')} accessibilityRole="button" accessibilityLabel={t('Política de privacidad')} style={styles.rowTap}>
+          <Pressable
+            onPress={() => navigation.navigate('PrivacyPolicy')}
+            accessibilityRole="button"
+            accessibilityLabel={t('Política de privacidad')}
+            android_ripple={{ color: colors.primary + '18' }}
+            style={({ pressed }) => [
+              styles.rowTap,
+              { borderRadius: 8, overflow: 'hidden', opacity: pressed && Platform.OS === 'ios' ? 0.7 : 1 },
+            ]}
+          >
             <Text style={[typography.body, { color: colors.textPrimary }]}>{t('Política de privacidad')}</Text>
             <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
-          </TouchableOpacity>
+          </Pressable>
           <View style={[styles.separator, { backgroundColor: colors.border }]} />
-          <TouchableOpacity onPress={() => navigation.navigate('TermsOfService')} accessibilityRole="button" accessibilityLabel={t('Términos y condiciones')} style={styles.rowTap}>
+          <Pressable
+            onPress={() => navigation.navigate('TermsOfService')}
+            accessibilityRole="button"
+            accessibilityLabel={t('Términos y condiciones')}
+            android_ripple={{ color: colors.primary + '18' }}
+            style={({ pressed }) => [
+              styles.rowTap,
+              { borderRadius: 8, overflow: 'hidden', opacity: pressed && Platform.OS === 'ios' ? 0.7 : 1 },
+            ]}
+          >
             <Text style={[typography.body, { color: colors.textPrimary }]}>{t('Términos y condiciones')}</Text>
             <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
-          </TouchableOpacity>
+          </Pressable>
           <View style={[styles.separator, { backgroundColor: colors.border }]} />
-          <TouchableOpacity onPress={resetOnboarding} accessibilityRole="button" accessibilityLabel={t('Ver introducción de nuevo')} style={styles.rowTap}>
+          <Pressable
+            onPress={resetOnboarding}
+            accessibilityRole="button"
+            accessibilityLabel={t('Ver introducción de nuevo')}
+            android_ripple={{ color: colors.primary + '18' }}
+            style={({ pressed }) => [
+              styles.rowTap,
+              { borderRadius: 8, overflow: 'hidden', opacity: pressed && Platform.OS === 'ios' ? 0.7 : 1 },
+            ]}
+          >
             <Text style={[typography.body, { color: colors.textPrimary }]}>{t('Ver introducción de nuevo')}</Text>
             <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
-          </TouchableOpacity>
+          </Pressable>
           <View style={[styles.separator, { backgroundColor: colors.border }]} />
-          <TouchableOpacity onPress={handleDeleteData} accessibilityRole="button" accessibilityLabel={t('Eliminar cuenta y datos del dispositivo')} style={styles.rowTap}>
+          <Pressable
+            onPress={handleDeleteData}
+            accessibilityRole="button"
+            accessibilityLabel={t('Eliminar cuenta y datos del dispositivo')}
+            android_ripple={{ color: colors.error + '20' }}
+            style={({ pressed }) => [
+              styles.rowTap,
+              { borderRadius: 8, overflow: 'hidden', opacity: pressed && Platform.OS === 'ios' ? 0.7 : 1 },
+            ]}
+          >
             <Text style={[typography.body, { color: colors.error }]}>{t('Eliminar cuenta y datos del dispositivo')}</Text>
             <Ionicons name="trash-outline" size={20} color={colors.error} />
-          </TouchableOpacity>
+          </Pressable>
         </Card>
 
         {/* 7. AYUDA Y CONTACTO */}
         {renderSectionTitle(t('Ayuda y contacto'))}
         <Card>
-          <TouchableOpacity onPress={() => navigation.navigate('Help')} accessibilityRole="button" accessibilityLabel={t('Centro de ayuda y preguntas frecuentes')} style={styles.rowTap}>
+          <Pressable
+            onPress={() => navigation.navigate('Help')}
+            accessibilityRole="button"
+            accessibilityLabel={t('Centro de ayuda y preguntas frecuentes')}
+            android_ripple={{ color: colors.primary + '18' }}
+            style={({ pressed }) => [
+              styles.rowTap,
+              { borderRadius: 8, overflow: 'hidden', opacity: pressed && Platform.OS === 'ios' ? 0.7 : 1 },
+            ]}
+          >
             <View style={{ flex: 1 }}>
               <Text style={[typography.body, { color: colors.textPrimary }]}>{t('Centro de ayuda')}</Text>
               <Text style={[typography.caption1, { color: colors.textTertiary, marginTop: 2 }]}>
@@ -573,9 +687,18 @@ export const SettingsScreen: React.FC = () => {
               </Text>
             </View>
             <Ionicons name="help-circle-outline" size={22} color={colors.primary} />
-          </TouchableOpacity>
+          </Pressable>
           <View style={[styles.separator, { backgroundColor: colors.border }]} />
-          <TouchableOpacity onPress={handleContactSupport} accessibilityRole="button" accessibilityLabel={t('Contactar por correo')} style={styles.rowTap}>
+          <Pressable
+            onPress={handleContactSupport}
+            accessibilityRole="button"
+            accessibilityLabel={t('Contactar por correo')}
+            android_ripple={{ color: colors.primary + '18' }}
+            style={({ pressed }) => [
+              styles.rowTap,
+              { borderRadius: 8, overflow: 'hidden', opacity: pressed && Platform.OS === 'ios' ? 0.7 : 1 },
+            ]}
+          >
             <View style={{ flex: 1 }}>
               <Text style={[typography.body, { color: colors.textPrimary }]}>{t('Contactar con soporte')}</Text>
               <Text style={[typography.caption1, { color: colors.textTertiary, marginTop: 2 }]}>
@@ -583,7 +706,7 @@ export const SettingsScreen: React.FC = () => {
               </Text>
             </View>
             <Ionicons name="mail-outline" size={20} color={colors.primary} />
-          </TouchableOpacity>
+          </Pressable>
         </Card>
 
         {/* 8. ACERCA DE */}
@@ -641,31 +764,40 @@ export const SettingsScreen: React.FC = () => {
               }}
             />
             <View style={{ flexDirection: 'row', gap: 12, justifyContent: 'flex-end' }}>
-              <TouchableOpacity
+              <Pressable
                 onPress={() => {
                   setIsImportModalVisible(false);
                   setImportJsonText('');
                 }}
-                style={{ minHeight: 48, minWidth: 48, justifyContent: 'center', paddingHorizontal: 16 }}
+                style={({ pressed }) => [
+                  { minHeight: 48, minWidth: 48, justifyContent: 'center', paddingHorizontal: 16, borderRadius: 8, overflow: 'hidden' },
+                  pressed && Platform.OS === 'ios' && { opacity: 0.7 },
+                ]}
+                android_ripple={{ color: colors.textSecondary + '20' }}
                 accessibilityRole="button"
                 accessibilityLabel={t('Cancelar')}
               >
                 <Text style={[typography.body, { color: colors.textSecondary }]}>{t('Cancelar')}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
+              </Pressable>
+              <Pressable
                 onPress={handleExecuteImport}
-                style={{
-                  backgroundColor: colors.primary,
-                  borderRadius: 8,
-                  minHeight: 48,
-                  justifyContent: 'center',
-                  paddingHorizontal: 20,
-                }}
+                style={({ pressed }) => [
+                  {
+                    backgroundColor: colors.primary,
+                    borderRadius: 8,
+                    minHeight: 48,
+                    justifyContent: 'center',
+                    paddingHorizontal: 20,
+                    overflow: 'hidden',
+                  },
+                  pressed && Platform.OS === 'ios' && { opacity: 0.8 },
+                ]}
+                android_ripple={{ color: 'rgba(255,255,255,0.3)' }}
                 accessibilityRole="button"
                 accessibilityLabel={t('Restaurar mi jardín')}
               >
                 <Text style={[typography.headline, { color: '#FFFFFF' }]}>{t('Restaurar')}</Text>
-              </TouchableOpacity>
+              </Pressable>
             </View>
           </View>
         </View>

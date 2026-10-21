@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View, ViewStyle } from 'react-native';
+import { StyleSheet, Text, Pressable, View, ViewStyle, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAppTheme } from '../theme';
 import { Button } from './Button';
@@ -61,9 +61,20 @@ export const PrimaryActionBar: React.FC<PrimaryActionBarProps> = ({
           />
 
           {secondaryTitle && onSecondaryPress ? (
-            <TouchableOpacity
+            <Pressable
               onPress={onSecondaryPress}
-              style={[styles.secondaryButton, { minHeight: layout.minTouchTarget }]}
+              style={({ pressed }) => [
+                styles.secondaryButton,
+                {
+                  minHeight: layout.minTouchTarget,
+                  opacity: pressed && Platform.OS === 'ios' ? 0.7 : 1,
+                  borderRadius: layout.borderRadius.md,
+                },
+              ]}
+              android_ripple={{
+                color: 'rgba(27, 106, 59, 0.12)',
+                borderless: false,
+              }}
               accessibilityRole="button"
               accessibilityLabel={secondaryTitle}
               hitSlop={{ top: 8, bottom: 8, left: 16, right: 16 }}
@@ -71,7 +82,7 @@ export const PrimaryActionBar: React.FC<PrimaryActionBarProps> = ({
               <Text style={[typography.subheadline, { color: colors.primary, fontWeight: '600' }]}>
                 {secondaryTitle}
               </Text>
-            </TouchableOpacity>
+            </Pressable>
           ) : null}
         </View>
       </GlassView>

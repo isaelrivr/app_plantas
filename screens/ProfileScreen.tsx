@@ -4,12 +4,14 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
+  Pressable,
   useColorScheme,
   Image,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAppTheme } from '../theme';
 import { usePremium } from '../context/PremiumContext';
 import { ScreenHeader } from '../components/ScreenHeader';
@@ -18,10 +20,13 @@ import { Badge } from '../components/Badge';
 import { Button } from '../components/Button';
 import { ErrorBanner } from '../components/ErrorBanner';
 import { SkeletonBox } from '../components/SkeletonLoader';
+import { BlurTargetView, useBlurTarget } from '../components/GlassView';
 import { useTranslation } from '../i18n';
 
 export const ProfileScreen: React.FC = () => {
   const { colors, layout, spacing, typography } = useAppTheme();
+  const insets = useSafeAreaInsets();
+  const blurTargetRef = useBlurTarget();
   const navigation = useNavigation<any>();
   const { isPremium, price } = usePremium();
   const colorScheme = useColorScheme();
@@ -84,14 +89,19 @@ export const ProfileScreen: React.FC = () => {
   ];
 
   return (
-    <ScrollView
-      style={[styles.container, { backgroundColor: colors.background }]}
-      contentContainerStyle={{ padding: spacing.md, paddingBottom: 115 }}
-    >
-      <ScreenHeader
-        title={t('Yo')}
-        subtitle={t('Tu espacio y preferencias')}
-      />
+    <BlurTargetView ref={blurTargetRef} style={styles.container}>
+      <ScrollView
+        style={[styles.container, { backgroundColor: colors.background }]}
+        contentContainerStyle={{
+          paddingHorizontal: spacing.md,
+          paddingTop: Math.max(insets.top, spacing.md),
+          paddingBottom: 110 + insets.bottom,
+        }}
+      >
+        <ScreenHeader
+          title={t('Yo')}
+          subtitle={t('Tu espacio y preferencias')}
+        />
 
       {/* TARJETA DE ESTADO DE SUSCRIPCIÓN */}
       {errorMessage && (
@@ -205,12 +215,16 @@ export const ProfileScreen: React.FC = () => {
       )}
 
       {/* ACCESO A LOGROS (LOGROS DENTRO DE YO) */}
-      <Card style={{ marginBottom: spacing.md }}>
-        <TouchableOpacity
-          style={styles.settingRow}
+      <Card style={{ marginBottom: spacing.md, overflow: 'hidden' }}>
+        <Pressable
+          style={({ pressed }) => [
+            styles.settingRow,
+            { borderRadius: 8, overflow: 'hidden', opacity: pressed && Platform.OS === 'ios' ? 0.7 : 1 },
+          ]}
           onPress={() => navigation.navigate('Achievements')}
           accessibilityRole="button"
           accessibilityLabel={t('Mis Logros y Medallas')}
+          android_ripple={{ color: colors.primary + '18' }}
         >
           <View
             style={[
@@ -229,16 +243,20 @@ export const ProfileScreen: React.FC = () => {
             </Text>
           </View>
           <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} style={{ marginLeft: 8 }} />
-        </TouchableOpacity>
+        </Pressable>
       </Card>
 
       {/* ACCESO A AJUSTES */}
-      <Card style={{ marginBottom: spacing.lg }}>
-        <TouchableOpacity
-          style={styles.settingRow}
+      <Card style={{ marginBottom: spacing.lg, overflow: 'hidden' }}>
+        <Pressable
+          style={({ pressed }) => [
+            styles.settingRow,
+            { borderRadius: 8, overflow: 'hidden', opacity: pressed && Platform.OS === 'ios' ? 0.7 : 1 },
+          ]}
           onPress={() => navigation.navigate('Settings')}
           accessibilityRole="button"
           accessibilityLabel={t('Abrir los ajustes de la aplicación')}
+          android_ripple={{ color: colors.primary + '18' }}
         >
           <View
             style={[
@@ -255,7 +273,7 @@ export const ProfileScreen: React.FC = () => {
             </Text>
           </View>
           <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} style={{ marginLeft: 8 }} />
-        </TouchableOpacity>
+        </Pressable>
       </Card>
 
       {/* SECCIÓN DE AYUDA Y SOPORTE */}
@@ -303,17 +321,28 @@ export const ProfileScreen: React.FC = () => {
 
           <View style={[styles.separator, { backgroundColor: colors.border, marginVertical: spacing.sm }]} />
 
-          <TouchableOpacity
+          <Pressable
             onPress={() => navigation.navigate('Help')}
             accessibilityRole="button"
             accessibilityLabel={t('Ver centro de ayuda completo')}
-            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: spacing.xs }}
+            android_ripple={{ color: colors.primary + '18' }}
+            style={({ pressed }) => [
+              {
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                paddingVertical: spacing.sm,
+                minHeight: 48,
+                borderRadius: 8,
+                opacity: pressed && Platform.OS === 'ios' ? 0.7 : 1,
+              },
+            ]}
           >
             <Text style={[typography.body, { color: colors.primary, fontWeight: '700' }]}>
               {t('Ver centro de ayuda y soporte')}
             </Text>
             <Ionicons name="arrow-forward" size={18} color={colors.primary} />
-          </TouchableOpacity>
+          </Pressable>
         </Card>
       </View>
 
@@ -400,7 +429,8 @@ export const ProfileScreen: React.FC = () => {
         </View>
       </Card>
     </ScrollView>
-  );
+  </BlurTargetView>
+);
 };
 
 const styles = StyleSheet.create({

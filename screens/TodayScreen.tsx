@@ -4,10 +4,12 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
+  Pressable,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useAppTheme } from '../theme';
 import { useGarden, GardenPlant } from '../context/GardenContext';
@@ -17,12 +19,15 @@ import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { StatusPill } from '../components/StatusPill';
+import { BlurTargetView, useBlurTarget } from '../components/GlassView';
 import { getLocalWeatherAndRecommendations, WeatherData } from '../services/weatherService';
 import { announce } from '../services/accessibilityService';
 import { useTranslation } from '../i18n';
 
 export const TodayScreen: React.FC = () => {
   const { colors, layout, spacing, typography } = useAppTheme();
+  const insets = useSafeAreaInsets();
+  const blurTargetRef = useBlurTarget();
   const navigation = useNavigation<any>();
   const { plants, rooms, stats, waterPlantToday, undoWaterPlant } = useGarden();
   const { userGoal } = useSettings();
@@ -102,80 +107,98 @@ export const TodayScreen: React.FC = () => {
   }, [userGoal, t]);
 
   return (
-    <ScrollView
-      style={[styles.container, { backgroundColor: colors.background }]}
-      contentContainerStyle={{ padding: spacing.md, paddingBottom: 115 }}
-      showsVerticalScrollIndicator={false}
-    >
-      <ScreenHeader
-        title={t('Hoy')}
-        subtitle={formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1)}
-        rightAction={
-          <TouchableOpacity
-            onPress={() => navigation.navigate('CareCalendar')}
+    <BlurTargetView ref={blurTargetRef} style={styles.container}>
+      <ScrollView
+        style={[styles.container, { backgroundColor: colors.background }]}
+        contentContainerStyle={{
+          paddingHorizontal: spacing.md,
+          paddingTop: Math.max(insets.top, spacing.md),
+          paddingBottom: 110 + insets.bottom,
+        }}
+        showsVerticalScrollIndicator={false}
+      >
+        <ScreenHeader
+          title={t('Hoy')}
+          subtitle={formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1)}
+          rightAction={
+            <Pressable
+              onPress={() => navigation.navigate('CareCalendar')}
+              accessibilityRole="button"
+              accessibilityLabel={t('Abrir calendario de cuidados')}
+              style={({ pressed }) => [
+                styles.calendarHeaderBtn,
+                {
+                  borderRadius: layout.borderRadius.full,
+                  overflow: 'hidden',
+                  opacity: pressed && Platform.OS === 'ios' ? 0.7 : 1,
+                },
+              ]}
+              android_ripple={{ color: 'rgba(27, 106, 59, 0.12)', borderless: true, radius: 22 }}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Ionicons name="calendar-outline" size={24} color={colors.primary} />
+            </Pressable>
+          }
+        />
+
+        {/* SALUDO Y MOTIVACIÓN */}
+        <View style={{ marginBottom: spacing.sm, paddingHorizontal: spacing.xxs }}>
+          <Text style={[typography.title2, { color: colors.textPrimary, fontWeight: '800' }]}>
+            {greeting}
+          </Text>
+          <Text style={[typography.subheadline, { color: colors.textSecondary, marginTop: 4 }]}>
+            {goalMotivation}
+          </Text>
+        </View>
+
+        {/* CLIMA EN UNA SOLA LÍNEA CON UBICACIÓN */}
+        {weather && weather.city ? (
+          <Pressable
+            onPress={() => navigation.navigate('Settings')}
+            style={({ pressed }) => [
+              styles.weatherOneLine,
+              {
+                backgroundColor: colors.surfaceSecondary,
+                borderRadius: layout.borderRadius.md,
+                overflow: 'hidden',
+                opacity: pressed && Platform.OS === 'ios' ? 0.75 : 1,
+              },
+            ]}
+            android_ripple={{ color: colors.border, borderless: false }}
+            accessible
             accessibilityRole="button"
-            accessibilityLabel={t('Abrir calendario de cuidados')}
-            style={styles.calendarHeaderBtn}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            accessibilityLabel={t('Ubicación: {ciudad}. Clima: {temp} grados, {desc}. Toca para ver ajustes de clima.', {
+              ciudad: weather.city,
+              temp: Math.round(weather.temperatureC),
+              desc: weather.weatherDescription,
+            })}
           >
-            <Ionicons name="calendar-outline" size={24} color={colors.primary} />
-          </TouchableOpacity>
-        }
-      />
-
-      {/* SALUDO Y MOTIVACIÓN */}
-      <View style={{ marginBottom: spacing.sm, paddingHorizontal: spacing.xxs }}>
-        <Text style={[typography.title2, { color: colors.textPrimary, fontWeight: '800' }]}>
-          {greeting}
-        </Text>
-        <Text style={[typography.subheadline, { color: colors.textSecondary, marginTop: 4 }]}>
-          {goalMotivation}
-        </Text>
-      </View>
-
-      {/* CLIMA EN UNA SOLA LÍNEA CON UBICACIÓN */}
-      {weather && weather.city ? (
-        <TouchableOpacity
-          onPress={() => navigation.navigate('Settings')}
-          activeOpacity={0.7}
-          style={[
-            styles.weatherOneLine,
-            { backgroundColor: colors.surfaceSecondary, borderRadius: layout.borderRadius.md },
-          ]}
-          accessible
-          accessibilityRole="button"
-          accessibilityLabel={t('Ubicación: {ciudad}. Clima: {temp} grados, {desc}. Toca para ver ajustes de clima.', {
-            ciudad: weather.city,
-            temp: Math.round(weather.temperatureC),
-            desc: weather.weatherDescription,
-          })}
-        >
-          <Ionicons name="location-sharp" size={15} color={colors.primary} style={{ marginRight: 4 }} />
-          <Text style={[typography.footnote, { color: colors.textPrimary, fontWeight: '700' }]} numberOfLines={1}>
-            {weather.city}
-          </Text>
-          <Text style={[typography.footnote, { color: colors.textTertiary, marginHorizontal: 6 }]}>
-            ·
-          </Text>
-          <Ionicons
-            name={
-              weather.weatherIcon === 'rainy'
-                ? 'rainy-outline'
-                : weather.weatherIcon === 'cloudy'
-                ? 'cloudy-outline'
-                : weather.weatherIcon === 'partly-sunny'
-                ? 'partly-sunny-outline'
-                : 'sunny-outline'
-            }
-            size={15}
-            color={colors.accent}
-            style={{ marginRight: 4 }}
-          />
-          <Text style={[typography.footnote, { color: colors.textSecondary }]} numberOfLines={1}>
-            {Math.round(weather.temperatureC)}°C · {weather.weatherDescription}
-          </Text>
-        </TouchableOpacity>
-      ) : null}
+            <Ionicons name="location-sharp" size={15} color={colors.primary} style={{ marginRight: 4 }} />
+            <Text style={[typography.footnote, { color: colors.textPrimary, fontWeight: '700' }]} numberOfLines={1}>
+              {weather.city}
+            </Text>
+            <Text style={[typography.footnote, { color: colors.textTertiary, marginHorizontal: 6 }]}>
+              ·
+            </Text>
+            <Ionicons
+              name={
+                weather.weatherIcon === 'rainy'
+                  ? 'rainy-outline'
+                  : weather.weatherIcon === 'cloudy'
+                  ? 'cloudy-outline'
+                  : weather.weatherIcon === 'partly-sunny'
+                  ? 'partly-sunny-outline'
+                  : 'sunny-outline'
+              }
+              size={15}
+              color={colors.accent}
+              style={{ marginRight: 4 }}
+            />
+            <Text style={[typography.footnote, { color: colors.textSecondary }]} numberOfLines={1}>
+              {Math.round(weather.temperatureC)}°C · {weather.weatherDescription}
+            </Text>
+          </Pressable>
+        ) : null}
 
       {/* RACHA DE CUIDADOS DISCRETA */}
       <View style={[styles.streakRow, { marginBottom: spacing.md }]}>
@@ -221,9 +244,13 @@ export const TodayScreen: React.FC = () => {
             style={styles.hugeButton}
           />
 
-          <TouchableOpacity
+          <Pressable
             onPress={() => navigation.navigate('Encyclopedia')}
-            style={styles.searchByNameLink}
+            style={({ pressed }) => [
+              styles.searchByNameLink,
+              { opacity: pressed && Platform.OS === 'ios' ? 0.7 : 1 },
+            ]}
+            android_ripple={{ color: 'rgba(27, 106, 59, 0.12)', borderless: true }}
             accessibilityRole="button"
             accessibilityLabel={t('o búscala por nombre')}
             hitSlop={{ top: 12, bottom: 12, left: 16, right: 16 }}
@@ -231,7 +258,7 @@ export const TodayScreen: React.FC = () => {
             <Text style={[typography.subheadline, { color: colors.primary, fontWeight: '700' }]}>
               {t('o búscala por nombre')}
             </Text>
-          </TouchableOpacity>
+          </Pressable>
         </Card>
       ) : (
         <>
@@ -240,18 +267,22 @@ export const TodayScreen: React.FC = () => {
             <Text style={[typography.headline, { color: colors.textPrimary }]}>
               {t('Tareas de Hoy')}
             </Text>
-            <TouchableOpacity
+            <Pressable
               onPress={() => navigation.navigate('CareCalendar')}
               accessibilityRole="button"
               accessibilityLabel={t('Ver calendario completo')}
-              style={styles.textButton}
+              style={({ pressed }) => [
+                styles.textButton,
+                { opacity: pressed && Platform.OS === 'ios' ? 0.7 : 1 },
+              ]}
+              android_ripple={{ color: 'rgba(27, 106, 59, 0.12)', borderless: true }}
               hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
             >
               <Text style={[typography.subheadline, { color: colors.primary, fontWeight: '600' }]}>
                 {t('Ver calendario')}
               </Text>
               <Ionicons name="chevron-forward" size={16} color={colors.primary} style={{ marginLeft: 2 }} />
-            </TouchableOpacity>
+            </Pressable>
           </View>
 
           {plantsNeedingWater.length > 0 ? (
@@ -302,12 +333,19 @@ export const TodayScreen: React.FC = () => {
           )}
 
           {/* ACCIÓN RÁPIDA: ESCANEAR */}
-          <TouchableOpacity
+          <Pressable
             onPress={() => navigation.navigate('Scan')}
-            activeOpacity={0.85}
             accessibilityRole="button"
             accessibilityLabel={t('Identificar o revisar una nueva planta')}
-            style={{ marginBottom: spacing.md }}
+            style={({ pressed }) => [
+              {
+                marginBottom: spacing.md,
+                borderRadius: 16,
+                overflow: 'hidden',
+                opacity: pressed && Platform.OS === 'ios' ? 0.85 : 1,
+              },
+            ]}
+            android_ripple={{ color: 'rgba(255, 255, 255, 0.25)', borderless: false }}
           >
             <Card elevated style={[styles.ctaCard, { backgroundColor: colors.primary }]}>
               <View style={styles.ctaRow}>
@@ -325,14 +363,21 @@ export const TodayScreen: React.FC = () => {
                 <Ionicons name="chevron-forward" size={22} color="#FFFFFF" />
               </View>
             </Card>
-          </TouchableOpacity>
+          </Pressable>
 
           {/* ASISTENTE */}
-          <TouchableOpacity
+          <Pressable
             onPress={() => navigation.navigate('Assistant')}
-            activeOpacity={0.85}
             accessibilityRole="button"
             accessibilityLabel={t('Pregúntale a EcoScan')}
+            style={({ pressed }) => [
+              {
+                borderRadius: layout.borderRadius.lg,
+                overflow: 'hidden',
+                opacity: pressed && Platform.OS === 'ios' ? 0.85 : 1,
+              },
+            ]}
+            android_ripple={{ color: 'rgba(0, 0, 0, 0.06)', borderless: false }}
           >
             <Card elevated style={{ backgroundColor: colors.surface }}>
               <View style={styles.assistantRow}>
@@ -350,11 +395,12 @@ export const TodayScreen: React.FC = () => {
                 <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
               </View>
             </Card>
-          </TouchableOpacity>
+          </Pressable>
         </>
       )}
     </ScrollView>
-  );
+  </BlurTargetView>
+);
 };
 
 const styles = StyleSheet.create({

@@ -4,12 +4,13 @@ import {
   Text,
   StyleSheet,
   SectionList,
-  TouchableOpacity,
+  Pressable,
   TextInput,
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useAppTheme } from '../theme';
 import { useGarden, GardenPlant, Room } from '../context/GardenContext';
@@ -23,6 +24,7 @@ import { SkeletonBox } from '../components/SkeletonLoader';
 import { ErrorBanner } from '../components/ErrorBanner';
 import { BottomSheet } from '../components/BottomSheet';
 import { ListRow } from '../components/ListRow';
+import { BlurTargetView, useBlurTarget } from '../components/GlassView';
 import { GardenPlantCard } from '../components/garden/GardenPlantCard';
 import { AddPlantModal, ManualPlantData } from '../components/garden/AddPlantModal';
 import { PlantActionSheet } from '../components/garden/PlantActionSheet';
@@ -40,6 +42,8 @@ const speciesIdFor = (name: string, scientificName?: string): string =>
 
 export const GardenScreen: React.FC = () => {
   const { colors, isDark, spacing, typography, layout } = useAppTheme();
+  const insets = useSafeAreaInsets();
+  const blurTargetRef = useBlurTarget();
   const { showToast, confirm } = useFeedback();
   const {
     plants,
@@ -226,10 +230,19 @@ export const GardenScreen: React.FC = () => {
         { title: t('Logros'), icon: 'trophy', route: 'Achievements', color: colors.premiumGold },
         { title: t('Calendario'), icon: 'calendar', route: 'CareCalendar', color: colors.primary },
       ].map((item) => (
-        <TouchableOpacity
+        <Pressable
           key={item.route}
           onPress={() => navigation.navigate(item.route)}
-          style={[styles.shortcutItem, { backgroundColor: colors.surface, borderRadius: layout.borderRadius.md }]}
+          style={({ pressed }) => [
+            styles.shortcutItem,
+            {
+              backgroundColor: colors.surface,
+              borderRadius: layout.borderRadius.md,
+              overflow: 'hidden',
+              opacity: pressed && Platform.OS === 'ios' ? 0.75 : 1,
+            },
+          ]}
+          android_ripple={{ color: colors.border, borderless: false }}
           accessibilityRole="button"
           accessibilityLabel={t('Abrir {seccion}', { seccion: item.title })}
         >
@@ -239,7 +252,7 @@ export const GardenScreen: React.FC = () => {
           <Text style={[typography.caption1, { color: colors.textPrimary, marginTop: 4, fontWeight: '600' }]}>
             {item.title}
           </Text>
-        </TouchableOpacity>
+        </Pressable>
       ))}
     </View>
   );
@@ -297,11 +310,15 @@ export const GardenScreen: React.FC = () => {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <BlurTargetView ref={blurTargetRef} style={styles.container}>
       <SectionList
         sections={sections}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={{ padding: spacing.md, paddingBottom: 115 }}
+        contentContainerStyle={{
+          paddingHorizontal: spacing.md,
+          paddingTop: Math.max(insets.top, spacing.md),
+          paddingBottom: 160 + insets.bottom,
+        }}
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={
           <>
@@ -323,9 +340,17 @@ export const GardenScreen: React.FC = () => {
                 <Text style={[typography.title3, { color: colors.textPrimary, fontWeight: '800' }]}>
                   {t('Tus Plantas')}
                 </Text>
-                <TouchableOpacity
+                <Pressable
                   onPress={() => setRoomModalOpen(true)}
-                  style={styles.manageZonesButton}
+                  style={({ pressed }) => [
+                    styles.manageZonesButton,
+                    {
+                      borderRadius: layout.borderRadius.md,
+                      overflow: 'hidden',
+                      opacity: pressed && Platform.OS === 'ios' ? 0.75 : 1,
+                    },
+                  ]}
+                  android_ripple={{ color: 'rgba(27, 106, 59, 0.12)', borderless: false }}
                   accessibilityRole="button"
                   accessibilityLabel={t('Organizar por zonas')}
                 >
@@ -333,7 +358,7 @@ export const GardenScreen: React.FC = () => {
                   <Text style={[typography.subheadline, { color: colors.primary, fontWeight: '700' }]}>
                     {t('Zonas')}
                   </Text>
-                </TouchableOpacity>
+                </Pressable>
               </View>
             ) : null}
           </>
@@ -382,22 +407,27 @@ export const GardenScreen: React.FC = () => {
       />
 
       {/* BOTÓN FLOTANTE: + AÑADIR PLANTA */}
-      <View style={styles.fabContainer} pointerEvents="box-none">
-        <TouchableOpacity
+      <View
+        style={[styles.fabContainer, { bottom: Math.max(insets.bottom + 16, 96) }]}
+        pointerEvents="box-none"
+      >
+        <Pressable
           onPress={() => {
             try {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             } catch {}
             setAddModalVisible(true);
           }}
-          activeOpacity={0.88}
-          style={[
+          style={({ pressed }) => [
             styles.fab,
             {
               backgroundColor: colors.primary,
               shadowColor: colors.primary,
+              overflow: 'hidden',
+              opacity: pressed && Platform.OS === 'ios' ? 0.88 : 1,
             },
           ]}
+          android_ripple={{ color: 'rgba(255, 255, 255, 0.25)', borderless: false }}
           accessibilityRole="button"
           accessibilityLabel={t('Añadir planta')}
         >
@@ -405,7 +435,7 @@ export const GardenScreen: React.FC = () => {
           <Text style={[typography.headline, { color: '#FFFFFF', fontWeight: '800' }]}>
             {t('Añadir planta')}
           </Text>
-        </TouchableOpacity>
+        </Pressable>
       </View>
 
       {/* MODAL: AÑADIR PLANTA (Escanear / Catálogo / Manual) */}
@@ -492,14 +522,19 @@ export const GardenScreen: React.FC = () => {
                     title={r.name}
                     subtitle={t('{n} plantas', { n: plants.filter((p) => p.roomId === r.id).length })}
                     trailing={
-                      <TouchableOpacity
+                      <Pressable
                         onPress={() => handleRemoveRoom(r)}
                         accessibilityRole="button"
                         accessibilityLabel={t('Eliminar zona {zona}', { zona: r.name })}
                         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                        android_ripple={{ color: colors.error + '25', borderless: true, radius: 22 }}
+                        style={({ pressed }) => [
+                          { minHeight: 48, minWidth: 48, alignItems: 'center', justifyContent: 'center' },
+                          pressed && Platform.OS === 'ios' && { opacity: 0.6 },
+                        ]}
                       >
                         <Ionicons name="trash-outline" size={20} color={colors.error} />
-                      </TouchableOpacity>
+                      </Pressable>
                     }
                   />
                   <View style={[styles.separator, { backgroundColor: colors.border }]} />
@@ -534,7 +569,7 @@ export const GardenScreen: React.FC = () => {
           )}
         </View>
       </BottomSheet>
-    </View>
+    </BlurTargetView>
   );
 };
 

@@ -1,12 +1,13 @@
 import React from 'react';
 import {
-  TouchableOpacity,
+  Pressable,
   Text,
   StyleSheet,
   ActivityIndicator,
   ViewStyle,
   TextStyle,
   StyleProp,
+  Platform,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useAppTheme } from '../theme';
@@ -38,7 +39,7 @@ export const Button: React.FC<ButtonProps> = ({
   accessibilityLabel,
   accessibilityHint,
 }) => {
-  const { colors, layout, spacing } = useAppTheme();
+  const { colors, layout, spacing, isDark } = useAppTheme();
 
   const getBackgroundColor = () => {
     if (disabled) return colors.border;
@@ -81,6 +82,21 @@ export const Button: React.FC<ButtonProps> = ({
     }
   };
 
+  const getRippleColor = () => {
+    switch (variant) {
+      case 'primary':
+        return 'rgba(255, 255, 255, 0.25)';
+      case 'premium':
+        return 'rgba(0, 0, 0, 0.15)';
+      case 'outline':
+      case 'ghost':
+        return isDark ? 'rgba(74, 222, 128, 0.15)' : 'rgba(27, 106, 59, 0.12)';
+      case 'secondary':
+      default:
+        return isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)';
+    }
+  };
+
   const getMinHeight = () => {
     switch (size) {
       case 'sm':
@@ -94,20 +110,24 @@ export const Button: React.FC<ButtonProps> = ({
   };
 
   return (
-    <TouchableOpacity
-      onPress={(e) => {
+    <Pressable
+      onPress={() => {
         try {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         } catch {}
         onPress();
       }}
       disabled={disabled || loading}
-      activeOpacity={0.75}
+      android_ripple={{
+        color: getRippleColor(),
+        borderless: false,
+        foreground: true,
+      }}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel || title}
       accessibilityHint={accessibilityHint}
       accessibilityState={{ disabled: disabled || loading }}
-      style={[
+      style={({ pressed }) => [
         styles.button,
         {
           minHeight: getMinHeight(),
@@ -118,6 +138,7 @@ export const Button: React.FC<ButtonProps> = ({
           borderWidth: variant === 'outline' ? 1.5 : 0,
           borderRadius: layout.borderRadius.full,
           paddingHorizontal: spacing.xl,
+          opacity: pressed && Platform.OS === 'ios' ? 0.78 : disabled || loading ? 0.6 : 1,
         },
         style,
       ]}
@@ -144,7 +165,7 @@ export const Button: React.FC<ButtonProps> = ({
           </Text>
         </>
       )}
-    </TouchableOpacity>
+    </Pressable>
   );
 };
 
@@ -153,6 +174,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
   },
   text: {
     fontSize: 16,

@@ -3,7 +3,7 @@ import {
   Modal,
   StyleSheet,
   Text,
-  TouchableOpacity,
+  Pressable,
   View,
   Animated,
   KeyboardAvoidingView,
@@ -102,9 +102,8 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
             tint={isDark ? 'dark' : 'systemMaterialDark'}
             style={StyleSheet.absoluteFill}
           />
-          <TouchableOpacity
+          <Pressable
             style={StyleSheet.absoluteFill}
-            activeOpacity={1}
             onPress={onClose}
             accessibilityRole="button"
             accessibilityLabel={t('Cerrar')}
@@ -146,15 +145,25 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
                 ) : null}
               </View>
               {showCloseButton ? (
-                <TouchableOpacity
+                <Pressable
                   onPress={onClose}
-                  style={styles.closeBtn}
+                  style={({ pressed }) => [
+                    styles.closeBtn,
+                    {
+                      opacity: pressed && Platform.OS === 'ios' ? 0.7 : 1,
+                    },
+                  ]}
+                  android_ripple={{
+                    color: colors.border,
+                    borderless: true,
+                    radius: 22,
+                  }}
                   accessibilityRole="button"
                   accessibilityLabel={t('Cerrar')}
                   hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
                   <Ionicons name="close-circle" size={26} color={colors.textTertiary} />
-                </TouchableOpacity>
+                </Pressable>
               ) : null}
             </View>
           ) : null}

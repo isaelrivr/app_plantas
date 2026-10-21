@@ -3,7 +3,7 @@ import { Platform, View, StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
-import { GlassView } from '../components/GlassView';
+import { GlassView, BlurTargetContext } from '../components/GlassView';
 import { TodayScreen } from '../screens/TodayScreen';
 import { GardenScreen } from '../screens/GardenScreen';
 import { ScannerScreen } from '../screens/ScannerScreen';
@@ -68,21 +68,24 @@ function BottomTabs() {
   const { colors, typography, layout } = useAppTheme();
   const { isPremium } = usePremium();
   const { t } = useTranslation();
+  const tabBlurTargetRef = React.useRef<View | null>(null);
 
   return (
-    <Tab.Navigator
-      initialRouteName="Today"
-      screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textTertiary,
-        tabBarBackground: () => (
-          <GlassView
-            borderRadius={32}
-            style={StyleSheet.absoluteFill}
-            elevated={false}
-          />
-        ),
+    <BlurTargetContext.Provider value={tabBlurTargetRef}>
+      <Tab.Navigator
+        initialRouteName="Today"
+        screenOptions={{
+          headerShown: false,
+          tabBarActiveTintColor: colors.primary,
+          tabBarInactiveTintColor: colors.textTertiary,
+          tabBarBackground: () => (
+            <GlassView
+              blurTarget={tabBlurTargetRef}
+              borderRadius={32}
+              style={StyleSheet.absoluteFill}
+              elevated={false}
+            />
+          ),
         tabBarStyle: {
           position: 'absolute',
           bottom: Platform.OS === 'ios' ? 24 : 16,
@@ -207,6 +210,7 @@ function BottomTabs() {
         }}
       />
     </Tab.Navigator>
+    </BlurTargetContext.Provider>
   );
 }
 

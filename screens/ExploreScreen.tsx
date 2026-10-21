@@ -5,16 +5,19 @@ import {
   StyleSheet,
   ScrollView,
   TextInput,
-  TouchableOpacity,
+  Pressable,
   Image,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useAppTheme } from '../theme';
 import { Card } from '../components/Card';
 import { Badge } from '../components/Badge';
 import { ScreenHeader } from '../components/ScreenHeader';
+import { BlurTargetView, useBlurTarget } from '../components/GlassView';
 import {
   searchEncyclopedia,
   DEFAULT_FILTERS,
@@ -24,6 +27,8 @@ import { useTranslation } from '../i18n';
 
 export const ExploreScreen: React.FC = () => {
   const { colors, layout, spacing, typography } = useAppTheme();
+  const insets = useSafeAreaInsets();
+  const blurTargetRef = useBlurTarget();
   const navigation = useNavigation<any>();
   const { t } = useTranslation();
 
@@ -62,55 +67,64 @@ export const ExploreScreen: React.FC = () => {
   };
 
   return (
-    <ScrollView
-      style={[styles.container, { backgroundColor: colors.background }]}
-      contentContainerStyle={{ padding: spacing.md, paddingBottom: 115 }}
-      showsVerticalScrollIndicator={false}
-      keyboardShouldPersistTaps="handled"
-    >
-      <ScreenHeader
-        title={t('Explorar')}
-        subtitle={t('Descubre plantas y consulta tus dudas con IA')}
-      />
-
-      {/* BARRA DE BÚSQUEDA DESTACADA */}
-      <View
-        style={[
-          styles.searchBar,
-          {
-            backgroundColor: colors.surface,
-            borderColor: colors.border,
-            borderRadius: layout.borderRadius.md,
-            minHeight: layout.minTouchTarget,
-          },
-        ]}
+    <BlurTargetView ref={blurTargetRef} style={styles.container}>
+      <ScrollView
+        style={[styles.container, { backgroundColor: colors.background }]}
+        contentContainerStyle={{
+          paddingHorizontal: spacing.md,
+          paddingTop: Math.max(insets.top, spacing.md),
+          paddingBottom: 110 + insets.bottom,
+        }}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
-        <Ionicons name="search" size={22} color={colors.textTertiary} style={{ marginLeft: 12 }} />
-        <TextInput
-          value={query}
-          onChangeText={setQuery}
-          placeholder={t('Buscar por nombre o familia...')}
-          placeholderTextColor={colors.textTertiary}
-          style={[
-            styles.searchInput,
-            typography.body,
-            { color: colors.textPrimary, minHeight: layout.minTouchTarget },
-          ]}
-          returnKeyType="search"
-          accessibilityLabel={t('Buscar por nombre o familia...')}
+        <ScreenHeader
+          title={t('Explorar')}
+          subtitle={t('Descubre plantas y consulta tus dudas con IA')}
         />
-        {query.length > 0 && (
-          <TouchableOpacity
-            onPress={() => setQuery('')}
-            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-            style={styles.clearBtn}
-            accessibilityRole="button"
-            accessibilityLabel={t('Limpiar')}
-          >
-            <Ionicons name="close-circle" size={20} color={colors.textTertiary} />
-          </TouchableOpacity>
-        )}
-      </View>
+
+        {/* BARRA DE BÚSQUEDA DESTACADA */}
+        <View
+          style={[
+            styles.searchBar,
+            {
+              backgroundColor: colors.surface,
+              borderColor: colors.border,
+              borderRadius: layout.borderRadius.md,
+              minHeight: layout.minTouchTarget,
+            },
+          ]}
+        >
+          <Ionicons name="search" size={22} color={colors.textTertiary} style={{ marginLeft: 12 }} />
+          <TextInput
+            value={query}
+            onChangeText={setQuery}
+            placeholder={t('Buscar por nombre o familia...')}
+            placeholderTextColor={colors.textTertiary}
+            style={[
+              styles.searchInput,
+              typography.body,
+              { color: colors.textPrimary, minHeight: layout.minTouchTarget },
+            ]}
+            returnKeyType="search"
+            accessibilityLabel={t('Buscar por nombre o familia...')}
+          />
+          {query.length > 0 && (
+            <Pressable
+              onPress={() => setQuery('')}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              style={({ pressed }) => [
+                styles.clearBtn,
+                { opacity: pressed && Platform.OS === 'ios' ? 0.7 : 1 },
+              ]}
+              android_ripple={{ color: colors.border, borderless: true, radius: 18 }}
+              accessibilityRole="button"
+              accessibilityLabel={t('Limpiar')}
+            >
+              <Ionicons name="close-circle" size={20} color={colors.textTertiary} />
+            </Pressable>
+          )}
+        </View>
 
       {/* RESULTADOS DE BÚSQUEDA SI HAY CONSULTA */}
       {query.trim().length > 0 ? (
@@ -121,10 +135,17 @@ export const ExploreScreen: React.FC = () => {
           {searchResults.length > 0 ? (
             <View style={{ gap: spacing.sm }}>
               {searchResults.map((plant) => (
-                <TouchableOpacity
+                <Pressable
                   key={plant.id}
                   onPress={() => handleOpenPlant(plant.id)}
-                  activeOpacity={0.8}
+                  style={({ pressed }) => [
+                    {
+                      borderRadius: layout.borderRadius.lg,
+                      overflow: 'hidden',
+                      opacity: pressed && Platform.OS === 'ios' ? 0.8 : 1,
+                    },
+                  ]}
+                  android_ripple={{ color: colors.border, borderless: false }}
                   accessibilityRole="button"
                   accessibilityLabel={`${plant.name}. ${plant.scientificName}`}
                 >
@@ -150,7 +171,7 @@ export const ExploreScreen: React.FC = () => {
                     </View>
                     <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
                   </Card>
-                </TouchableOpacity>
+                </Pressable>
               ))}
             </View>
           ) : (
@@ -165,12 +186,19 @@ export const ExploreScreen: React.FC = () => {
       ) : null}
 
       {/* TARJETA DESTACADA DEL ASISTENTE BOTÁNICO */}
-      <TouchableOpacity
+      <Pressable
         onPress={handleOpenAssistant}
-        activeOpacity={0.88}
         accessibilityRole="button"
         accessibilityLabel={t('Pregúntale a EcoSan 🌿')}
-        style={{ marginBottom: spacing.lg }}
+        style={({ pressed }) => [
+          {
+            marginBottom: spacing.lg,
+            borderRadius: 16,
+            overflow: 'hidden',
+            opacity: pressed && Platform.OS === 'ios' ? 0.88 : 1,
+          },
+        ]}
+        android_ripple={{ color: 'rgba(255, 255, 255, 0.25)', borderless: false }}
       >
         <Card
           elevated
@@ -197,16 +225,20 @@ export const ExploreScreen: React.FC = () => {
             <Ionicons name="chevron-forward" size={24} color="#FFFFFF" />
           </View>
         </Card>
-      </TouchableOpacity>
+      </Pressable>
 
       {/* ACCESO COMPLETO A LA ENCICLOPEDIA */}
       <View style={styles.sectionRow}>
         <Text style={[typography.headline, { color: colors.textPrimary }]}>
           {t('Enciclopedia Botánica')}
         </Text>
-        <TouchableOpacity
+        <Pressable
           onPress={handleOpenEncyclopedia}
-          style={styles.moreButton}
+          style={({ pressed }) => [
+            styles.moreButton,
+            { opacity: pressed && Platform.OS === 'ios' ? 0.7 : 1 },
+          ]}
+          android_ripple={{ color: 'rgba(27, 106, 59, 0.12)', borderless: true }}
           accessibilityRole="button"
           accessibilityLabel={t('Ver catálogo completo')}
         >
@@ -214,15 +246,23 @@ export const ExploreScreen: React.FC = () => {
             {t('Ver todo')}
           </Text>
           <Ionicons name="chevron-forward" size={16} color={colors.primary} />
-        </TouchableOpacity>
+        </Pressable>
       </View>
 
       {/* COLECCIONES POPULARES */}
       <View style={styles.collectionGrid}>
-        <TouchableOpacity
+        <Pressable
           onPress={handleOpenEncyclopedia}
-          style={[styles.collectionCard, { backgroundColor: colors.surface }]}
-          activeOpacity={0.8}
+          style={({ pressed }) => [
+            styles.collectionCard,
+            {
+              backgroundColor: colors.surface,
+              borderRadius: layout.borderRadius.md,
+              overflow: 'hidden',
+              opacity: pressed && Platform.OS === 'ios' ? 0.8 : 1,
+            },
+          ]}
+          android_ripple={{ color: colors.border, borderless: false }}
           accessibilityRole="button"
           accessibilityLabel={t('Fáciles de cuidar')}
         >
@@ -235,12 +275,20 @@ export const ExploreScreen: React.FC = () => {
           <Text style={[typography.caption2, { color: colors.textTertiary, marginTop: 2 }]}>
             {t('Ideales para principiantes')}
           </Text>
-        </TouchableOpacity>
+        </Pressable>
 
-        <TouchableOpacity
+        <Pressable
           onPress={handleOpenEncyclopedia}
-          style={[styles.collectionCard, { backgroundColor: colors.surface }]}
-          activeOpacity={0.8}
+          style={({ pressed }) => [
+            styles.collectionCard,
+            {
+              backgroundColor: colors.surface,
+              borderRadius: layout.borderRadius.md,
+              overflow: 'hidden',
+              opacity: pressed && Platform.OS === 'ios' ? 0.8 : 1,
+            },
+          ]}
+          android_ripple={{ color: colors.border, borderless: false }}
           accessibilityRole="button"
           accessibilityLabel={t('Seguras para mascotas')}
         >
@@ -253,12 +301,20 @@ export const ExploreScreen: React.FC = () => {
           <Text style={[typography.caption2, { color: colors.textTertiary, marginTop: 2 }]}>
             {t('Sin riesgo para perros y gatos')}
           </Text>
-        </TouchableOpacity>
+        </Pressable>
 
-        <TouchableOpacity
+        <Pressable
           onPress={handleOpenEncyclopedia}
-          style={[styles.collectionCard, { backgroundColor: colors.surface }]}
-          activeOpacity={0.8}
+          style={({ pressed }) => [
+            styles.collectionCard,
+            {
+              backgroundColor: colors.surface,
+              borderRadius: layout.borderRadius.md,
+              overflow: 'hidden',
+              opacity: pressed && Platform.OS === 'ios' ? 0.8 : 1,
+            },
+          ]}
+          android_ripple={{ color: colors.border, borderless: false }}
           accessibilityRole="button"
           accessibilityLabel={t('Para interiores con sombra')}
         >
@@ -271,12 +327,20 @@ export const ExploreScreen: React.FC = () => {
           <Text style={[typography.caption2, { color: colors.textTertiary, marginTop: 2 }]}>
             {t('Prosperan con luz indirecta')}
           </Text>
-        </TouchableOpacity>
+        </Pressable>
 
-        <TouchableOpacity
+        <Pressable
           onPress={handleOpenEncyclopedia}
-          style={[styles.collectionCard, { backgroundColor: colors.surface }]}
-          activeOpacity={0.8}
+          style={({ pressed }) => [
+            styles.collectionCard,
+            {
+              backgroundColor: colors.surface,
+              borderRadius: layout.borderRadius.md,
+              overflow: 'hidden',
+              opacity: pressed && Platform.OS === 'ios' ? 0.8 : 1,
+            },
+          ]}
+          android_ripple={{ color: colors.border, borderless: false }}
           accessibilityRole="button"
           accessibilityLabel={t('Resistentes a sequía')}
         >
@@ -289,7 +353,7 @@ export const ExploreScreen: React.FC = () => {
           <Text style={[typography.caption2, { color: colors.textTertiary, marginTop: 2 }]}>
             {t('Requieren poco riego')}
           </Text>
-        </TouchableOpacity>
+        </Pressable>
       </View>
 
       {/* PLANTAS POPULARES */}
@@ -301,10 +365,17 @@ export const ExploreScreen: React.FC = () => {
 
       <View style={{ gap: spacing.sm }}>
         {popularPlants.map((plant) => (
-          <TouchableOpacity
+          <Pressable
             key={plant.id}
             onPress={() => handleOpenPlant(plant.id)}
-            activeOpacity={0.8}
+            style={({ pressed }) => [
+              {
+                borderRadius: layout.borderRadius.lg,
+                overflow: 'hidden',
+                opacity: pressed && Platform.OS === 'ios' ? 0.8 : 1,
+              },
+            ]}
+            android_ripple={{ color: colors.border, borderless: false }}
             accessibilityRole="button"
             accessibilityLabel={`${plant.name}. ${plant.scientificName}`}
           >
@@ -330,11 +401,12 @@ export const ExploreScreen: React.FC = () => {
               </View>
               <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
             </Card>
-          </TouchableOpacity>
+          </Pressable>
         ))}
       </View>
     </ScrollView>
-  );
+  </BlurTargetView>
+);
 };
 
 const styles = StyleSheet.create({

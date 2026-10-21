@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Animated, StyleSheet, Text, Pressable, View, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { GlassView } from './GlassView';
@@ -121,20 +121,30 @@ export const Snackbar: React.FC<SnackbarProps> = ({
             {message}
           </Text>
           {actionLabel && onAction ? (
-            <TouchableOpacity
-              style={[styles.actionButton, { minHeight: layout.minTouchTarget }]}
+            <Pressable
+              style={({ pressed }) => [
+                styles.actionButton,
+                {
+                  minHeight: layout.minTouchTarget,
+                  opacity: pressed && Platform.OS === 'ios' ? 0.7 : 1,
+                },
+              ]}
+              android_ripple={{
+                color: 'rgba(129, 199, 132, 0.25)',
+                borderless: true,
+                radius: 20,
+              }}
               onPress={() => {
                 onAction();
                 onDismiss();
               }}
               accessibilityRole="button"
               accessibilityLabel={actionLabel}
-              activeOpacity={0.7}
             >
               <Text style={[typography.headline, styles.actionText, { color: '#81C784' }]}>
                 {actionLabel}
               </Text>
-            </TouchableOpacity>
+            </Pressable>
           ) : null}
         </View>
       </GlassView>
