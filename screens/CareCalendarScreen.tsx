@@ -257,7 +257,17 @@ export const CareCalendarScreen: React.FC = () => {
     const taskIcon = TASK_ICONS[item.type];
 
     return (
-      <Card elevated style={{ marginBottom: spacing.sm }}>
+      <Card
+        variant="flat"
+        style={{
+          marginBottom: spacing.sm,
+          backgroundColor: colors.surface,
+          borderColor: colors.border,
+          borderWidth: 1,
+          borderRadius: layout.borderRadius.lg,
+          padding: spacing.md,
+        }}
+      >
         <View style={styles.taskRow}>
           {/* Indicador de tipo */}
           <View
@@ -297,14 +307,14 @@ export const CareCalendarScreen: React.FC = () => {
             </View>
           </View>
 
-          {/* Botón checkbox 44x44 HIG */}
+          {/* Botón checkbox 48x48 */}
           <Pressable
             style={({ pressed }) => [
               styles.checkButton,
               { opacity: pressed && Platform.OS === 'ios' ? 0.7 : 1 },
             ]}
             onPress={() => handleCompleteTask(item.plantId, item.id)}
-            android_ripple={{ color: colors.primary + '25', borderless: true, radius: 22 }}
+            android_ripple={{ color: colors.primary + '25', borderless: true, radius: 24 }}
             accessibilityRole="checkbox"
             accessibilityState={{ checked: item.completed }}
             accessibilityLabel={t('Marcar "{tarea}" como {estado}', {
@@ -326,7 +336,7 @@ export const CareCalendarScreen: React.FC = () => {
                 { opacity: pressed && Platform.OS === 'ios' ? 0.7 : 1 },
               ]}
               onPress={() => setEditingTask(item)}
-              android_ripple={{ color: colors.primary + '20', borderless: true, radius: 20 }}
+              android_ripple={{ color: colors.primary + '20', borderless: true, radius: 24 }}
               accessibilityRole="button"
               accessibilityLabel={t('Editar tarea "{tarea}"', { tarea: t(item.title) })}
             >
@@ -341,7 +351,7 @@ export const CareCalendarScreen: React.FC = () => {
                 { opacity: pressed && Platform.OS === 'ios' ? 0.7 : 1 },
               ]}
               onPress={() => handleScheduleTaskReminder(item)}
-              android_ripple={{ color: colors.primary + '20', borderless: true, radius: 20 }}
+              android_ripple={{ color: colors.primary + '20', borderless: true, radius: 24 }}
               accessibilityRole="button"
               accessibilityLabel={t('Programar recordatorio para "{tarea}"', { tarea: t(item.title) })}
             >
@@ -354,7 +364,7 @@ export const CareCalendarScreen: React.FC = () => {
               { opacity: pressed && Platform.OS === 'ios' ? 0.7 : 1 },
             ]}
             onPress={() => removeCareTask(item.plantId, item.id)}
-            android_ripple={{ color: colors.error + '25', borderless: true, radius: 20 }}
+            android_ripple={{ color: colors.error + '25', borderless: true, radius: 24 }}
             accessibilityRole="button"
             accessibilityLabel={t('Eliminar tarea "{tarea}"', { tarea: t(item.title) })}
           >
@@ -367,13 +377,22 @@ export const CareCalendarScreen: React.FC = () => {
 
   const renderPlantHealthSummary = ({ item }: { item: GardenPlant }) => (
     <Card
-      style={[styles.plantHealthCard, { borderColor: colors.border, overflow: 'hidden' }]}
-      elevated
+      variant="flat"
+      style={[
+        styles.plantHealthCard,
+        {
+          borderColor: colors.border,
+          borderWidth: 1,
+          borderRadius: layout.borderRadius.lg,
+          backgroundColor: colors.surface,
+          overflow: 'hidden',
+        },
+      ]}
     >
       <Pressable
         onPress={() => navigation.navigate('HealthDiagnosis', { plantId: item.id })}
         style={({ pressed }) => [
-          { borderRadius: 12, overflow: 'hidden', opacity: pressed && Platform.OS === 'ios' ? 0.75 : 1 },
+          { borderRadius: layout.borderRadius.lg, overflow: 'hidden', opacity: pressed && Platform.OS === 'ios' ? 0.75 : 1 },
         ]}
         android_ripple={{ color: colors.primary + '18' }}
         accessibilityRole="button"
@@ -722,7 +741,17 @@ export const CareCalendarScreen: React.FC = () => {
           </Text>
 
           {plants.slice(0, 4).map((plant) => (
-            <Card key={plant.id} style={{ marginBottom: spacing.sm }}>
+            <Card
+              key={plant.id}
+              variant="flat"
+              style={{
+                marginBottom: spacing.sm,
+                borderRadius: layout.borderRadius.lg,
+                borderWidth: 1,
+                borderColor: colors.border,
+                backgroundColor: colors.surface,
+              }}
+            >
               <View style={styles.reminderRow}>
                 <Text style={{ fontSize: 20 }}>{plant.avatarEmoji}</Text>
                 <View style={{ flex: 1, marginLeft: spacing.sm }}>
@@ -822,18 +851,19 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   checkButton: {
-    width: 44,
-    height: 44,
+    width: 48,
+    height: 48,
     alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: 8,
+    marginLeft: 4,
   },
   filterPill: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
+    minHeight: 48,
   },
   calendarHeaderRow: {
     flexDirection: 'row',
@@ -843,31 +873,31 @@ const styles = StyleSheet.create({
   },
   viewToggle: {
     flexDirection: 'row',
-    borderRadius: 10,
-    padding: 3,
+    borderRadius: 14,
+    padding: 4,
   },
   viewToggleBtn: {
-    paddingHorizontal: 12,
-    minHeight: 36,
-    borderRadius: 8,
+    paddingHorizontal: 14,
+    minHeight: 40,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
   calendarCard: {
     borderWidth: 1,
-    borderRadius: 16,
-    padding: 12,
+    borderRadius: 24,
+    padding: 16,
     marginBottom: 20,
   },
   calendarNavRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    marginBottom: 12,
   },
   calendarNavBtn: {
-    width: 44,
-    height: 44,
+    width: 48,
+    height: 48,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -885,10 +915,10 @@ const styles = StyleSheet.create({
   },
   dayCell: {
     width: `${100 / 7}%`,
-    height: 46,
+    height: 48,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 10,
+    borderRadius: 12,
   },
   dayDotsRow: {
     flexDirection: 'row',
@@ -903,19 +933,19 @@ const styles = StyleSheet.create({
   },
   clearDayChip: {
     alignSelf: 'center',
-    marginTop: 8,
-    minHeight: 44,
+    marginTop: 10,
+    minHeight: 48,
     justifyContent: 'center',
-    paddingHorizontal: 12,
+    paddingHorizontal: 16,
   },
   reminderRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   reminderBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
   },

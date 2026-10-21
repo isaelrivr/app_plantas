@@ -178,8 +178,10 @@ const styles = StyleSheet.create({
   shareBadgeBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    minHeight: 48,
+    minWidth: 48,
+    borderRadius: 24,
   },
 });

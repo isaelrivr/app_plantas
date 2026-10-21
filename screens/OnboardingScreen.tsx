@@ -344,14 +344,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 18,
-    borderWidth: 2,
+    borderWidth: 1.5,
     minHeight: 64,
   },
   radioCircle: {
     width: 22,
     height: 22,
     borderRadius: 11,
-    borderWidth: 2,
+    borderWidth: 1.5,
   },
   goalsList: {
     width: '100%',
@@ -361,7 +361,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
-    borderWidth: 2,
+    borderWidth: 1.5,
     minHeight: 76,
   },
   goalIconBox: {

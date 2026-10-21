@@ -106,8 +106,16 @@ export const AchievementsScreen: React.FC = () => {
           <>
             {/* RACHA */}
             <Card
-              elevated
-              style={[styles.streakCard, { borderColor: tier.color + '66' }]}
+              variant="flat"
+              style={[
+                styles.streakCard,
+                {
+                  borderRadius: layout.borderRadius.lg,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  backgroundColor: colors.surface,
+                },
+              ]}
             >
               <Animated.View style={{ transform: [{ scale: flameScale }] }}>
                 <Ionicons name="flame" size={44} color={tier.color} />
@@ -134,7 +142,16 @@ export const AchievementsScreen: React.FC = () => {
             <Text style={[typography.headline, { color: colors.textPrimary, marginTop: spacing.lg, marginBottom: spacing.sm }]}>
               {t('Tu semana')}
             </Text>
-            <Card style={{ marginBottom: spacing.lg }}>
+            <Card
+              variant="flat"
+              style={{
+                marginBottom: spacing.lg,
+                borderRadius: layout.borderRadius.lg,
+                borderWidth: 1,
+                borderColor: colors.border,
+                backgroundColor: colors.surface,
+              }}
+            >
               <View style={styles.summaryTop}>
                 <View style={[styles.gradeCircle, { backgroundColor: gradeColor + '22', borderColor: gradeColor }]}>
                   <Text style={[typography.title2, { color: gradeColor, fontWeight: '800' }]}>{summary.grade}</Text>

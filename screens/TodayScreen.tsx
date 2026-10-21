@@ -159,7 +159,9 @@ export const TodayScreen: React.FC = () => {
               styles.weatherOneLine,
               {
                 backgroundColor: colors.surfaceSecondary,
-                borderRadius: layout.borderRadius.md,
+                borderRadius: layout.borderRadius.full,
+                borderWidth: 1,
+                borderColor: colors.border,
                 overflow: 'hidden',
                 opacity: pressed && Platform.OS === 'ios' ? 0.75 : 1,
               },
@@ -219,7 +221,18 @@ export const TodayScreen: React.FC = () => {
 
       {/* ESTADO CON PLANTAS VS. ESTADO VACÍO */}
       {plants.length === 0 ? (
-        <Card elevated style={[styles.emptyGardenCard, { backgroundColor: colors.surface }]}>
+        <Card
+          variant="flat"
+          style={[
+            styles.emptyGardenCard,
+            {
+              backgroundColor: colors.surface,
+              borderColor: colors.border,
+              borderWidth: 1,
+              borderRadius: layout.borderRadius.lg,
+            },
+          ]}
+        >
           <View style={[styles.emptyGardenIcon, { backgroundColor: colors.primaryLight }]}>
             <Ionicons name="leaf" size={48} color={colors.primary} />
           </View>
@@ -290,7 +303,19 @@ export const TodayScreen: React.FC = () => {
               {plantsNeedingWater.map((plant) => {
                 const roomName = rooms.find((r) => r.id === plant.roomId)?.name || t('Mi Jardín');
                 return (
-                  <Card key={plant.id} elevated style={styles.bigTaskCard}>
+                  <Card
+                    key={plant.id}
+                    variant="flat"
+                    style={[
+                      styles.bigTaskCard,
+                      {
+                        backgroundColor: colors.surface,
+                        borderColor: colors.border,
+                        borderWidth: 1,
+                        borderRadius: layout.borderRadius.lg,
+                      },
+                    ]}
+                  >
                     <View style={styles.bigTaskHeader}>
                       <View style={[styles.taskAvatarCircle, { backgroundColor: colors.primaryLight }]}>
                         <Ionicons name="water" size={26} color="#0288D1" />
@@ -319,7 +344,19 @@ export const TodayScreen: React.FC = () => {
               })}
             </View>
           ) : (
-            <Card style={[styles.allDoneCard, { backgroundColor: colors.surface, marginBottom: spacing.lg }]}>
+            <Card
+              variant="flat"
+              style={[
+                styles.allDoneCard,
+                {
+                  backgroundColor: colors.surface,
+                  borderColor: colors.border,
+                  borderWidth: 1,
+                  borderRadius: layout.borderRadius.lg,
+                  marginBottom: spacing.lg,
+                },
+              ]}
+            >
               <View style={[styles.allDoneIcon, { backgroundColor: colors.primaryLight }]}>
                 <Ionicons name="checkmark-circle" size={36} color={colors.primary} />
               </View>
@@ -340,14 +377,23 @@ export const TodayScreen: React.FC = () => {
             style={({ pressed }) => [
               {
                 marginBottom: spacing.md,
-                borderRadius: 16,
+                borderRadius: layout.borderRadius.lg,
                 overflow: 'hidden',
                 opacity: pressed && Platform.OS === 'ios' ? 0.85 : 1,
               },
             ]}
             android_ripple={{ color: 'rgba(255, 255, 255, 0.25)', borderless: false }}
           >
-            <Card elevated style={[styles.ctaCard, { backgroundColor: colors.primary }]}>
+            <Card
+              variant="flat"
+              style={[
+                styles.ctaCard,
+                {
+                  backgroundColor: colors.primary,
+                  borderRadius: layout.borderRadius.lg,
+                },
+              ]}
+            >
               <View style={styles.ctaRow}>
                 <View style={styles.ctaIconCircle}>
                   <Ionicons name="camera" size={26} color={colors.primary} />
@@ -379,7 +425,15 @@ export const TodayScreen: React.FC = () => {
             ]}
             android_ripple={{ color: 'rgba(0, 0, 0, 0.06)', borderless: false }}
           >
-            <Card elevated style={{ backgroundColor: colors.surface }}>
+            <Card
+              variant="flat"
+              style={{
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
+                borderWidth: 1,
+                borderRadius: layout.borderRadius.lg,
+              }}
+            >
               <View style={styles.assistantRow}>
                 <View style={[styles.assistantIconCircle, { backgroundColor: colors.primaryLight }]}>
                   <Ionicons name="chatbubbles" size={22} color={colors.accent} />
@@ -408,9 +462,10 @@ const styles = StyleSheet.create({
   weatherOneLine: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    marginBottom: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    minHeight: 48,
+    marginBottom: 10,
     alignSelf: 'flex-start',
   },
   streakRow: {
@@ -420,8 +475,9 @@ const styles = StyleSheet.create({
   streakBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    minHeight: 40,
   },
   emptyGardenCard: {
     padding: 24,
@@ -454,10 +510,10 @@ const styles = StyleSheet.create({
   textButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    minHeight: 44,
+    minHeight: 48,
   },
   bigTaskCard: {
-    padding: 16,
+    padding: 18,
   },
   bigTaskHeader: {
     flexDirection: 'row',
@@ -473,8 +529,8 @@ const styles = StyleSheet.create({
   allDoneCard: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 28,
-    paddingHorizontal: 16,
+    paddingVertical: 32,
+    paddingHorizontal: 20,
   },
   allDoneIcon: {
     width: 60,
@@ -485,8 +541,8 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   ctaCard: {
-    padding: 16,
-    borderRadius: 16,
+    padding: 18,
+    borderRadius: 24,
   },
   ctaRow: {
     flexDirection: 'row',
@@ -512,8 +568,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   calendarHeaderBtn: {
-    minWidth: 44,
-    minHeight: 44,
+    minWidth: 48,
+    minHeight: 48,
     alignItems: 'center',
     justifyContent: 'center',
   },

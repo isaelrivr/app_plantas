@@ -320,7 +320,17 @@ export const PaywallScreen: React.FC = () => {
         </View>
 
         {/* 4 VIÑETAS CLARAS */}
-        <Card style={{ marginVertical: spacing.md }}>
+        <Card
+          variant="flat"
+          style={{
+            marginVertical: spacing.md,
+            backgroundColor: colors.surface,
+            borderColor: colors.border,
+            borderWidth: 1,
+            borderRadius: layout.borderRadius.lg,
+            padding: spacing.md,
+          }}
+        >
           {PRO_BULLETS.map((bullet, idx) => (
             <View key={bullet.icon}>
               <View style={styles.bulletRow}>
@@ -419,7 +429,17 @@ export const PaywallScreen: React.FC = () => {
           </Text>
         </View>
 
-        <Card style={{ padding: 0, overflow: 'hidden' }}>
+        <Card
+          variant="flat"
+          style={{
+            padding: 0,
+            overflow: 'hidden',
+            backgroundColor: colors.surface,
+            borderColor: colors.border,
+            borderWidth: 1,
+            borderRadius: layout.borderRadius.lg,
+          }}
+        >
           <View style={[styles.tableHeader, { borderBottomColor: colors.border, backgroundColor: colors.surfaceSecondary }]}>
             <Text style={[typography.subheadline, { color: colors.textPrimary, flex: 1, fontWeight: '700' }]}>
               {t('Beneficio')}

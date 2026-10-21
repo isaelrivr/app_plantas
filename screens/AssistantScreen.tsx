@@ -184,7 +184,7 @@ export const AssistantScreen: React.FC = () => {
                       {
                         borderColor: colors.border,
                         backgroundColor: colors.surface,
-                        borderRadius: layout.borderRadius.md,
+                        borderRadius: layout.borderRadius.lg,
                         overflow: 'hidden',
                       },
                       pressed && { opacity: 0.75 },

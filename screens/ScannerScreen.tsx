@@ -21,6 +21,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAppTheme } from '../theme';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
+import { GlassSurface } from '../components/GlassSurface';
 import { Badge } from '../components/Badge';
 import { EmptyState } from '../components/EmptyState';
 import { PhotoGuideModal } from '../components/scanner/PhotoGuideModal';
@@ -493,16 +494,18 @@ export const ScannerScreen: React.FC = () => {
       <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
         {/* BARRA SUPERIOR SOBRE LA CÁMARA */}
         <View style={[styles.cameraTopBar, { paddingTop: insets.top + (Platform.OS === 'ios' ? 8 : 12) }]}>
-          <Pressable
-            onPress={() => navigation.goBack()}
-            android_ripple={{ color: '#FFFFFF33', borderless: true, radius: 24 }}
-            style={({ pressed }) => [styles.topBarBtn, pressed && { opacity: 0.7 }]}
-            accessibilityRole="button"
-            accessibilityLabel={t('Volver')}
-            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-          >
-            <Ionicons name="close" size={28} color="#FFFFFF" />
-          </Pressable>
+          <GlassSurface variant="strong" borderRadius={24} style={styles.topBarGlassBtn}>
+            <Pressable
+              onPress={() => navigation.goBack()}
+              android_ripple={{ color: '#FFFFFF33', borderless: true, radius: 24 }}
+              style={({ pressed }) => [styles.iconPressable, pressed && { opacity: 0.7 }]}
+              accessibilityRole="button"
+              accessibilityLabel={t('Volver')}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            >
+              <Ionicons name="close" size={26} color="#FFFFFF" />
+            </Pressable>
+          </GlassSurface>
 
           {!limits.isPremium ? (
             <Badge
@@ -514,98 +517,102 @@ export const ScannerScreen: React.FC = () => {
             <Badge label="PRO" variant="premium" />
           )}
 
-          <Pressable
-            onPress={toggleTorch}
-            android_ripple={{ color: '#FFFFFF33', borderless: true, radius: 24 }}
-            style={({ pressed }) => [styles.topBarBtn, pressed && { opacity: 0.7 }]}
-            accessibilityRole="button"
-            accessibilityLabel={torchEnabled ? t('Apagar linterna') : t('Encender linterna')}
-            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-          >
-            <Ionicons
-              name={torchEnabled ? 'flash' : 'flash-off'}
-              size={24}
-              color={torchEnabled ? '#FFD54F' : '#FFFFFF'}
-            />
-          </Pressable>
+          <GlassSurface variant="strong" borderRadius={24} style={styles.topBarGlassBtn}>
+            <Pressable
+              onPress={toggleTorch}
+              android_ripple={{ color: '#FFFFFF33', borderless: true, radius: 24 }}
+              style={({ pressed }) => [styles.iconPressable, pressed && { opacity: 0.7 }]}
+              accessibilityRole="button"
+              accessibilityLabel={torchEnabled ? t('Apagar linterna') : t('Encender linterna')}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            >
+              <Ionicons
+                name={torchEnabled ? 'flash' : 'flash-off'}
+                size={22}
+                color={torchEnabled ? '#FFD54F' : '#FFFFFF'}
+              />
+            </Pressable>
+          </GlassSurface>
         </View>
 
         {/* SELECTOR DE MODO: IDENTIFICAR vs ENFERMEDADES */}
-        <View style={styles.modeSelectorContainer}>
-          <Pressable
-            style={({ pressed }) => [
-              styles.modeSegment,
-              scanMode === 'identify' && styles.modeSegmentActive,
-              { overflow: 'hidden' },
-              pressed && { opacity: 0.8 },
-            ]}
-            android_ripple={{ color: '#FFFFFF33' }}
-            onPress={() => {
-              try {
-                Haptics.selectionAsync();
-              } catch {}
-              setScanMode('identify');
-            }}
-            accessibilityRole="button"
-            accessibilityLabel={t('Identificar planta')}
-            accessibilityState={{ selected: scanMode === 'identify' }}
-          >
-            <Ionicons
-              name="leaf"
-              size={15}
-              color={scanMode === 'identify' ? '#FFFFFF' : 'rgba(255,255,255,0.7)'}
-              style={{ marginRight: 6 }}
-            />
-            <Text
-              style={[
-                typography.footnote,
-                {
-                  color: scanMode === 'identify' ? '#FFFFFF' : 'rgba(255,255,255,0.7)',
-                  fontWeight: scanMode === 'identify' ? '700' : '500',
-                },
+        <GlassSurface variant="strong" borderRadius={28} style={styles.modeSelectorGlass}>
+          <View style={styles.modeSelectorInner}>
+            <Pressable
+              style={({ pressed }) => [
+                styles.modeSegment,
+                scanMode === 'identify' && styles.modeSegmentActive,
+                { overflow: 'hidden' },
+                pressed && { opacity: 0.8 },
               ]}
+              android_ripple={{ color: '#FFFFFF33' }}
+              onPress={() => {
+                try {
+                  Haptics.selectionAsync();
+                } catch {}
+                setScanMode('identify');
+              }}
+              accessibilityRole="button"
+              accessibilityLabel={t('Identificar planta')}
+              accessibilityState={{ selected: scanMode === 'identify' }}
             >
-              {t('Identificar planta')}
-            </Text>
-          </Pressable>
+              <Ionicons
+                name="leaf"
+                size={15}
+                color={scanMode === 'identify' ? '#FFFFFF' : 'rgba(255,255,255,0.75)'}
+                style={{ marginRight: 6 }}
+              />
+              <Text
+                style={[
+                  typography.footnote,
+                  {
+                    color: scanMode === 'identify' ? '#FFFFFF' : 'rgba(255,255,255,0.75)',
+                    fontWeight: scanMode === 'identify' ? '700' : '500',
+                  },
+                ]}
+              >
+                {t('Identificar planta')}
+              </Text>
+            </Pressable>
 
-          <Pressable
-            style={({ pressed }) => [
-              styles.modeSegment,
-              scanMode === 'diagnose' && styles.modeSegmentActive,
-              { overflow: 'hidden' },
-              pressed && { opacity: 0.8 },
-            ]}
-            android_ripple={{ color: '#FFFFFF33' }}
-            onPress={() => {
-              try {
-                Haptics.selectionAsync();
-              } catch {}
-              setScanMode('diagnose');
-            }}
-            accessibilityRole="button"
-            accessibilityLabel={t('Mi planta está enferma')}
-            accessibilityState={{ selected: scanMode === 'diagnose' }}
-          >
-            <Ionicons
-              name="medkit"
-              size={15}
-              color={scanMode === 'diagnose' ? '#FFFFFF' : 'rgba(255,255,255,0.7)'}
-              style={{ marginRight: 6 }}
-            />
-            <Text
-              style={[
-                typography.footnote,
-                {
-                  color: scanMode === 'diagnose' ? '#FFFFFF' : 'rgba(255,255,255,0.7)',
-                  fontWeight: scanMode === 'diagnose' ? '700' : '500',
-                },
+            <Pressable
+              style={({ pressed }) => [
+                styles.modeSegment,
+                scanMode === 'diagnose' && styles.modeSegmentActive,
+                { overflow: 'hidden' },
+                pressed && { opacity: 0.8 },
               ]}
+              android_ripple={{ color: '#FFFFFF33' }}
+              onPress={() => {
+                try {
+                  Haptics.selectionAsync();
+                } catch {}
+                setScanMode('diagnose');
+              }}
+              accessibilityRole="button"
+              accessibilityLabel={t('Mi planta está enferma')}
+              accessibilityState={{ selected: scanMode === 'diagnose' }}
             >
-              {t('Mi planta está enferma')}
-            </Text>
-          </Pressable>
-        </View>
+              <Ionicons
+                name="medkit"
+                size={15}
+                color={scanMode === 'diagnose' ? '#FFFFFF' : 'rgba(255,255,255,0.75)'}
+                style={{ marginRight: 6 }}
+              />
+              <Text
+                style={[
+                  typography.footnote,
+                  {
+                    color: scanMode === 'diagnose' ? '#FFFFFF' : 'rgba(255,255,255,0.75)',
+                    fontWeight: scanMode === 'diagnose' ? '700' : '500',
+                  },
+                ]}
+              >
+                {t('Mi planta está enferma')}
+              </Text>
+            </Pressable>
+          </View>
+        </GlassSurface>
 
         {/* ÁREA CENTRAL CON RETÍCULA Y AYUDA CONTEXTUAL */}
         <View style={styles.centerArea}>
@@ -635,30 +642,32 @@ export const ScannerScreen: React.FC = () => {
           </View>
 
           {/* Ayuda contextual de una sola línea */}
-          <Pressable
-            onPress={() => setGuideVisible(true)}
-            android_ripple={{ color: '#FFFFFF33' }}
-            style={({ pressed }) => [styles.contextTip, { overflow: 'hidden' }, pressed && { opacity: 0.8 }]}
-            accessibilityRole="button"
-            accessibilityLabel={
-              scanMode === 'diagnose'
-                ? t('Acércate a la hoja con manchas, plagas o daño visible')
-                : t('Acércate a una hoja con buena luz')
-            }
-          >
-            <Ionicons
-              name={scanMode === 'diagnose' ? 'medkit' : 'information-circle'}
-              size={18}
-              color="#FFFFFF"
-              style={{ marginRight: 6 }}
-            />
-            <Text style={[typography.caption1, { color: '#FFFFFF', fontWeight: '600' }]}>
-              {scanMode === 'diagnose'
-                ? t('Acércate a la hoja con manchas, plagas o daño visible')
-                : t('Acércate a una hoja con buena luz')}
-            </Text>
-            <Ionicons name="chevron-forward" size={14} color="#FFFFFF" style={{ marginLeft: 4 }} />
-          </Pressable>
+          <GlassSurface variant="strong" borderRadius={24} style={styles.contextTipGlass}>
+            <Pressable
+              onPress={() => setGuideVisible(true)}
+              android_ripple={{ color: '#FFFFFF33' }}
+              style={({ pressed }) => [styles.contextTipInner, { overflow: 'hidden' }, pressed && { opacity: 0.8 }]}
+              accessibilityRole="button"
+              accessibilityLabel={
+                scanMode === 'diagnose'
+                  ? t('Acércate a la hoja con manchas, plagas o daño visible')
+                  : t('Acércate a una hoja con buena luz')
+              }
+            >
+              <Ionicons
+                name={scanMode === 'diagnose' ? 'medkit' : 'information-circle'}
+                size={18}
+                color="#FFFFFF"
+                style={{ marginRight: 6 }}
+              />
+              <Text style={[typography.caption1, { color: '#FFFFFF', fontWeight: '600' }]}>
+                {scanMode === 'diagnose'
+                  ? t('Acércate a la hoja con manchas, plagas o daño visible')
+                  : t('Acércate a una hoja con buena luz')}
+              </Text>
+              <Ionicons name="chevron-forward" size={14} color="#FFFFFF" style={{ marginLeft: 4 }} />
+            </Pressable>
+          </GlassSurface>
         </View>
 
         {/* ESTADO DE ANÁLISIS EN CURSO */}
@@ -674,16 +683,18 @@ export const ScannerScreen: React.FC = () => {
         {/* BARRA INFERIOR: UNA SOLA COSA GRANDE (BOTÓN DE CAPTURA) */}
         <View style={[styles.cameraBottomBar, { paddingBottom: Math.max(insets.bottom, 24) }]}>
           {/* LADO IZQUIERDO: GALERÍA */}
-          <Pressable
-            onPress={handlePickGallery}
-            android_ripple={{ color: '#FFFFFF33', borderless: true, radius: 25 }}
-            style={({ pressed }) => [styles.sideControlBtn, pressed && { opacity: 0.7 }]}
-            accessibilityRole="button"
-            accessibilityLabel={t('Elegir de la galería')}
-            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-          >
-            <Ionicons name="images" size={26} color="#FFFFFF" />
-          </Pressable>
+          <GlassSurface variant="strong" borderRadius={25} style={styles.glassSideBtn}>
+            <Pressable
+              onPress={handlePickGallery}
+              android_ripple={{ color: '#FFFFFF33', borderless: true, radius: 25 }}
+              style={({ pressed }) => [styles.iconPressable, pressed && { opacity: 0.7 }]}
+              accessibilityRole="button"
+              accessibilityLabel={t('Elegir de la galería')}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            >
+              <Ionicons name="images" size={24} color="#FFFFFF" />
+            </Pressable>
+          </GlassSurface>
 
           {/* CENTRO: BOTÓN GIGANTE DE CAPTURA */}
           <Pressable
@@ -725,16 +736,18 @@ export const ScannerScreen: React.FC = () => {
           </Pressable>
 
           {/* LADO DERECHO: CAMBIAR CÁMARA */}
-          <Pressable
-            onPress={toggleCameraFacing}
-            android_ripple={{ color: '#FFFFFF33', borderless: true, radius: 25 }}
-            style={({ pressed }) => [styles.sideControlBtn, pressed && { opacity: 0.7 }]}
-            accessibilityRole="button"
-            accessibilityLabel={t('Cambiar cámara')}
-            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-          >
-            <Ionicons name="camera-reverse" size={26} color="#FFFFFF" />
-          </Pressable>
+          <GlassSurface variant="strong" borderRadius={25} style={styles.glassSideBtn}>
+            <Pressable
+              onPress={toggleCameraFacing}
+              android_ripple={{ color: '#FFFFFF33', borderless: true, radius: 25 }}
+              style={({ pressed }) => [styles.iconPressable, pressed && { opacity: 0.7 }]}
+              accessibilityRole="button"
+              accessibilityLabel={t('Cambiar cámara')}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            >
+              <Ionicons name="camera-reverse" size={24} color="#FFFFFF" />
+            </Pressable>
+          </GlassSurface>
         </View>
       </View>
 
@@ -782,11 +795,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: Platform.OS === 'ios' ? 52 : 36,
   },
-  topBarBtn: {
+  topBarGlassBtn: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    overflow: 'hidden',
+  },
+  iconPressable: {
+    width: '100%',
+    height: '100%',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -820,14 +837,17 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
   },
-  contextTip: {
+  contextTipGlass: {
+    borderRadius: 24,
+    marginTop: 20,
+    overflow: 'hidden',
+  },
+  contextTipInner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.55)',
-    paddingVertical: 8,
+    paddingVertical: 10,
     paddingHorizontal: 16,
-    borderRadius: 20,
-    marginTop: 20,
+    minHeight: 48,
   },
   analyzingOverlay: {
     ...StyleSheet.absoluteFill,
@@ -858,21 +878,21 @@ const styles = StyleSheet.create({
     height: 66,
     borderRadius: 33,
   },
-  sideControlBtn: {
+  glassSideBtn: {
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    overflow: 'hidden',
   },
-  modeSelectorContainer: {
-    flexDirection: 'row',
+  modeSelectorGlass: {
     alignSelf: 'center',
-    backgroundColor: 'rgba(0,0,0,0.55)',
-    borderRadius: 24,
-    padding: 3,
+    borderRadius: 28,
     marginTop: 12,
+    overflow: 'hidden',
+  },
+  modeSelectorInner: {
+    flexDirection: 'row',
+    padding: 3,
   },
   modeSegment: {
     flexDirection: 'row',

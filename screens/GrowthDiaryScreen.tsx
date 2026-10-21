@@ -198,7 +198,17 @@ export const GrowthDiaryScreen: React.FC = () => {
             <SkeletonBox width="100%" height={80} borderRadius={14} style={{ marginTop: spacing.sm }} />
           </>
         ) : entries.length === 0 ? (
-          <Card style={{ alignItems: 'center' }}>
+          <Card
+            variant="flat"
+            style={{
+              alignItems: 'center',
+              borderRadius: layout.borderRadius.lg,
+              borderWidth: 1,
+              borderColor: colors.border,
+              backgroundColor: colors.surface,
+              padding: spacing.xl,
+            }}
+          >
             <Ionicons name="camera-outline" size={40} color={colors.textTertiary} />
             <Text style={[typography.headline, { color: colors.textPrimary, marginTop: spacing.sm }]}>
               {t('Aún no hay registros')}
@@ -210,7 +220,18 @@ export const GrowthDiaryScreen: React.FC = () => {
         ) : (
           <>
             {comparison.before && comparison.after && comparison.before.id !== comparison.after.id ? (
-              <Card style={{ padding: 0, overflow: 'hidden', marginBottom: spacing.md }}>
+              <Card
+                variant="flat"
+                style={{
+                  padding: 0,
+                  overflow: 'hidden',
+                  marginBottom: spacing.md,
+                  borderRadius: layout.borderRadius.lg,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  backgroundColor: colors.surface,
+                }}
+              >
                 <BeforeAfterSlider
                   beforeUri={comparison.before.photoUri}
                   afterUri={comparison.after.photoUri}
@@ -232,7 +253,17 @@ export const GrowthDiaryScreen: React.FC = () => {
               {t('Línea de tiempo')}
             </Text>
             {entries.map((entry) => (
-              <Card key={entry.id} style={{ marginBottom: spacing.sm }}>
+              <Card
+                key={entry.id}
+                variant="flat"
+                style={{
+                  marginBottom: spacing.sm,
+                  borderRadius: layout.borderRadius.lg,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  backgroundColor: colors.surface,
+                }}
+              >
                 <View style={styles.entryRow}>
                   <Image
                     source={{ uri: entry.photoUri }}
@@ -293,7 +324,17 @@ export const GrowthDiaryScreen: React.FC = () => {
 
       <Modal visible={modalVisible} transparent animationType="slide" onRequestClose={() => setModalVisible(false)}>
         <View style={styles.modalOverlay}>
-          <Card style={{ width: '100%' }} elevated>
+          <Card
+            variant="flat"
+            style={{
+              width: '100%',
+              borderRadius: layout.borderRadius.lg,
+              borderWidth: 1,
+              borderColor: colors.border,
+              backgroundColor: colors.surface,
+              padding: spacing.lg,
+            }}
+          >
             <Text style={[typography.title3, { color: colors.textPrimary }]}>{t('Nueva entrada')}</Text>
             {pendingPhoto ? (
               <Image source={{ uri: pendingPhoto }} style={[styles.previewImage, { borderRadius: layout.borderRadius.md }]} />

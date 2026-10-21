@@ -135,9 +135,9 @@ const styles = StyleSheet.create({
   },
   quickChip: {
     borderWidth: 1,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    minHeight: 40,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    minHeight: 48,
     justifyContent: 'center',
   },
 });

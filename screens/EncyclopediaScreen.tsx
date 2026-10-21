@@ -103,7 +103,19 @@ export const EncyclopediaScreen: React.FC = () => {
   const renderPlantItem = ({ item }: { item: CatalogPlant }) => {
     const petSafe = isPetSafe(item.id);
     return (
-      <Card elevated style={[styles.itemCard, { backgroundColor: colors.surface, overflow: 'hidden' }]}>
+      <Card
+        variant="flat"
+        style={[
+          styles.itemCard,
+          {
+            backgroundColor: colors.surface,
+            borderRadius: layout.borderRadius.lg,
+            borderWidth: 1,
+            borderColor: colors.border,
+            overflow: 'hidden',
+          },
+        ]}
+      >
         <Pressable
           onPress={() => handleOpenDetail(item)}
           android_ripple={{ color: colors.primaryLight }}
@@ -492,7 +504,8 @@ const styles = StyleSheet.create({
   backButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    minHeight: 44,
+    minHeight: 48,
+    minWidth: 48,
   },
   searchSection: {
     paddingHorizontal: 16,
@@ -509,9 +522,10 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
     minHeight: 48,
     borderWidth: 1,
+    borderRadius: 24,
   },
   searchInput: {
     flex: 1,
@@ -524,6 +538,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
+    borderRadius: 16,
     position: 'relative',
   },
   filterBadgeCount: {
@@ -546,8 +561,9 @@ const styles = StyleSheet.create({
   toggleChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    minHeight: 48,
     borderWidth: 1,
   },
   resultsCountBar: {
@@ -560,16 +576,18 @@ const styles = StyleSheet.create({
   itemCard: {
     padding: 0,
     overflow: 'hidden',
-    marginBottom: 10,
+    marginBottom: 12,
   },
   itemRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 12,
+    padding: 14,
+    minHeight: 88,
   },
   thumb: {
     width: 72,
     height: 72,
+    borderRadius: 16,
   },
   avatarPlaceholder: {
     alignItems: 'center',

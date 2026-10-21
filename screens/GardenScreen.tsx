@@ -24,6 +24,7 @@ import { SkeletonBox } from '../components/SkeletonLoader';
 import { ErrorBanner } from '../components/ErrorBanner';
 import { BottomSheet } from '../components/BottomSheet';
 import { ListRow } from '../components/ListRow';
+import { GlassSurface } from '../components/GlassSurface';
 import { BlurTargetView, useBlurTarget } from '../components/GlassView';
 import { GardenPlantCard } from '../components/garden/GardenPlantCard';
 import { AddPlantModal, ManualPlantData } from '../components/garden/AddPlantModal';
@@ -237,7 +238,9 @@ export const GardenScreen: React.FC = () => {
             styles.shortcutItem,
             {
               backgroundColor: colors.surface,
-              borderRadius: layout.borderRadius.md,
+              borderColor: colors.border,
+              borderWidth: 1,
+              borderRadius: layout.borderRadius.lg,
               overflow: 'hidden',
               opacity: pressed && Platform.OS === 'ios' ? 0.75 : 1,
             },
@@ -261,7 +264,18 @@ export const GardenScreen: React.FC = () => {
   const renderWeatherBanner = () => {
     if (!isPremium) {
       return (
-        <Card style={[styles.weatherCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <Card
+          variant="flat"
+          style={[
+            styles.weatherCard,
+            {
+              backgroundColor: colors.surface,
+              borderColor: colors.border,
+              borderWidth: 1,
+              borderRadius: layout.borderRadius.lg,
+            },
+          ]}
+        >
           <View style={styles.weatherTeaserRow}>
             <View style={[styles.weatherIconCircle, { backgroundColor: colors.surfaceSecondary }]}>
               <Ionicons name="sunny-outline" size={24} color={colors.primary} />
@@ -281,13 +295,24 @@ export const GardenScreen: React.FC = () => {
     }
 
     if (weatherLoading) {
-      return <SkeletonBox width="100%" height={74} borderRadius={16} style={{ marginBottom: spacing.md }} />;
+      return <SkeletonBox width="100%" height={74} borderRadius={24} style={{ marginBottom: spacing.md }} />;
     }
 
     if (weatherData && weatherData.weather) {
       const w = weatherData.weather;
       return (
-        <Card elevated style={[styles.weatherCard, { backgroundColor: colors.surface }]}>
+        <Card
+          variant="flat"
+          style={[
+            styles.weatherCard,
+            {
+              backgroundColor: colors.surface,
+              borderColor: colors.border,
+              borderWidth: 1,
+              borderRadius: layout.borderRadius.lg,
+            },
+          ]}
+        >
           <View style={styles.weatherTeaserRow}>
             <Ionicons name="partly-sunny" size={24} color={colors.primary} />
             <View style={{ flex: 1, marginLeft: spacing.sm }}>
@@ -406,36 +431,38 @@ export const GardenScreen: React.FC = () => {
         }
       />
 
-      {/* BOTÓN FLOTANTE: + AÑADIR PLANTA */}
+      {/* BOTÓN FLOTANTE: + AÑADIR PLANTA (Superficie flotante de vidrio) */}
       <View
         style={[styles.fabContainer, { bottom: Math.max(insets.bottom + 16, 96) }]}
         pointerEvents="box-none"
       >
-        <Pressable
-          onPress={() => {
-            try {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            } catch {}
-            setAddModalVisible(true);
-          }}
-          style={({ pressed }) => [
-            styles.fab,
-            {
-              backgroundColor: colors.primary,
-              shadowColor: colors.primary,
-              overflow: 'hidden',
-              opacity: pressed && Platform.OS === 'ios' ? 0.88 : 1,
-            },
-          ]}
-          android_ripple={{ color: 'rgba(255, 255, 255, 0.25)', borderless: false }}
-          accessibilityRole="button"
-          accessibilityLabel={t('Añadir planta')}
+        <GlassSurface
+          variant="strong"
+          borderRadius={layout.borderRadius.full}
+          blurTarget={blurTargetRef}
+          style={styles.fabGlass}
         >
-          <Ionicons name="add" size={24} color="#FFFFFF" style={{ marginRight: 6 }} />
-          <Text style={[typography.headline, { color: '#FFFFFF', fontWeight: '800' }]}>
-            {t('Añadir planta')}
-          </Text>
-        </Pressable>
+          <Pressable
+            onPress={() => {
+              try {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              } catch {}
+              setAddModalVisible(true);
+            }}
+            style={({ pressed }) => [
+              styles.fabInner,
+              { opacity: pressed && Platform.OS === 'ios' ? 0.85 : 1 },
+            ]}
+            android_ripple={{ color: colors.primary + '20', borderless: false }}
+            accessibilityRole="button"
+            accessibilityLabel={t('Añadir planta')}
+          >
+            <Ionicons name="add" size={24} color={colors.primary} style={{ marginRight: 6 }} />
+            <Text style={[typography.headline, { color: colors.primary, fontWeight: '700' }]}>
+              {t('Añadir planta')}
+            </Text>
+          </Pressable>
+        </GlassSurface>
       </View>
 
       {/* MODAL: AÑADIR PLANTA (Escanear / Catálogo / Manual) */}
@@ -622,7 +649,9 @@ const styles = StyleSheet.create({
   manageZonesButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    minHeight: 44,
+    minHeight: 48,
+    minWidth: 48,
+    paddingHorizontal: 8,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -638,17 +667,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  fab: {
+  fabGlass: {
+    overflow: 'hidden',
+    elevation: 6,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+  },
+  fabInner: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 14,
-    paddingHorizontal: 24,
-    borderRadius: 30,
-    elevation: 8,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
+    paddingHorizontal: 22,
+    minHeight: 48,
   },
   separator: {
     height: 1,

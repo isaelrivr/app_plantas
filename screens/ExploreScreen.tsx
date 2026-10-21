@@ -90,12 +90,12 @@ export const ExploreScreen: React.FC = () => {
             {
               backgroundColor: colors.surface,
               borderColor: colors.border,
-              borderRadius: layout.borderRadius.md,
+              borderRadius: layout.borderRadius.lg,
               minHeight: layout.minTouchTarget,
             },
           ]}
         >
-          <Ionicons name="search" size={22} color={colors.textTertiary} style={{ marginLeft: 12 }} />
+          <Ionicons name="search" size={22} color={colors.textTertiary} style={{ marginLeft: 14 }} />
           <TextInput
             value={query}
             onChangeText={setQuery}
@@ -149,7 +149,18 @@ export const ExploreScreen: React.FC = () => {
                   accessibilityRole="button"
                   accessibilityLabel={`${plant.name}. ${plant.scientificName}`}
                 >
-                  <Card elevated style={styles.plantResultCard}>
+                  <Card
+                    variant="flat"
+                    style={[
+                      styles.plantResultCard,
+                      {
+                        borderRadius: layout.borderRadius.lg,
+                        borderWidth: 1,
+                        borderColor: colors.border,
+                        backgroundColor: colors.surface,
+                      },
+                    ]}
+                  >
                     {plant.imageUri ? (
                       <Image source={{ uri: plant.imageUri }} style={styles.plantThumb} resizeMode="cover" />
                     ) : (
@@ -175,7 +186,18 @@ export const ExploreScreen: React.FC = () => {
               ))}
             </View>
           ) : (
-            <Card style={[styles.emptyBox, { backgroundColor: colors.surface }]}>
+            <Card
+              variant="flat"
+              style={[
+                styles.emptyBox,
+                {
+                  borderRadius: layout.borderRadius.lg,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  backgroundColor: colors.surface,
+                },
+              ]}
+            >
               <Ionicons name="leaf-outline" size={32} color={colors.textTertiary} />
               <Text style={[typography.subheadline, { color: colors.textSecondary, marginTop: 8 }]}>
                 {t('No encontramos plantas con ese nombre.')}
@@ -193,7 +215,7 @@ export const ExploreScreen: React.FC = () => {
         style={({ pressed }) => [
           {
             marginBottom: spacing.lg,
-            borderRadius: 16,
+            borderRadius: layout.borderRadius.lg,
             overflow: 'hidden',
             opacity: pressed && Platform.OS === 'ios' ? 0.88 : 1,
           },
@@ -201,11 +223,12 @@ export const ExploreScreen: React.FC = () => {
         android_ripple={{ color: 'rgba(255, 255, 255, 0.25)', borderless: false }}
       >
         <Card
-          elevated
+          variant="flat"
           style={[
             styles.assistantCard,
             {
               backgroundColor: colors.primary,
+              borderRadius: layout.borderRadius.lg,
             },
           ]}
         >
@@ -257,7 +280,8 @@ export const ExploreScreen: React.FC = () => {
             styles.collectionCard,
             {
               backgroundColor: colors.surface,
-              borderRadius: layout.borderRadius.md,
+              borderColor: colors.border,
+              borderRadius: layout.borderRadius.lg,
               overflow: 'hidden',
               opacity: pressed && Platform.OS === 'ios' ? 0.8 : 1,
             },
@@ -283,7 +307,8 @@ export const ExploreScreen: React.FC = () => {
             styles.collectionCard,
             {
               backgroundColor: colors.surface,
-              borderRadius: layout.borderRadius.md,
+              borderColor: colors.border,
+              borderRadius: layout.borderRadius.lg,
               overflow: 'hidden',
               opacity: pressed && Platform.OS === 'ios' ? 0.8 : 1,
             },
@@ -309,7 +334,8 @@ export const ExploreScreen: React.FC = () => {
             styles.collectionCard,
             {
               backgroundColor: colors.surface,
-              borderRadius: layout.borderRadius.md,
+              borderColor: colors.border,
+              borderRadius: layout.borderRadius.lg,
               overflow: 'hidden',
               opacity: pressed && Platform.OS === 'ios' ? 0.8 : 1,
             },
@@ -335,7 +361,8 @@ export const ExploreScreen: React.FC = () => {
             styles.collectionCard,
             {
               backgroundColor: colors.surface,
-              borderRadius: layout.borderRadius.md,
+              borderColor: colors.border,
+              borderRadius: layout.borderRadius.lg,
               overflow: 'hidden',
               opacity: pressed && Platform.OS === 'ios' ? 0.8 : 1,
             },
@@ -379,7 +406,18 @@ export const ExploreScreen: React.FC = () => {
             accessibilityRole="button"
             accessibilityLabel={`${plant.name}. ${plant.scientificName}`}
           >
-            <Card elevated style={styles.plantResultCard}>
+            <Card
+              variant="flat"
+              style={[
+                styles.plantResultCard,
+                {
+                  borderRadius: layout.borderRadius.lg,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  backgroundColor: colors.surface,
+                },
+              ]}
+            >
               {plant.imageUri ? (
                 <Image source={{ uri: plant.imageUri }} style={styles.plantThumb} resizeMode="cover" />
               ) : (
@@ -433,21 +471,21 @@ const styles = StyleSheet.create({
   plantResultCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 10,
+    padding: 12,
   },
   plantThumb: {
-    width: 60,
-    height: 60,
-    borderRadius: 10,
+    width: 64,
+    height: 64,
+    borderRadius: 16,
   },
   emptyBox: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 20,
+    paddingVertical: 24,
   },
   assistantCard: {
-    padding: 16,
-    borderRadius: 16,
+    padding: 18,
+    borderRadius: 24,
   },
   assistantRow: {
     flexDirection: 'row',
@@ -481,15 +519,15 @@ const styles = StyleSheet.create({
   },
   collectionCard: {
     width: '48%',
-    padding: 14,
-    borderRadius: 14,
+    padding: 16,
+    borderRadius: 24,
     borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.05)',
+    minHeight: 110,
   },
   collectionIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
   },

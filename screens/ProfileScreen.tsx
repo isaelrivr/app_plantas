@@ -113,7 +113,18 @@ export const ProfileScreen: React.FC = () => {
       )}
 
       {profileLoading ? (
-        <Card elevated style={{ marginBottom: spacing.lg }} accessible={true} accessibilityLabel={t('Cargando datos de la suscripción')}>
+        <Card
+          variant="flat"
+          style={{
+            marginBottom: spacing.lg,
+            borderColor: colors.border,
+            borderWidth: 1,
+            borderRadius: layout.borderRadius.lg,
+            padding: spacing.md,
+          }}
+          accessible={true}
+          accessibilityLabel={t('Cargando datos de la suscripción')}
+        >
           <SkeletonBox width="45%" height={22} borderRadius={6} />
           <SkeletonBox width="70%" height={26} borderRadius={6} style={{ marginTop: 12 }} />
           <SkeletonBox width="100%" height={16} borderRadius={6} style={{ marginTop: 16 }} />
@@ -122,12 +133,13 @@ export const ProfileScreen: React.FC = () => {
         </Card>
       ) : (
       <Card
-        elevated
+        variant="flat"
         style={[
           styles.planCard,
           {
             borderColor: isPremium ? colors.premiumGold : colors.border,
             backgroundColor: isPremium ? colors.premiumGoldLight : colors.surface,
+            borderRadius: layout.borderRadius.lg,
             marginBottom: spacing.lg,
           },
         ]}
@@ -215,11 +227,20 @@ export const ProfileScreen: React.FC = () => {
       )}
 
       {/* ACCESO A LOGROS (LOGROS DENTRO DE YO) */}
-      <Card style={{ marginBottom: spacing.md, overflow: 'hidden' }}>
+      <Card
+        variant="flat"
+        style={{
+          marginBottom: spacing.md,
+          overflow: 'hidden',
+          borderColor: colors.border,
+          borderWidth: 1,
+          borderRadius: layout.borderRadius.lg,
+        }}
+      >
         <Pressable
           style={({ pressed }) => [
             styles.settingRow,
-            { borderRadius: 8, overflow: 'hidden', opacity: pressed && Platform.OS === 'ios' ? 0.7 : 1 },
+            { borderRadius: layout.borderRadius.lg, overflow: 'hidden', opacity: pressed && Platform.OS === 'ios' ? 0.7 : 1 },
           ]}
           onPress={() => navigation.navigate('Achievements')}
           accessibilityRole="button"
@@ -247,11 +268,20 @@ export const ProfileScreen: React.FC = () => {
       </Card>
 
       {/* ACCESO A AJUSTES */}
-      <Card style={{ marginBottom: spacing.lg, overflow: 'hidden' }}>
+      <Card
+        variant="flat"
+        style={{
+          marginBottom: spacing.lg,
+          overflow: 'hidden',
+          borderColor: colors.border,
+          borderWidth: 1,
+          borderRadius: layout.borderRadius.lg,
+        }}
+      >
         <Pressable
           style={({ pressed }) => [
             styles.settingRow,
-            { borderRadius: 8, overflow: 'hidden', opacity: pressed && Platform.OS === 'ios' ? 0.7 : 1 },
+            { borderRadius: layout.borderRadius.lg, overflow: 'hidden', opacity: pressed && Platform.OS === 'ios' ? 0.7 : 1 },
           ]}
           onPress={() => navigation.navigate('Settings')}
           accessibilityRole="button"
@@ -287,7 +317,15 @@ export const ProfileScreen: React.FC = () => {
           {t('Ayuda y Preguntas Frecuentes')}
         </Text>
 
-        <Card>
+        <Card
+          variant="flat"
+          style={{
+            borderColor: colors.border,
+            borderWidth: 1,
+            borderRadius: layout.borderRadius.lg,
+            padding: spacing.md,
+          }}
+        >
           <View style={{ paddingVertical: spacing.xs }}>
             <Text style={[typography.subheadline, { color: colors.textPrimary, fontWeight: '700' }]}>
               {t('¿Cómo identifico una planta?')}
@@ -333,7 +371,7 @@ export const ProfileScreen: React.FC = () => {
                 justifyContent: 'space-between',
                 paddingVertical: spacing.sm,
                 minHeight: 48,
-                borderRadius: 8,
+                borderRadius: layout.borderRadius.md,
                 opacity: pressed && Platform.OS === 'ios' ? 0.7 : 1,
               },
             ]}
@@ -357,7 +395,15 @@ export const ProfileScreen: React.FC = () => {
           {t('Beneficios incluidos en EcoScan Pro')}
         </Text>
 
-        <Card>
+        <Card
+          variant="flat"
+          style={{
+            borderColor: colors.border,
+            borderWidth: 1,
+            borderRadius: layout.borderRadius.lg,
+            padding: spacing.md,
+          }}
+        >
           {benefits.map((item, index) => (
             <View key={index}>
               <View
@@ -411,7 +457,16 @@ export const ProfileScreen: React.FC = () => {
         {t('Detalles de la Aplicación')}
       </Text>
 
-      <Card style={{ marginBottom: spacing.xl }}>
+      <Card
+        variant="flat"
+        style={{
+          marginBottom: spacing.xl,
+          borderColor: colors.border,
+          borderWidth: 1,
+          borderRadius: layout.borderRadius.lg,
+          padding: spacing.md,
+        }}
+      >
         <View style={styles.settingRow}>
           <Text style={[typography.body, { color: colors.textPrimary }]}>{t('Tema del sistema')}</Text>
           <Text style={[typography.subheadline, { color: colors.textSecondary }]}>
@@ -452,6 +507,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 10,
+    minHeight: 48,
   },
   benefitIconBox: {
     width: 40,
@@ -469,5 +525,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: 12,
+    minHeight: 48,
   },
 });

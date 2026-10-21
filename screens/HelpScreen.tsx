@@ -8,7 +8,6 @@ import {
   TextInput,
   Platform,
   Linking,
-  Switch,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,6 +17,7 @@ import { useAppTheme } from '../theme';
 import { useTranslation } from '../i18n';
 import { Card } from '../components/Card';
 import { BottomSheet } from '../components/BottomSheet';
+import { MaterialSwitch } from '../components/MaterialSwitch';
 import { useFeedback } from '../context/FeedbackContext';
 
 interface FAQItem {
@@ -148,7 +148,16 @@ export const HelpScreen: React.FC = () => {
         }}
       >
         {/* CONTACTO RÁPIDO */}
-        <Card elevated style={{ marginBottom: spacing.lg }}>
+        <Card
+          variant="flat"
+          style={{
+            marginBottom: spacing.lg,
+            borderRadius: layout.borderRadius.lg,
+            borderWidth: 1,
+            borderColor: colors.border,
+            backgroundColor: colors.surface,
+          }}
+        >
           <View style={styles.contactRow}>
             <View style={[styles.contactIconCircle, { backgroundColor: colors.primaryLight }]}>
               <Ionicons name="chatbubbles" size={26} color={colors.primary} />
@@ -224,7 +233,18 @@ export const HelpScreen: React.FC = () => {
           {FAQS.map((faq) => {
             const isExpanded = expandedFaq === faq.id;
             return (
-              <Card key={faq.id} style={{ padding: 0, overflow: 'hidden' }}>
+              <Card
+                key={faq.id}
+                variant="flat"
+                style={{
+                  padding: 0,
+                  overflow: 'hidden',
+                  borderRadius: layout.borderRadius.lg,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  backgroundColor: colors.surface,
+                }}
+              >
                 <Pressable
                   onPress={() => toggleFaq(faq.id)}
                   style={({ pressed }) => [
@@ -297,10 +317,9 @@ export const HelpScreen: React.FC = () => {
                 {t('Versión de la app y del sistema para resolver el fallo más rápido.')}
               </Text>
             </View>
-            <Switch
+            <MaterialSwitch
               value={includeDiagnostics}
               onValueChange={setIncludeDiagnostics}
-              trackColor={{ true: colors.primary, false: colors.border }}
               accessibilityLabel={t('Incluir diagnóstico del sistema')}
             />
           </View>
@@ -359,11 +378,12 @@ const styles = StyleSheet.create({
   },
   actionBtn: {
     flex: 1,
-    borderRadius: 12,
+    borderRadius: 16,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 12,
+    minHeight: 48,
   },
   faqHeader: {
     flexDirection: 'row',
@@ -377,9 +397,9 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
   },
   textArea: {
-    height: 100,
+    height: 110,
     borderWidth: 1,
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 12,
     fontSize: 16,
     textAlignVertical: 'top',
@@ -390,9 +410,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   submitReportBtn: {
-    borderRadius: 14,
+    borderRadius: 16,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    minHeight: 48,
   },
 });

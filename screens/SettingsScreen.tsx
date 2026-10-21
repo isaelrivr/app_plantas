@@ -230,7 +230,16 @@ export const SettingsScreen: React.FC = () => {
       >
         {/* 1. MODO FÁCIL */}
         {renderSectionTitle(t('Modo fácil'))}
-        <Card style={{ marginBottom: spacing.sm }}>
+        <Card
+          variant="flat"
+          style={{
+            marginBottom: spacing.sm,
+            borderRadius: layout.borderRadius.lg,
+            borderWidth: 1,
+            borderColor: colors.border,
+            backgroundColor: colors.surface,
+          }}
+        >
           <View style={styles.row}>
             <View style={{ flex: 1, paddingRight: spacing.sm }}>
               <Text style={[typography.headline, { color: colors.textPrimary }]}>{t('Activar Modo fácil')}</Text>
@@ -252,7 +261,16 @@ export const SettingsScreen: React.FC = () => {
 
         {/* MASCOTAS EN EL HOGAR */}
         {renderSectionTitle(t('Mascotas en el hogar'))}
-        <Card style={{ marginBottom: spacing.sm }}>
+        <Card
+          variant="flat"
+          style={{
+            marginBottom: spacing.sm,
+            borderRadius: layout.borderRadius.lg,
+            borderWidth: 1,
+            borderColor: colors.border,
+            backgroundColor: colors.surface,
+          }}
+        >
           <View style={styles.row}>
             <View style={{ flex: 1, paddingRight: spacing.sm }}>
               <Text style={[typography.headline, { color: colors.textPrimary }]}>{t('Tengo perros o gatos en casa')}</Text>
@@ -277,7 +295,16 @@ export const SettingsScreen: React.FC = () => {
 
         {/* 2. APARIENCIA */}
         {renderSectionTitle(t('Apariencia'))}
-        <Card>
+        <Card
+          variant="flat"
+          style={{
+            marginBottom: spacing.sm,
+            borderRadius: layout.borderRadius.lg,
+            borderWidth: 1,
+            borderColor: colors.border,
+            backgroundColor: colors.surface,
+          }}
+        >
           <View style={styles.row}>
             <Text style={[typography.body, { color: colors.textPrimary }]}>{t('Tema')}</Text>
             <Text style={[typography.caption1, { color: colors.textTertiary }]}>
@@ -303,7 +330,7 @@ export const SettingsScreen: React.FC = () => {
                     {
                       borderColor: selected ? colors.primary : colors.border,
                       backgroundColor: selected ? colors.primaryLight : colors.surface,
-                      borderRadius: layout.borderRadius.md,
+                      borderRadius: layout.borderRadius.lg,
                       overflow: 'hidden',
                       opacity: pressed && Platform.OS === 'ios' ? 0.8 : 1,
                     },
@@ -321,7 +348,16 @@ export const SettingsScreen: React.FC = () => {
 
         {/* 3. IDIOMA */}
         {renderSectionTitle(t('Idioma'))}
-        <Card>
+        <Card
+          variant="flat"
+          style={{
+            marginBottom: spacing.sm,
+            borderRadius: layout.borderRadius.lg,
+            borderWidth: 1,
+            borderColor: colors.border,
+            backgroundColor: colors.surface,
+          }}
+        >
           {LANGUAGES.map((lang, index) => {
             const selected = language === lang.code;
             return (
@@ -355,7 +391,16 @@ export const SettingsScreen: React.FC = () => {
 
         {/* 4. NOTIFICACIONES */}
         {renderSectionTitle(t('Notificaciones'))}
-        <Card>
+        <Card
+          variant="flat"
+          style={{
+            marginBottom: spacing.sm,
+            borderRadius: layout.borderRadius.lg,
+            borderWidth: 1,
+            borderColor: colors.border,
+            backgroundColor: colors.surface,
+          }}
+        >
           <View style={styles.row}>
             <View style={{ flex: 1 }}>
               <Text style={[typography.body, { color: colors.textPrimary }]}>{t('Recordatorios de riego')}</Text>
@@ -412,7 +457,16 @@ export const SettingsScreen: React.FC = () => {
 
         {/* UBICACIÓN DEL CLIMA */}
         {renderSectionTitle(t('Ubicación para el clima'))}
-        <Card>
+        <Card
+          variant="flat"
+          style={{
+            marginBottom: spacing.sm,
+            borderRadius: layout.borderRadius.lg,
+            borderWidth: 1,
+            borderColor: colors.border,
+            backgroundColor: colors.surface,
+          }}
+        >
           <View style={styles.row}>
             <View style={{ flex: 1 }}>
               <Text style={[typography.body, { color: colors.textPrimary }]}>{t('Ciudad para el pronóstico')}</Text>
@@ -484,7 +538,16 @@ export const SettingsScreen: React.FC = () => {
 
         {/* 5. PLAN */}
         {renderSectionTitle(t('Plan'))}
-        <Card>
+        <Card
+          variant="flat"
+          style={{
+            marginBottom: spacing.sm,
+            borderRadius: layout.borderRadius.lg,
+            borderWidth: 1,
+            borderColor: colors.border,
+            backgroundColor: colors.surface,
+          }}
+        >
           <Pressable
             onPress={() => navigation.navigate('Paywall')}
             accessibilityRole="button"
@@ -513,7 +576,16 @@ export const SettingsScreen: React.FC = () => {
 
         {/* CUENTA Y NUBE */}
         {renderSectionTitle(t('Cuenta y nube'))}
-        <Card>
+        <Card
+          variant="flat"
+          style={{
+            marginBottom: spacing.sm,
+            borderRadius: layout.borderRadius.lg,
+            borderWidth: 1,
+            borderColor: colors.border,
+            backgroundColor: colors.surface,
+          }}
+        >
           <Pressable
             onPress={() => {
               try { Haptics.selectionAsync(); } catch {}
@@ -554,7 +626,16 @@ export const SettingsScreen: React.FC = () => {
 
         {/* 6. PRIVACIDAD Y DATOS */}
         {renderSectionTitle(t('Privacidad y datos'))}
-        <Card>
+        <Card
+          variant="flat"
+          style={{
+            marginBottom: spacing.sm,
+            borderRadius: layout.borderRadius.lg,
+            borderWidth: 1,
+            borderColor: colors.border,
+            backgroundColor: colors.surface,
+          }}
+        >
           <View style={styles.row}>
             <View style={{ flex: 1, paddingRight: spacing.sm }}>
               <Text style={[typography.body, { color: colors.textPrimary }]}>{t('Compartir datos de uso anónimos')}</Text>
@@ -669,7 +750,16 @@ export const SettingsScreen: React.FC = () => {
 
         {/* 7. AYUDA Y CONTACTO */}
         {renderSectionTitle(t('Ayuda y contacto'))}
-        <Card>
+        <Card
+          variant="flat"
+          style={{
+            marginBottom: spacing.sm,
+            borderRadius: layout.borderRadius.lg,
+            borderWidth: 1,
+            borderColor: colors.border,
+            backgroundColor: colors.surface,
+          }}
+        >
           <Pressable
             onPress={() => navigation.navigate('Help')}
             accessibilityRole="button"
@@ -711,7 +801,18 @@ export const SettingsScreen: React.FC = () => {
 
         {/* 8. ACERCA DE */}
         {renderSectionTitle(t('Acerca de'))}
-        <Card style={{ marginBottom: spacing.xl, alignItems: 'center', paddingVertical: spacing.lg }}>
+        <Card
+          variant="flat"
+          style={{
+            marginBottom: spacing.xl,
+            alignItems: 'center',
+            paddingVertical: spacing.lg,
+            borderRadius: layout.borderRadius.lg,
+            borderWidth: 1,
+            borderColor: colors.border,
+            backgroundColor: colors.surface,
+          }}
+        >
           <Image
             source={require('../assets/logo.png')}
             style={styles.aboutLogo}
@@ -853,23 +954,23 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   hourPill: {
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 12,
     borderWidth: 1,
-    minHeight: 36,
-    minWidth: 40,
+    minHeight: 48,
+    minWidth: 48,
     alignItems: 'center',
     justifyContent: 'center',
   },
   cityPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 24,
     borderWidth: 1,
-    minHeight: 40,
+    minHeight: 48,
   },
   aboutLogo: {
     width: 80,

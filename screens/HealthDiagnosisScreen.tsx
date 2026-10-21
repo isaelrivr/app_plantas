@@ -348,7 +348,18 @@ export const HealthDiagnosisScreen: React.FC = () => {
       >
         {/* BOTÓN O FOTO DE ANÁLISIS */}
         {!photoUri ? (
-          <Card elevated style={{ alignItems: 'center', paddingVertical: 24 }}>
+          <Card
+            variant="flat"
+            style={{
+              alignItems: 'center',
+              paddingVertical: 28,
+              paddingHorizontal: spacing.md,
+              borderRadius: layout.borderRadius.lg,
+              borderWidth: 1,
+              borderColor: colors.border,
+              backgroundColor: colors.surface,
+            }}
+          >
             <View style={[styles.cameraIconBox, { backgroundColor: colors.primaryLight }]}>
               <Ionicons name="medkit" size={40} color={colors.primary} />
             </View>
@@ -471,7 +482,18 @@ export const HealthDiagnosisScreen: React.FC = () => {
 
             {/* SKELETON DEL RESULTADO MIENTRAS SE ANALIZA */}
             {isDiagnosing && (
-              <Card elevated style={{ marginTop: spacing.md }} accessible={true} accessibilityLabel={t('Analizando la muestra')}>
+              <Card
+                variant="flat"
+                style={{
+                  marginTop: spacing.md,
+                  borderRadius: layout.borderRadius.lg,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  backgroundColor: colors.surface,
+                }}
+                accessible={true}
+                accessibilityLabel={t('Analizando la muestra')}
+              >
                 <SkeletonBox width="60%" height={22} borderRadius={6} />
                 <SkeletonBox width="100%" height={14} borderRadius={6} style={{ marginTop: 12 }} />
                 <SkeletonBox width="85%" height={14} borderRadius={6} style={{ marginTop: 8 }} />
@@ -483,7 +505,15 @@ export const HealthDiagnosisScreen: React.FC = () => {
             {diagnosisResult && (
               <View style={{ marginTop: spacing.md, gap: spacing.md }}>
                 {/* TARJETA CABECERA DEL PROBLEMA */}
-                <Card elevated>
+                <Card
+                  variant="flat"
+                  style={{
+                    borderRadius: layout.borderRadius.lg,
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                    backgroundColor: colors.surface,
+                  }}
+                >
                   <View style={styles.resultHeaderRow}>
                     <View style={{ flex: 1 }}>
                       <View style={{ flexDirection: 'row', gap: 6, marginBottom: 4, flexWrap: 'wrap' }}>
@@ -640,7 +670,15 @@ export const HealthDiagnosisScreen: React.FC = () => {
                 </View>
 
                 {/* DETALLE DEL TRATAMIENTO SELECCIONADO */}
-                <Card elevated>
+                <Card
+                  variant="flat"
+                  style={{
+                    borderRadius: layout.borderRadius.lg,
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                    backgroundColor: colors.surface,
+                  }}
+                >
                   <View style={styles.optionHeader}>
                     <Text style={[typography.headline, { color: colors.textPrimary }]}>
                       {treatmentMode === 'organic'
@@ -703,7 +741,18 @@ export const HealthDiagnosisScreen: React.FC = () => {
                 </Card>
 
                 {/* ADVERTENCIA DE SEGURIDAD (APPLE HIG ALERT CARD) */}
-                <Card style={[styles.safetyCard, { borderColor: colors.warning, backgroundColor: isDark ? '#2E1A0A' : '#FFF8E1' }]}>
+                <Card
+                  variant="flat"
+                  style={[
+                    styles.safetyCard,
+                    {
+                      borderRadius: layout.borderRadius.lg,
+                      borderWidth: 1,
+                      borderColor: colors.warning,
+                      backgroundColor: isDark ? '#2E1A0A' : '#FFF8E1',
+                    },
+                  ]}
+                >
                   <View style={styles.safetyHeader}>
                     <Ionicons name="warning" size={22} color={colors.warning} />
                     <Text style={[typography.headline, { color: colors.textPrimary, marginLeft: 8 }]}>
@@ -741,7 +790,15 @@ export const HealthDiagnosisScreen: React.FC = () => {
                 </Card>
 
                 {/* PREVENCIÓN */}
-                <Card elevated>
+                <Card
+                  variant="flat"
+                  style={{
+                    borderRadius: layout.borderRadius.lg,
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                    backgroundColor: colors.surface,
+                  }}
+                >
                   <Text style={[typography.headline, { color: colors.textPrimary, marginBottom: 4 }]}>
                     {t('Cómo prevenirlo a futuro')}
                   </Text>
@@ -751,7 +808,15 @@ export const HealthDiagnosisScreen: React.FC = () => {
                 </Card>
 
                 {/* DESCARGO MÉDICO (obligatorio en diagnósticos por IA) */}
-                <Card style={{ backgroundColor: colors.surfaceSecondary, borderColor: colors.border }}>
+                <Card
+                  variant="flat"
+                  style={{
+                    backgroundColor: colors.surfaceSecondary,
+                    borderColor: colors.border,
+                    borderWidth: 1,
+                    borderRadius: layout.borderRadius.lg,
+                  }}
+                >
                   <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
                     <Ionicons name="information-circle-outline" size={18} color={colors.textTertiary} />
                     <Text style={[typography.caption1, { color: colors.textSecondary, flex: 1, marginLeft: 8, lineHeight: 18 }]}>
@@ -808,7 +873,7 @@ const styles = StyleSheet.create({
   },
   previewBox: {
     height: 230,
-    borderRadius: 16,
+    borderRadius: 24,
     overflow: 'hidden',
     borderWidth: 1,
     position: 'relative',
@@ -857,7 +922,7 @@ const styles = StyleSheet.create({
   referenceTile: {
     width: 96,
     height: 88,
-    borderRadius: 12,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 6,
@@ -868,8 +933,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   symptomsBox: {
-    borderRadius: 12,
-    padding: 12,
+    borderRadius: 16,
+    padding: 14,
     marginTop: 12,
   },
   symptomItem: {
@@ -879,8 +944,8 @@ const styles = StyleSheet.create({
   },
   treatmentSelector: {
     flexDirection: 'row',
-    borderRadius: 12,
-    padding: 3,
+    borderRadius: 14,
+    padding: 4,
   },
   treatmentTabBtn: {
     flex: 1,
@@ -888,7 +953,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 10,
-    borderRadius: 9,
+    borderRadius: 10,
     minHeight: 48,
   },
   treatmentTabActive: {

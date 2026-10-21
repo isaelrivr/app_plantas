@@ -15,6 +15,7 @@ import * as Haptics from 'expo-haptics';
 import { useAppTheme } from '../theme';
 import { useTranslation } from '../i18n';
 import { Card } from '../components/Card';
+import { GlassSurface } from '../components/GlassSurface';
 import { Button } from '../components/Button';
 import { SegmentedControl } from '../components/SegmentedControl';
 import { PrimaryActionBar } from '../components/PrimaryActionBar';
@@ -168,291 +169,347 @@ export const PlantDetailScreen: React.FC = () => {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* HEADER NAVEGACIÓN */}
-      <View
-        style={[
-          styles.header,
-          {
-            backgroundColor: colors.surface,
-            borderBottomColor: colors.border,
-            paddingTop: Math.max(insets.top, Platform.OS === 'ios' ? 44 : 16),
-          },
-        ]}
+      <ScrollView
+        contentContainerStyle={{ paddingBottom: Math.max(insets.bottom + 140, 160) }}
+        showsVerticalScrollIndicator={false}
       >
-        <Pressable
-          onPress={() => navigation.goBack()}
-          style={({ pressed }) => [
-            styles.backButton,
-            { opacity: pressed && Platform.OS === 'ios' ? 0.7 : 1 },
-          ]}
-          android_ripple={{ color: colors.primary + '20', borderless: true, radius: 24 }}
-          accessibilityRole="button"
-          accessibilityLabel={t('Volver')}
-          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-        >
-          <Ionicons name="chevron-back" size={26} color={colors.primary} />
-          <Text style={[typography.body, { color: colors.primary, fontWeight: '600' }]}>
-            {t('Atrás')}
-          </Text>
-        </Pressable>
-
-        <Text style={[typography.headline, { color: colors.textPrimary, flex: 1, textAlign: 'center' }]} numberOfLines={1}>
-          {plant.name}
-        </Text>
-
-        <View style={styles.headerActions}>
-          <Pressable
-            onPress={() => setLightMeterVisible(true)}
-            style={({ pressed }) => [
-              styles.headerIconButton,
-              { opacity: pressed && Platform.OS === 'ios' ? 0.7 : 1 },
-            ]}
-            android_ripple={{ color: colors.primary + '20', borderless: true, radius: 20 }}
-            accessibilityRole="button"
-            accessibilityLabel={t('Medidor de luz')}
-            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-          >
-            <Ionicons name="sunny-outline" size={22} color={colors.textPrimary} />
-          </Pressable>
-          <Pressable
-            onPress={() => navigation.navigate('Assistant', { plantName: plant.name })}
-            style={({ pressed }) => [
-              styles.headerIconButton,
-              { marginLeft: 4, opacity: pressed && Platform.OS === 'ios' ? 0.7 : 1 },
-            ]}
-            android_ripple={{ color: colors.primary + '20', borderless: true, radius: 20 }}
-            accessibilityRole="button"
-            accessibilityLabel={t('Pregúntale a EcoScan')}
-            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-          >
-            <Ionicons name="chatbubble-ellipses-outline" size={22} color={colors.primary} />
-          </Pressable>
-          <Pressable
-            onPress={() => setShareModalVisible(true)}
-            style={({ pressed }) => [
-              styles.headerIconButton,
-              { marginLeft: 6, opacity: pressed && Platform.OS === 'ios' ? 0.7 : 1 },
-            ]}
-            android_ripple={{ color: colors.primary + '20', borderless: true, radius: 20 }}
-            accessibilityRole="button"
-            accessibilityLabel={t('Compartir')}
-            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-          >
-            <Ionicons name="share-social-outline" size={22} color={colors.textPrimary} />
-          </Pressable>
-        </View>
-      </View>
-
-      <ScrollView contentContainerStyle={{ padding: spacing.md, paddingBottom: Math.max(insets.bottom + 140, 160) }}>
-        {/* FOTO HERO */}
-        {plant.imageUri ? (
-          <Image
-            source={{ uri: plant.imageUri }}
-            style={[styles.heroImage, { borderRadius: layout.borderRadius.xl }]}
-            accessible
-            accessibilityLabel={plant.name}
-          />
-        ) : null}
-
-        {/* TÍTULO BOTÁNICO */}
-        <Text style={[typography.title1, { color: colors.textPrimary, fontWeight: '800', marginTop: spacing.sm }]}>
-          {plant.name}
-        </Text>
-        <Text style={[typography.subheadline, { color: colors.textSecondary, fontStyle: 'italic', marginTop: 2 }]}>
-          {plant.scientificName}
-        </Text>
-
-        {/* TOXICIDAD ARRIBA (SEGURIDAD PRIORITARIA) */}
-        <PlantToxicityBanner speciesId={plant.id} />
-
-        {/* BLOQUE PRINCIPAL: QUÉ HACER HOY */}
-        <PlantTodayActionCard plant={plant} />
-
-        {/* PESTAÑAS: CUIDADOS vs HISTORIA vs MÁS INFORMACIÓN */}
-        <SegmentedControl<TabType>
-          options={[
-            { key: 'cuidados', label: t('Cuidados') },
-            { key: 'historia', label: t('Historia') },
-            { key: 'mas_info', label: t('Más información') },
-          ]}
-          selectedKey={activeTab}
-          onSelect={setActiveTab}
-          style={{ marginTop: spacing.lg, marginBottom: spacing.md }}
-        />
-
-        {activeTab === 'cuidados' ? (
-          <View style={{ gap: spacing.md }}>
-            {/* PAUTAS DETALLADAS DE CUIDADO */}
-            <Card elevated style={{ backgroundColor: colors.surface }}>
-              <Text style={[typography.headline, { color: colors.textPrimary, marginBottom: 8 }]}>
-                {t('Pauta de Riego y Humedad')}
-              </Text>
-              <Text style={[typography.body, { color: colors.textSecondary, lineHeight: 22 }]}>
-                {plant.watering}
-              </Text>
-              <View style={[styles.separator, { backgroundColor: colors.border }]} />
-              <Text style={[typography.headline, { color: colors.textPrimary, marginBottom: 8 }]}>
-                {t('Iluminación Recomendada')}
-              </Text>
-              <Text style={[typography.body, { color: colors.textSecondary, lineHeight: 22 }]}>
-                {plant.light}
-              </Text>
-              <Button
-                title={t('Comprobar luz con la cámara')}
-                onPress={() => setLightMeterVisible(true)}
-                variant="secondary"
-                size="sm"
-                icon={<Ionicons name="sunny-outline" size={16} color={colors.primary} />}
-                style={{ marginTop: spacing.md }}
-              />
-            </Card>
-
-            {/* BOTÓN AL DIARIO DE CRECIMIENTO */}
-            <Card style={{ backgroundColor: colors.surface }}>
-              <View style={styles.actionCardRow}>
-                <View style={[styles.actionIconBox, { backgroundColor: colors.primaryLight }]}>
-                  <Ionicons name="images" size={24} color={colors.primary} />
-                </View>
-                <View style={{ flex: 1, marginLeft: spacing.md }}>
-                  <Text style={[typography.headline, { color: colors.textPrimary }]}>
-                    {t('Diario de Crecimiento')}
-                  </Text>
-                  <Text style={[typography.caption1, { color: colors.textSecondary, marginTop: 2 }]}>
-                    {t('Guarda fotos con fecha y compara antes vs. después')}
-                  </Text>
-                </View>
-              </View>
-              <Button
-                title={t('Ver Diario de Crecimiento')}
-                onPress={() => navigation.navigate('GrowthDiary', { plantId: plant.id })}
-                variant="secondary"
-                size="md"
-                style={{ marginTop: spacing.md }}
-              />
-            </Card>
-
-            {/* PREGÚNTALE A ECOSCAN */}
-            <Card style={{ backgroundColor: colors.surface }}>
-              <View style={styles.actionCardRow}>
-                <View style={[styles.actionIconBox, { backgroundColor: colors.primaryLight }]}>
-                  <Ionicons name="chatbubbles" size={24} color={colors.primary} />
-                </View>
-                <View style={{ flex: 1, marginLeft: spacing.md }}>
-                  <Text style={[typography.headline, { color: colors.textPrimary }]}>
-                    {t('Pregúntale a EcoScan')}
-                  </Text>
-                  <Text style={[typography.caption1, { color: colors.textSecondary, marginTop: 2 }]}>
-                    {t('Resuelve dudas sobre riego, luz, plagas o abono con tu asistente')}
-                  </Text>
-                </View>
-              </View>
-              <Button
-                title={t('Consultar al Asistente')}
-                onPress={() => navigation.navigate('Assistant', { plantName: plant.name })}
-                variant="secondary"
-                size="md"
-                icon={<Ionicons name="sparkles-outline" size={18} color={colors.primary} />}
-                style={{ marginTop: spacing.md }}
-              />
-            </Card>
-          </View>
-        ) : activeTab === 'historia' ? (
-          <View style={{ gap: spacing.md }}>
-            <PlantTimeline
-              plantId={plant.id}
-              plantName={plant.name}
-              lastWatered={matchingGardenPlant?.lastWatered}
-              lastDiagnosis={matchingGardenPlant?.lastDiagnosis}
-              onNavigateGrowthDiary={() => navigation.navigate('GrowthDiary', { plantId: plant.id })}
+        {/* HERO CONTAINER CON CONTROLES FLOTANTES DE VIDRIO SOBRE FOTO */}
+        <View style={styles.heroContainer}>
+          {plant.imageUri ? (
+            <Image
+              source={{ uri: plant.imageUri }}
+              style={styles.heroImage}
+              accessible
+              accessibilityLabel={plant.name}
             />
-          </View>
-        ) : (
-          <View style={{ gap: spacing.md }}>
-            {/* HÁBITAT Y ORIGEN */}
-            <Card elevated style={{ backgroundColor: colors.surface }}>
-              <View style={styles.actionCardRow}>
-                <View style={[styles.actionIconBox, { backgroundColor: '#E3F2FD' }]}>
-                  <Ionicons name="earth" size={24} color="#0D47A1" />
-                </View>
-                <View style={{ flex: 1, marginLeft: spacing.md }}>
-                  <Text style={[typography.headline, { color: colors.textPrimary }]}>
-                    {t('Origen y Hábitat')}
-                  </Text>
-                  <Text style={[typography.body, { color: colors.textSecondary, marginTop: 4, lineHeight: 22 }]}>
-                    {plant.habitatSummary}
-                  </Text>
-                </View>
-              </View>
-              <Button
-                title={t('Abrir Mapa de Hábitat')}
-                onPress={() => navigation.navigate('HabitatMap', { plantId: plant.id, plantName: plant.name })}
-                variant="secondary"
-                size="md"
-                style={{ marginTop: spacing.md }}
-              />
-            </Card>
+          ) : (
+            <View style={[styles.heroPlaceholder, { backgroundColor: colors.surfaceSecondary }]}>
+              <Text style={{ fontSize: 64 }}>{plant.avatarEmoji || '🌿'}</Text>
+            </View>
+          )}
 
-            {/* PROBLEMAS FRECUENTES Y DIAGNÓSTICO */}
-            <Card elevated style={{ backgroundColor: colors.surface }}>
-              <View style={styles.actionCardRow}>
-                <View style={[styles.actionIconBox, { backgroundColor: '#FFF3E0' }]}>
-                  <Ionicons name="medkit" size={24} color="#E65100" />
-                </View>
-                <View style={{ flex: 1, marginLeft: spacing.md }}>
-                  <Text style={[typography.headline, { color: colors.textPrimary }]}>
-                    {t('Problemas Comunes')}
-                  </Text>
-                  <Text style={[typography.body, { color: colors.textSecondary, marginTop: 4, lineHeight: 22 }]}>
-                    {Array.isArray(plant.commonProblems) ? plant.commonProblems.join('\n') : plant.commonProblems}
-                  </Text>
-                </View>
-              </View>
-              <Button
-                title={t('Diagnosticar Salud')}
-                onPress={() => navigation.navigate('HealthDiagnosis', { plantId: plant.id, plantName: plant.name })}
-                variant="secondary"
-                size="md"
-                style={{ marginTop: spacing.md }}
-              />
-            </Card>
+          {/* CONTROLES FLOTANTES DE VIDRIO SOBRE LA FOTO */}
+          <View
+            style={[styles.floatingControlsOverlay, { paddingTop: Math.max(insets.top, Platform.OS === 'ios' ? 44 : 16) }]}
+            pointerEvents="box-none"
+          >
+            <GlassSurface variant="strong" borderRadius={24} style={styles.floatingGlassBtn}>
+              <Pressable
+                onPress={() => navigation.goBack()}
+                style={({ pressed }) => [styles.glassBtnPressable, pressed && { opacity: 0.7 }]}
+                android_ripple={{ color: '#FFFFFF33', borderless: true, radius: 24 }}
+                accessibilityRole="button"
+                accessibilityLabel={t('Volver')}
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              >
+                <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
+              </Pressable>
+            </GlassSurface>
 
-            {/* TAXONOMÍA */}
-            <Card style={{ backgroundColor: colors.surface }}>
-              <Text style={[typography.headline, { color: colors.textPrimary, marginBottom: 8 }]}>
-                {t('Clasificación Botánica')}
-              </Text>
-              <Text style={[typography.footnote, { color: colors.textSecondary }]}>
-                {t('Familia')}: <Text style={{ color: colors.textPrimary, fontWeight: '600' }}>{plant.family}</Text>
-              </Text>
-              <Text style={[typography.footnote, { color: colors.textSecondary, marginTop: 4 }]}>
-                {t('Nombre Científico')}: <Text style={{ color: colors.textPrimary, fontWeight: '600', fontStyle: 'italic' }}>{plant.scientificName}</Text>
-              </Text>
-            </Card>
+            <View style={styles.floatingRightActions}>
+              <GlassSurface variant="strong" borderRadius={24} style={styles.floatingGlassBtn}>
+                <Pressable
+                  onPress={() => setLightMeterVisible(true)}
+                  style={({ pressed }) => [styles.glassBtnPressable, pressed && { opacity: 0.7 }]}
+                  android_ripple={{ color: '#FFFFFF33', borderless: true, radius: 24 }}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('Medidor de luz')}
+                  hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                >
+                  <Ionicons name="sunny-outline" size={22} color="#FFFFFF" />
+                </Pressable>
+              </GlassSurface>
+
+              <GlassSurface variant="strong" borderRadius={24} style={[styles.floatingGlassBtn, { marginLeft: 8 }]}>
+                <Pressable
+                  onPress={() => navigation.navigate('Assistant', { plantName: plant.name })}
+                  style={({ pressed }) => [styles.glassBtnPressable, pressed && { opacity: 0.7 }]}
+                  android_ripple={{ color: '#FFFFFF33', borderless: true, radius: 24 }}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('Pregúntale a EcoScan')}
+                  hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                >
+                  <Ionicons name="chatbubble-ellipses-outline" size={22} color="#FFFFFF" />
+                </Pressable>
+              </GlassSurface>
+
+              <GlassSurface variant="strong" borderRadius={24} style={[styles.floatingGlassBtn, { marginLeft: 8 }]}>
+                <Pressable
+                  onPress={() => setShareModalVisible(true)}
+                  style={({ pressed }) => [styles.glassBtnPressable, pressed && { opacity: 0.7 }]}
+                  android_ripple={{ color: '#FFFFFF33', borderless: true, radius: 24 }}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('Compartir')}
+                  hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                >
+                  <Ionicons name="share-social-outline" size={22} color="#FFFFFF" />
+                </Pressable>
+              </GlassSurface>
+            </View>
           </View>
-        )}
+        </View>
+
+        <View style={{ paddingHorizontal: spacing.md, paddingTop: spacing.md }}>
+          {/* TÍTULO BOTÁNICO */}
+          <Text style={[typography.title1, { color: colors.textPrimary, fontWeight: '800' }]}>
+            {plant.name}
+          </Text>
+          <Text style={[typography.subheadline, { color: colors.textSecondary, fontStyle: 'italic', marginTop: 2 }]}>
+            {plant.scientificName}
+          </Text>
+
+          {/* TOXICIDAD ARRIBA (SEGURIDAD PRIORITARIA) */}
+          <PlantToxicityBanner speciesId={plant.id} />
+
+          {/* BLOQUE PRINCIPAL: QUÉ HACER HOY */}
+          <PlantTodayActionCard plant={plant} />
+
+          {/* PESTAÑAS: CUIDADOS vs HISTORIA vs MÁS INFORMACIÓN */}
+          <SegmentedControl<TabType>
+            options={[
+              { key: 'cuidados', label: t('Cuidados') },
+              { key: 'historia', label: t('Historia') },
+              { key: 'mas_info', label: t('Más información') },
+            ]}
+            selectedKey={activeTab}
+            onSelect={setActiveTab}
+            style={{ marginTop: spacing.lg, marginBottom: spacing.md }}
+          />
+
+          {activeTab === 'cuidados' ? (
+            <View style={{ gap: spacing.md }}>
+              {/* PAUTAS DETALLADAS DE CUIDADO */}
+              <Card
+                variant="flat"
+                style={{
+                  backgroundColor: colors.surface,
+                  borderColor: colors.border,
+                  borderWidth: 1,
+                  borderRadius: layout.borderRadius.lg,
+                  padding: spacing.md,
+                }}
+              >
+                <Text style={[typography.headline, { color: colors.textPrimary, marginBottom: 8 }]}>
+                  {t('Pauta de Riego y Humedad')}
+                </Text>
+                <Text style={[typography.body, { color: colors.textSecondary, lineHeight: 22 }]}>
+                  {plant.watering}
+                </Text>
+                <View style={[styles.separator, { backgroundColor: colors.border }]} />
+                <Text style={[typography.headline, { color: colors.textPrimary, marginBottom: 8 }]}>
+                  {t('Iluminación Recomendada')}
+                </Text>
+                <Text style={[typography.body, { color: colors.textSecondary, lineHeight: 22 }]}>
+                  {plant.light}
+                </Text>
+                <Button
+                  title={t('Comprobar luz con la cámara')}
+                  onPress={() => setLightMeterVisible(true)}
+                  variant="secondary"
+                  size="sm"
+                  icon={<Ionicons name="sunny-outline" size={16} color={colors.primary} />}
+                  style={{ marginTop: spacing.md }}
+                />
+              </Card>
+
+              {/* BOTÓN AL DIARIO DE CRECIMIENTO */}
+              <Card
+                variant="flat"
+                style={{
+                  backgroundColor: colors.surface,
+                  borderColor: colors.border,
+                  borderWidth: 1,
+                  borderRadius: layout.borderRadius.lg,
+                  padding: spacing.md,
+                }}
+              >
+                <View style={styles.actionCardRow}>
+                  <View style={[styles.actionIconBox, { backgroundColor: colors.primaryLight }]}>
+                    <Ionicons name="images" size={24} color={colors.primary} />
+                  </View>
+                  <View style={{ flex: 1, marginLeft: spacing.md }}>
+                    <Text style={[typography.headline, { color: colors.textPrimary }]}>
+                      {t('Diario de Crecimiento')}
+                    </Text>
+                    <Text style={[typography.caption1, { color: colors.textSecondary, marginTop: 2 }]}>
+                      {t('Guarda fotos con fecha y compara antes vs. después')}
+                    </Text>
+                  </View>
+                </View>
+                <Button
+                  title={t('Ver Diario de Crecimiento')}
+                  onPress={() => navigation.navigate('GrowthDiary', { plantId: plant.id })}
+                  variant="secondary"
+                  size="md"
+                  style={{ marginTop: spacing.md }}
+                />
+              </Card>
+
+              {/* PREGÚNTALE A ECOSCAN */}
+              <Card
+                variant="flat"
+                style={{
+                  backgroundColor: colors.surface,
+                  borderColor: colors.border,
+                  borderWidth: 1,
+                  borderRadius: layout.borderRadius.lg,
+                  padding: spacing.md,
+                }}
+              >
+                <View style={styles.actionCardRow}>
+                  <View style={[styles.actionIconBox, { backgroundColor: colors.primaryLight }]}>
+                    <Ionicons name="chatbubbles" size={24} color={colors.primary} />
+                  </View>
+                  <View style={{ flex: 1, marginLeft: spacing.md }}>
+                    <Text style={[typography.headline, { color: colors.textPrimary }]}>
+                      {t('Pregúntale a EcoScan')}
+                    </Text>
+                    <Text style={[typography.caption1, { color: colors.textSecondary, marginTop: 2 }]}>
+                      {t('Resuelve dudas sobre riego, luz, plagas o abono con tu asistente')}
+                    </Text>
+                  </View>
+                </View>
+                <Button
+                  title={t('Consultar al Asistente')}
+                  onPress={() => navigation.navigate('Assistant', { plantName: plant.name })}
+                  variant="secondary"
+                  size="md"
+                  icon={<Ionicons name="sparkles-outline" size={18} color={colors.primary} />}
+                  style={{ marginTop: spacing.md }}
+                />
+              </Card>
+            </View>
+          ) : activeTab === 'historia' ? (
+            <View style={{ gap: spacing.md }}>
+              <PlantTimeline
+                plantId={plant.id}
+                plantName={plant.name}
+                lastWatered={matchingGardenPlant?.lastWatered}
+                lastDiagnosis={matchingGardenPlant?.lastDiagnosis}
+                onNavigateGrowthDiary={() => navigation.navigate('GrowthDiary', { plantId: plant.id })}
+              />
+            </View>
+          ) : (
+            <View style={{ gap: spacing.md }}>
+              {/* HÁBITAT Y ORIGEN */}
+              <Card
+                variant="flat"
+                style={{
+                  backgroundColor: colors.surface,
+                  borderColor: colors.border,
+                  borderWidth: 1,
+                  borderRadius: layout.borderRadius.lg,
+                  padding: spacing.md,
+                }}
+              >
+                <View style={styles.actionCardRow}>
+                  <View style={[styles.actionIconBox, { backgroundColor: '#E3F2FD' }]}>
+                    <Ionicons name="earth" size={24} color="#0D47A1" />
+                  </View>
+                  <View style={{ flex: 1, marginLeft: spacing.md }}>
+                    <Text style={[typography.headline, { color: colors.textPrimary }]}>
+                      {t('Origen y Hábitat')}
+                    </Text>
+                    <Text style={[typography.body, { color: colors.textSecondary, marginTop: 4, lineHeight: 22 }]}>
+                      {plant.habitatSummary}
+                    </Text>
+                  </View>
+                </View>
+                <Button
+                  title={t('Abrir Mapa de Hábitat')}
+                  onPress={() => navigation.navigate('HabitatMap', { plantId: plant.id, plantName: plant.name })}
+                  variant="secondary"
+                  size="md"
+                  style={{ marginTop: spacing.md }}
+                />
+              </Card>
+
+              {/* PROBLEMAS FRECUENTES Y DIAGNÓSTICO */}
+              <Card
+                variant="flat"
+                style={{
+                  backgroundColor: colors.surface,
+                  borderColor: colors.border,
+                  borderWidth: 1,
+                  borderRadius: layout.borderRadius.lg,
+                  padding: spacing.md,
+                }}
+              >
+                <View style={styles.actionCardRow}>
+                  <View style={[styles.actionIconBox, { backgroundColor: '#FFF3E0' }]}>
+                    <Ionicons name="medkit" size={24} color="#E65100" />
+                  </View>
+                  <View style={{ flex: 1, marginLeft: spacing.md }}>
+                    <Text style={[typography.headline, { color: colors.textPrimary }]}>
+                      {t('Problemas Comunes')}
+                    </Text>
+                    <Text style={[typography.body, { color: colors.textSecondary, marginTop: 4, lineHeight: 22 }]}>
+                      {Array.isArray(plant.commonProblems) ? plant.commonProblems.join('\n') : plant.commonProblems}
+                    </Text>
+                  </View>
+                </View>
+                <Button
+                  title={t('Diagnosticar Salud')}
+                  onPress={() => navigation.navigate('HealthDiagnosis', { plantId: plant.id, plantName: plant.name })}
+                  variant="secondary"
+                  size="md"
+                  style={{ marginTop: spacing.md }}
+                />
+              </Card>
+
+              {/* TAXONOMÍA */}
+              <Card
+                variant="flat"
+                style={{
+                  backgroundColor: colors.surface,
+                  borderColor: colors.border,
+                  borderWidth: 1,
+                  borderRadius: layout.borderRadius.lg,
+                  padding: spacing.md,
+                }}
+              >
+                <Text style={[typography.headline, { color: colors.textPrimary, marginBottom: 8 }]}>
+                  {t('Clasificación Botánica')}
+                </Text>
+                <Text style={[typography.footnote, { color: colors.textSecondary }]}>
+                  {t('Familia')}: <Text style={{ color: colors.textPrimary, fontWeight: '600' }}>{plant.family}</Text>
+                </Text>
+                <Text style={[typography.footnote, { color: colors.textSecondary, marginTop: 4 }]}>
+                  {t('Nombre Científico')}: <Text style={{ color: colors.textPrimary, fontWeight: '600', fontStyle: 'italic' }}>{plant.scientificName}</Text>
+                </Text>
+              </Card>
+            </View>
+          )}
+        </View>
       </ScrollView>
 
       {/* BOTÓN FLOTANTE: PREGÚNTALE A ECOSCAN */}
-      <Pressable
-        onPress={() => navigation.navigate('Assistant', { plantName: plant.name })}
-        style={({ pressed }) => [
-          styles.floatingAssistantBtn,
-          {
-            backgroundColor: colors.primary,
-            bottom: Math.max(insets.bottom + 88, 96),
-            overflow: 'hidden',
-            opacity: pressed && Platform.OS === 'ios' ? 0.85 : 1,
-          },
-        ]}
-        android_ripple={{ color: 'rgba(255,255,255,0.3)' }}
-        accessibilityRole="button"
-        accessibilityLabel={t('Pregúntale a EcoScan')}
+      <View
+        style={[styles.floatingAssistantContainer, { bottom: Math.max(insets.bottom + 88, 96) }]}
+        pointerEvents="box-none"
       >
-        <Ionicons name="chatbubble-ellipses" size={20} color="#FFFFFF" style={{ marginRight: 6 }} />
-        <Text style={[typography.subheadline, { color: '#FFFFFF', fontWeight: '700' }]}>
-          {t('Preguntar')}
-        </Text>
-      </Pressable>
+        <GlassSurface
+          variant="strong"
+          borderRadius={layout.borderRadius.full}
+          style={styles.floatingAssistantGlass}
+        >
+          <Pressable
+            onPress={() => navigation.navigate('Assistant', { plantName: plant.name })}
+            style={({ pressed }) => [
+              styles.floatingAssistantInner,
+              { opacity: pressed && Platform.OS === 'ios' ? 0.85 : 1 },
+            ]}
+            android_ripple={{ color: colors.primary + '20' }}
+            accessibilityRole="button"
+            accessibilityLabel={t('Pregúntale a EcoScan')}
+          >
+            <Ionicons name="chatbubbles" size={20} color={colors.primary} style={{ marginRight: 6 }} />
+            <Text style={[typography.subheadline, { color: colors.primary, fontWeight: '700' }]}>
+              {t('Preguntar')}
+            </Text>
+          </Pressable>
+        </GlassSurface>
+      </View>
 
       {/* BARRA INFERIOR DE ACCIÓN PRINCIPAL */}
       <PrimaryActionBar
@@ -498,33 +555,47 @@ export const PlantDetailScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: {
+  heroContainer: {
+    width: '100%',
+    height: 280,
+    position: 'relative',
+    backgroundColor: '#000000',
+  },
+  heroImage: {
+    width: '100%',
+    height: '100%',
+  },
+  heroPlaceholder: {
+    width: '100%',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  floatingControlsOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
   },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    minHeight: 44,
-    minWidth: 44,
+  floatingGlassBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    overflow: 'hidden',
   },
-  headerActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  headerIconButton: {
-    minWidth: 44,
-    minHeight: 44,
+  glassBtnPressable: {
+    width: '100%',
+    height: '100%',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  heroImage: {
-    width: '100%',
-    height: 240,
+  floatingRightActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   separator: {
     height: 1,
@@ -541,19 +612,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  floatingAssistantBtn: {
+  floatingAssistantContainer: {
     position: 'absolute',
-    bottom: 96,
-    right: 20,
+    right: 18,
+    zIndex: 10,
+  },
+  floatingAssistantGlass: {
+    overflow: 'hidden',
+    elevation: 6,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+  },
+  floatingAssistantInner: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 12,
     paddingHorizontal: 18,
-    borderRadius: 28,
-    elevation: 6,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    zIndex: 10,
+    minHeight: 48,
   },
 });

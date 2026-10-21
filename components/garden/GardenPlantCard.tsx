@@ -33,7 +33,19 @@ export const GardenPlantCard: React.FC<GardenPlantCardProps> = ({
   const isWatered = plant.isWateredToday;
 
   return (
-    <Card elevated style={[styles.card, { backgroundColor: colors.surface, overflow: 'hidden' }]}>
+    <Card
+      variant="flat"
+      style={[
+        styles.card,
+        {
+          backgroundColor: colors.surface,
+          borderColor: colors.border,
+          borderWidth: 1,
+          borderRadius: layout.borderRadius.lg,
+          overflow: 'hidden',
+        },
+      ]}
+    >
       <Pressable
         onPress={onPress}
         accessibilityRole="button"
@@ -66,7 +78,7 @@ export const GardenPlantCard: React.FC<GardenPlantCardProps> = ({
           <View style={styles.infoContainer}>
             <View style={styles.titleRow}>
               <Text
-                style={[typography.title3, { color: colors.textPrimary, fontWeight: '800', flex: 1 }]}
+                style={[typography.title3, { color: colors.textPrimary, fontWeight: '700', flex: 1 }]}
                 numberOfLines={1}
               >
                 {plant.name}
@@ -76,7 +88,7 @@ export const GardenPlantCard: React.FC<GardenPlantCardProps> = ({
                 accessibilityRole="button"
                 accessibilityLabel={t('Opciones de {nombre}', { nombre: plant.name })}
                 hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-                android_ripple={{ color: colors.border, borderless: true, radius: 20 }}
+                android_ripple={{ color: colors.border, borderless: true, radius: 24 }}
                 style={({ pressed }) => [
                   styles.moreButton,
                   { opacity: pressed && Platform.OS === 'ios' ? 0.6 : 1 },
@@ -117,7 +129,8 @@ export const GardenPlantCard: React.FC<GardenPlantCardProps> = ({
               styles.waterButton,
               {
                 backgroundColor: isWatered ? colors.primaryLight : colors.primary,
-                minHeight: layout.minTouchTarget,
+                minHeight: Math.max(layout.minTouchTarget, 48),
+                borderRadius: layout.borderRadius.md,
                 overflow: 'hidden',
                 opacity: pressed && Platform.OS === 'ios' ? 0.8 : 1,
               },
@@ -183,8 +196,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   moreButton: {
-    minWidth: 44,
-    minHeight: 44,
+    minWidth: 48,
+    minHeight: 48,
     alignItems: 'center',
     justifyContent: 'center',
   },
