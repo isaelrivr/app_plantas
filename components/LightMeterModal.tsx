@@ -4,7 +4,7 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
+  Pressable,
   ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -108,14 +108,15 @@ export const LightMeterModal: React.FC<LightMeterModalProps> = ({
                 {t('Medidor de luz')}
               </Text>
             </View>
-            <TouchableOpacity
+            <Pressable
               onPress={onClose}
+              android_ripple={{ color: colors.border, borderless: true, radius: 24 }}
+              style={({ pressed }) => [styles.closeButton, pressed && { opacity: 0.7 }]}
               accessibilityRole="button"
               accessibilityLabel={t('Cerrar')}
-              style={styles.closeButton}
             >
               <Ionicons name="close" size={24} color={colors.textSecondary} />
-            </TouchableOpacity>
+            </Pressable>
           </View>
 
           <ScrollView
@@ -203,14 +204,17 @@ export const LightMeterModal: React.FC<LightMeterModalProps> = ({
             </Text>
 
             <View style={styles.presetsRow}>
-              <TouchableOpacity
+              <Pressable
                 onPress={() => setLuxValue(120)}
-                style={[
+                android_ripple={{ color: colors.primaryLight }}
+                style={({ pressed }) => [
                   styles.presetBtn,
                   {
                     backgroundColor: luxValue < 250 ? colors.primaryLight : colors.surface,
                     borderColor: colors.border,
+                    overflow: 'hidden',
                   },
+                  pressed && { opacity: 0.8 },
                 ]}
                 accessibilityRole="button"
                 accessibilityLabel="Probar sombra de pasillo"
@@ -220,16 +224,19 @@ export const LightMeterModal: React.FC<LightMeterModalProps> = ({
                   {t('Sombra')}
                 </Text>
                 <Text style={[typography.caption2, { color: colors.textSecondary }]}>~120 lx</Text>
-              </TouchableOpacity>
+              </Pressable>
 
-              <TouchableOpacity
+              <Pressable
                 onPress={() => setLuxValue(550)}
-                style={[
+                android_ripple={{ color: colors.primaryLight }}
+                style={({ pressed }) => [
                   styles.presetBtn,
                   {
                     backgroundColor: luxValue >= 250 && luxValue <= 1000 ? colors.primaryLight : colors.surface,
                     borderColor: colors.border,
+                    overflow: 'hidden',
                   },
+                  pressed && { opacity: 0.8 },
                 ]}
                 accessibilityRole="button"
                 accessibilityLabel="Probar ventana con cortina"
@@ -239,16 +246,19 @@ export const LightMeterModal: React.FC<LightMeterModalProps> = ({
                   {t('Luz filtrada')}
                 </Text>
                 <Text style={[typography.caption2, { color: colors.textSecondary }]}>~550 lx</Text>
-              </TouchableOpacity>
+              </Pressable>
 
-              <TouchableOpacity
+              <Pressable
                 onPress={() => setLuxValue(1400)}
-                style={[
+                android_ripple={{ color: colors.primaryLight }}
+                style={({ pressed }) => [
                   styles.presetBtn,
                   {
                     backgroundColor: luxValue > 1000 ? colors.primaryLight : colors.surface,
                     borderColor: colors.border,
+                    overflow: 'hidden',
                   },
+                  pressed && { opacity: 0.8 },
                 ]}
                 accessibilityRole="button"
                 accessibilityLabel="Probar sol directo"
@@ -258,7 +268,7 @@ export const LightMeterModal: React.FC<LightMeterModalProps> = ({
                   {t('Sol directo')}
                 </Text>
                 <Text style={[typography.caption2, { color: colors.textSecondary }]}>~1400 lx</Text>
-              </TouchableOpacity>
+              </Pressable>
             </View>
 
             {/* DIAGNÓSTICO Y CONSEJO */}

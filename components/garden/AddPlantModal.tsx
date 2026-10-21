@@ -4,7 +4,7 @@ import {
   TextInput,
   View,
   Text,
-  TouchableOpacity,
+  Pressable,
   Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -114,21 +114,28 @@ export const AddPlantModal: React.FC<AddPlantModalProps> = ({
             {imageUri ? (
               <View style={{ position: 'relative' }}>
                 <Image source={{ uri: imageUri }} style={styles.previewImage} />
-                <TouchableOpacity
+                <Pressable
                   onPress={() => setImageUri(undefined)}
-                  style={[styles.removePhotoButton, { backgroundColor: colors.surface }]}
+                  android_ripple={{ color: colors.error + '25', borderless: true, radius: 20 }}
+                  style={({ pressed }) => [
+                    styles.removePhotoButton,
+                    { backgroundColor: colors.surface },
+                    pressed && { opacity: 0.7 },
+                  ]}
                   accessibilityRole="button"
                   accessibilityLabel={t('Eliminar foto')}
                 >
                   <Ionicons name="close-circle" size={24} color={colors.error} />
-                </TouchableOpacity>
+                </Pressable>
               </View>
             ) : (
-              <TouchableOpacity
+              <Pressable
                 onPress={handlePickImage}
-                style={[
+                android_ripple={{ color: colors.primaryLight }}
+                style={({ pressed }) => [
                   styles.addPhotoButton,
-                  { borderColor: colors.border, backgroundColor: colors.surfaceSecondary },
+                  { borderColor: colors.border, backgroundColor: colors.surfaceSecondary, overflow: 'hidden' },
+                  pressed && { opacity: 0.8 },
                 ]}
                 accessibilityRole="button"
                 accessibilityLabel={t('Agregar foto opcional de tu planta')}
@@ -137,7 +144,7 @@ export const AddPlantModal: React.FC<AddPlantModalProps> = ({
                 <Text style={[typography.caption1, { color: colors.textSecondary, marginTop: 4 }]}>
                   {t('Foto opcional')}
                 </Text>
-              </TouchableOpacity>
+              </Pressable>
             )}
           </View>
 
@@ -206,16 +213,19 @@ export const AddPlantModal: React.FC<AddPlantModalProps> = ({
             {potOptions.map((opt) => {
               const selected = selectedPot === opt.key;
               return (
-                <TouchableOpacity
+                <Pressable
                   key={opt.key}
                   onPress={() => setSelectedPot(opt.key)}
-                  style={[
+                  android_ripple={{ color: colors.primaryLight }}
+                  style={({ pressed }) => [
                     styles.potOption,
                     {
                       borderColor: selected ? colors.primary : colors.border,
                       backgroundColor: selected ? colors.primaryLight : colors.surfaceSecondary,
                       borderRadius: layout.borderRadius.md,
+                      overflow: 'hidden',
                     },
+                    pressed && { opacity: 0.8 },
                   ]}
                   accessibilityRole="radio"
                   accessibilityState={{ selected }}
@@ -237,7 +247,7 @@ export const AddPlantModal: React.FC<AddPlantModalProps> = ({
                   <Text style={[typography.caption2, { color: colors.textTertiary, marginTop: 2 }]}>
                     {opt.desc}
                   </Text>
-                </TouchableOpacity>
+                </Pressable>
               );
             })}
           </View>

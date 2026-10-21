@@ -5,7 +5,7 @@ import {
   StyleSheet,
   Image,
   ScrollView,
-  TouchableOpacity,
+  Pressable,
   ActivityIndicator,
   Animated,
   Easing,
@@ -17,6 +17,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAppTheme } from '../theme';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
@@ -41,6 +42,7 @@ import { useFeedback } from '../context/FeedbackContext';
 export const ScannerScreen: React.FC = () => {
   const { colors, spacing, typography, layout } = useAppTheme();
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   const { showToast, confirm } = useFeedback();
   const { addPlant, registerIdentification } = useGarden();
   const limits = usePlanLimits();
@@ -490,16 +492,17 @@ export const ScannerScreen: React.FC = () => {
       {/* CONTROLES Y ELEMENTOS SUPERPUESTOS EN POSICIÓN ABSOLUTA (CameraView en SDK 57 no admite children) */}
       <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
         {/* BARRA SUPERIOR SOBRE LA CÁMARA */}
-        <View style={styles.cameraTopBar}>
-          <TouchableOpacity
+        <View style={[styles.cameraTopBar, { paddingTop: insets.top + (Platform.OS === 'ios' ? 8 : 12) }]}>
+          <Pressable
             onPress={() => navigation.goBack()}
-            style={styles.topBarBtn}
+            android_ripple={{ color: '#FFFFFF33', borderless: true, radius: 24 }}
+            style={({ pressed }) => [styles.topBarBtn, pressed && { opacity: 0.7 }]}
             accessibilityRole="button"
             accessibilityLabel={t('Volver')}
             hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           >
             <Ionicons name="close" size={28} color="#FFFFFF" />
-          </TouchableOpacity>
+          </Pressable>
 
           {!limits.isPremium ? (
             <Badge
@@ -511,9 +514,10 @@ export const ScannerScreen: React.FC = () => {
             <Badge label="PRO" variant="premium" />
           )}
 
-          <TouchableOpacity
+          <Pressable
             onPress={toggleTorch}
-            style={styles.topBarBtn}
+            android_ripple={{ color: '#FFFFFF33', borderless: true, radius: 24 }}
+            style={({ pressed }) => [styles.topBarBtn, pressed && { opacity: 0.7 }]}
             accessibilityRole="button"
             accessibilityLabel={torchEnabled ? t('Apagar linterna') : t('Encender linterna')}
             hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
@@ -523,16 +527,19 @@ export const ScannerScreen: React.FC = () => {
               size={24}
               color={torchEnabled ? '#FFD54F' : '#FFFFFF'}
             />
-          </TouchableOpacity>
+          </Pressable>
         </View>
 
         {/* SELECTOR DE MODO: IDENTIFICAR vs ENFERMEDADES */}
         <View style={styles.modeSelectorContainer}>
-          <TouchableOpacity
-            style={[
+          <Pressable
+            style={({ pressed }) => [
               styles.modeSegment,
               scanMode === 'identify' && styles.modeSegmentActive,
+              { overflow: 'hidden' },
+              pressed && { opacity: 0.8 },
             ]}
+            android_ripple={{ color: '#FFFFFF33' }}
             onPress={() => {
               try {
                 Haptics.selectionAsync();
@@ -560,13 +567,16 @@ export const ScannerScreen: React.FC = () => {
             >
               {t('Identificar planta')}
             </Text>
-          </TouchableOpacity>
+          </Pressable>
 
-          <TouchableOpacity
-            style={[
+          <Pressable
+            style={({ pressed }) => [
               styles.modeSegment,
               scanMode === 'diagnose' && styles.modeSegmentActive,
+              { overflow: 'hidden' },
+              pressed && { opacity: 0.8 },
             ]}
+            android_ripple={{ color: '#FFFFFF33' }}
             onPress={() => {
               try {
                 Haptics.selectionAsync();
@@ -594,7 +604,7 @@ export const ScannerScreen: React.FC = () => {
             >
               {t('Mi planta está enferma')}
             </Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
 
         {/* ÁREA CENTRAL CON RETÍCULA Y AYUDA CONTEXTUAL */}
@@ -625,10 +635,10 @@ export const ScannerScreen: React.FC = () => {
           </View>
 
           {/* Ayuda contextual de una sola línea */}
-          <TouchableOpacity
+          <Pressable
             onPress={() => setGuideVisible(true)}
-            activeOpacity={0.8}
-            style={styles.contextTip}
+            android_ripple={{ color: '#FFFFFF33' }}
+            style={({ pressed }) => [styles.contextTip, { overflow: 'hidden' }, pressed && { opacity: 0.8 }]}
             accessibilityRole="button"
             accessibilityLabel={
               scanMode === 'diagnose'
@@ -648,7 +658,7 @@ export const ScannerScreen: React.FC = () => {
                 : t('Acércate a una hoja con buena luz')}
             </Text>
             <Ionicons name="chevron-forward" size={14} color="#FFFFFF" style={{ marginLeft: 4 }} />
-          </TouchableOpacity>
+          </Pressable>
         </View>
 
         {/* ESTADO DE ANÁLISIS EN CURSO */}
@@ -662,24 +672,29 @@ export const ScannerScreen: React.FC = () => {
         ) : null}
 
         {/* BARRA INFERIOR: UNA SOLA COSA GRANDE (BOTÓN DE CAPTURA) */}
-        <View style={styles.cameraBottomBar}>
+        <View style={[styles.cameraBottomBar, { paddingBottom: Math.max(insets.bottom, 24) }]}>
           {/* LADO IZQUIERDO: GALERÍA */}
-          <TouchableOpacity
+          <Pressable
             onPress={handlePickGallery}
-            style={styles.sideControlBtn}
+            android_ripple={{ color: '#FFFFFF33', borderless: true, radius: 25 }}
+            style={({ pressed }) => [styles.sideControlBtn, pressed && { opacity: 0.7 }]}
             accessibilityRole="button"
             accessibilityLabel={t('Elegir de la galería')}
             hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           >
             <Ionicons name="images" size={26} color="#FFFFFF" />
-          </TouchableOpacity>
+          </Pressable>
 
           {/* CENTRO: BOTÓN GIGANTE DE CAPTURA */}
-          <TouchableOpacity
+          <Pressable
             onPress={handleCapture}
-            activeOpacity={0.85}
             disabled={isCapturing || isIdentifying}
-            style={[styles.shutterButtonOuter, (isCapturing || isIdentifying) && { opacity: 0.6 }]}
+            android_ripple={{ color: '#FFFFFF44', borderless: true, radius: 41 }}
+            style={({ pressed }) => [
+              styles.shutterButtonOuter,
+              (isCapturing || isIdentifying) && { opacity: 0.6 },
+              pressed && !(isCapturing || isIdentifying) && { transform: [{ scale: 0.94 }] },
+            ]}
             accessibilityRole="button"
             accessibilityLabel={
               scanMode === 'diagnose'
@@ -707,18 +722,19 @@ export const ScannerScreen: React.FC = () => {
                 />
               )}
             </View>
-          </TouchableOpacity>
+          </Pressable>
 
           {/* LADO DERECHO: CAMBIAR CÁMARA */}
-          <TouchableOpacity
+          <Pressable
             onPress={toggleCameraFacing}
-            style={styles.sideControlBtn}
+            android_ripple={{ color: '#FFFFFF33', borderless: true, radius: 25 }}
+            style={({ pressed }) => [styles.sideControlBtn, pressed && { opacity: 0.7 }]}
             accessibilityRole="button"
             accessibilityLabel={t('Cambiar cámara')}
             hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           >
             <Ionicons name="camera-reverse" size={26} color="#FFFFFF" />
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </View>
 
@@ -767,9 +783,9 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === 'ios' ? 52 : 36,
   },
   topBarBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: 'rgba(0,0,0,0.45)',
     alignItems: 'center',
     justifyContent: 'center',
@@ -864,7 +880,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 20,
-    minHeight: 44,
+    minHeight: 48,
   },
   modeSegmentActive: {
     backgroundColor: 'rgba(255,255,255,0.25)',

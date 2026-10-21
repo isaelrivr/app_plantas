@@ -3,7 +3,7 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
+  Pressable,
   Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -142,9 +142,19 @@ export const PlantTimeline: React.FC<PlantTimelineProps> = ({
           </View>
         </View>
 
-        <TouchableOpacity
+        <Pressable
           onPress={() => navigation.navigate('GrowthDiary', { plantId })}
-          style={[styles.addDiaryButton, { borderColor: colors.primary, borderRadius: layout.borderRadius.md, marginTop: spacing.md }]}
+          android_ripple={{ color: colors.primaryLight }}
+          style={({ pressed }) => [
+            styles.addDiaryButton,
+            {
+              borderColor: colors.primary,
+              borderRadius: layout.borderRadius.md,
+              marginTop: spacing.md,
+              overflow: 'hidden',
+            },
+            pressed && { opacity: 0.8 },
+          ]}
           accessibilityRole="button"
           accessibilityLabel={t('Agregar foto al diario')}
         >
@@ -152,7 +162,7 @@ export const PlantTimeline: React.FC<PlantTimelineProps> = ({
           <Text style={[typography.body, { color: colors.primary, fontWeight: '700' }]}>
             {t('Agregar foto al diario')}
           </Text>
-        </TouchableOpacity>
+        </Pressable>
       </Card>
     </View>
   );

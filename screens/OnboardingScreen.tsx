@@ -4,7 +4,7 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
+  Pressable,
   useWindowDimensions,
   Animated,
   NativeSyntheticEvent,
@@ -76,18 +76,19 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
       {/* Botón Omitir siempre visible */}
       <View style={[styles.topBar, { paddingTop: Math.max(insets.top, 16) }]}>
         <View style={{ flex: 1 }} />
-        <TouchableOpacity
+        <Pressable
           onPress={onComplete}
+          android_ripple={{ color: colors.border, borderless: true, radius: 24 }}
           accessibilityRole="button"
           accessibilityLabel={t('Omitir')}
           accessibilityHint={t('Pasa directamente a la pantalla principal')}
           hitSlop={{ top: 12, bottom: 12, left: 16, right: 16 }}
-          style={styles.skipButton}
+          style={({ pressed }) => [styles.skipButton, pressed && { opacity: 0.7 }]}
         >
           <Text style={[typography.body, { color: colors.textSecondary, fontWeight: '600' }]}>
             {t('Omitir')}
           </Text>
-        </TouchableOpacity>
+        </Pressable>
       </View>
 
       <ScrollView
@@ -118,7 +119,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
             {LANGUAGES.map((lang) => {
               const selected = language === lang.code;
               return (
-                <TouchableOpacity
+                <Pressable
                   key={lang.code}
                   onPress={() => {
                     try {
@@ -126,16 +127,19 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
                     } catch {}
                     setLanguage(lang.code);
                   }}
+                  android_ripple={{ color: colors.primaryLight }}
                   accessibilityRole="radio"
                   accessibilityState={{ selected }}
                   accessibilityLabel={lang.label}
-                  style={[
+                  style={({ pressed }) => [
                     styles.langCard,
                     {
                       borderColor: selected ? colors.primary : colors.border,
                       backgroundColor: selected ? colors.primaryLight : colors.surface,
                       borderRadius: layout.borderRadius.lg,
+                      overflow: 'hidden',
                     },
+                    pressed && { opacity: 0.85 },
                   ]}
                 >
                   <Text
@@ -151,7 +155,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
                   ) : (
                     <View style={[styles.radioCircle, { borderColor: colors.border }]} />
                   )}
-                </TouchableOpacity>
+                </Pressable>
               );
             })}
           </View>
@@ -170,7 +174,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
             {GOALS.map((goal) => {
               const selected = userGoal === goal.key;
               return (
-                <TouchableOpacity
+                <Pressable
                   key={goal.key}
                   onPress={() => {
                     try {
@@ -178,16 +182,19 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
                     } catch {}
                     setUserGoal(goal.key);
                   }}
+                  android_ripple={{ color: colors.primaryLight }}
                   accessibilityRole="radio"
                   accessibilityState={{ selected }}
                   accessibilityLabel={`${goal.title}. ${goal.subtitle}`}
-                  style={[
+                  style={({ pressed }) => [
                     styles.goalCard,
                     {
                       borderColor: selected ? colors.primary : colors.border,
                       backgroundColor: selected ? colors.primaryLight : colors.surface,
                       borderRadius: layout.borderRadius.lg,
+                      overflow: 'hidden',
                     },
+                    pressed && { opacity: 0.85 },
                   ]}
                 >
                   <View
@@ -225,7 +232,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
                   {selected ? (
                     <Ionicons name="checkmark-circle" size={22} color={colors.primary} />
                   ) : null}
-                </TouchableOpacity>
+                </Pressable>
               );
             })}
           </View>

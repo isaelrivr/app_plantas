@@ -4,7 +4,7 @@ import {
   Text,
   StyleSheet,
   TextInput,
-  TouchableOpacity,
+  Pressable,
   ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -104,18 +104,21 @@ const EditCareTaskForm: React.FC<FormProps> = ({ task, onClose, onSave, onDelete
         {DUE_PRESETS.map((preset) => {
           const isSelected = dueDate.toLowerCase() === preset.value.toLowerCase();
           return (
-            <TouchableOpacity
+            <Pressable
               key={preset.value}
               onPress={() => {
                 try { Haptics.selectionAsync(); } catch {}
                 setDueDate(preset.value);
               }}
-              style={[
+              android_ripple={{ color: isSelected ? '#FFFFFF33' : colors.primaryLight }}
+              style={({ pressed }) => [
                 styles.presetChip,
                 {
                   backgroundColor: isSelected ? colors.primary : colors.surface,
                   borderColor: isSelected ? colors.primary : colors.border,
+                  overflow: 'hidden',
                 },
+                pressed && { opacity: 0.8 },
               ]}
               accessibilityRole="button"
               accessibilityState={{ selected: isSelected }}
@@ -128,7 +131,7 @@ const EditCareTaskForm: React.FC<FormProps> = ({ task, onClose, onSave, onDelete
               >
                 {t(preset.label)}
               </Text>
-            </TouchableOpacity>
+            </Pressable>
           );
         })}
       </View>
@@ -141,18 +144,21 @@ const EditCareTaskForm: React.FC<FormProps> = ({ task, onClose, onSave, onDelete
         {REPEAT_PRESETS.map((preset) => {
           const isSelected = repeatInterval === preset.value;
           return (
-            <TouchableOpacity
+            <Pressable
               key={preset.value}
               onPress={() => {
                 try { Haptics.selectionAsync(); } catch {}
                 setRepeatInterval(preset.value);
               }}
-              style={[
+              android_ripple={{ color: isSelected ? '#FFFFFF33' : colors.primaryLight }}
+              style={({ pressed }) => [
                 styles.presetChip,
                 {
                   backgroundColor: isSelected ? colors.primary : colors.surface,
                   borderColor: isSelected ? colors.primary : colors.border,
+                  overflow: 'hidden',
                 },
+                pressed && { opacity: 0.8 },
               ]}
               accessibilityRole="button"
               accessibilityState={{ selected: isSelected }}
@@ -165,15 +171,20 @@ const EditCareTaskForm: React.FC<FormProps> = ({ task, onClose, onSave, onDelete
               >
                 {t(preset.label)}
               </Text>
-            </TouchableOpacity>
+            </Pressable>
           );
         })}
       </View>
 
       {/* BOTÓN GUARDAR */}
-      <TouchableOpacity
+      <Pressable
         onPress={handleSave}
-        style={[styles.saveBtn, { backgroundColor: colors.primary, marginTop: spacing.xl }]}
+        android_ripple={{ color: colors.primaryDark }}
+        style={({ pressed }) => [
+          styles.saveBtn,
+          { backgroundColor: colors.primary, marginTop: spacing.xl, overflow: 'hidden' },
+          pressed && { opacity: 0.85 },
+        ]}
         accessibilityRole="button"
         accessibilityLabel={t('Guardar cambios')}
       >
@@ -181,12 +192,17 @@ const EditCareTaskForm: React.FC<FormProps> = ({ task, onClose, onSave, onDelete
         <Text style={[typography.headline, { color: '#FFFFFF', fontWeight: '700' }]}>
           {t('Guardar cambios')}
         </Text>
-      </TouchableOpacity>
+      </Pressable>
 
       {/* BOTÓN DESACTIVAR / ELIMINAR */}
-      <TouchableOpacity
+      <Pressable
         onPress={handleDelete}
-        style={[styles.deleteBtn, { borderColor: colors.error, marginTop: spacing.sm }]}
+        android_ripple={{ color: colors.error + '25' }}
+        style={({ pressed }) => [
+          styles.deleteBtn,
+          { borderColor: colors.error, marginTop: spacing.sm, overflow: 'hidden' },
+          pressed && { opacity: 0.85 },
+        ]}
         accessibilityRole="button"
         accessibilityLabel={t('Desactivar esta tarea')}
       >
@@ -194,7 +210,7 @@ const EditCareTaskForm: React.FC<FormProps> = ({ task, onClose, onSave, onDelete
         <Text style={[typography.subheadline, { color: colors.error, fontWeight: '600' }]}>
           {t('Desactivar tarea')}
         </Text>
-      </TouchableOpacity>
+      </Pressable>
     </ScrollView>
   );
 };

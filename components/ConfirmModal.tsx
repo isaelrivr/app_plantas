@@ -1,5 +1,5 @@
 import React from 'react';
-import { Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Modal, StyleSheet, Text, Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAppTheme } from '../theme';
 import { Button } from './Button';
@@ -41,9 +41,8 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
       onRequestClose={onCancel}
       statusBarTranslucent
     >
-      <TouchableOpacity
+      <Pressable
         style={styles.backdrop}
-        activeOpacity={1}
         onPress={onCancel}
         accessibilityRole="none"
       >
@@ -108,7 +107,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
             ) : null}
           </View>
         </View>
-      </TouchableOpacity>
+      </Pressable>
     </Modal>
   );
 };

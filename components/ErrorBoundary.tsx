@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '../theme';
 import { useTranslation, t as tGlobal } from '../i18n';
@@ -54,18 +54,25 @@ const ErrorFallback: React.FC<{ message: string; onRetry: () => void }> = ({ mes
 
       <ErrorBanner message={message} />
 
-      <TouchableOpacity
+      <Pressable
         onPress={onRetry}
+        android_ripple={{ color: colors.primaryDark }}
         accessibilityRole="button"
         accessibilityLabel={t('Reintentar cargar la aplicación')}
-        style={[
+        style={({ pressed }) => [
           styles.retryButton,
-          { backgroundColor: colors.primary, borderRadius: layout.borderRadius.md, marginTop: spacing.lg },
+          {
+            backgroundColor: colors.primary,
+            borderRadius: layout.borderRadius.md,
+            marginTop: spacing.lg,
+            overflow: 'hidden',
+          },
+          pressed && { opacity: 0.85 },
         ]}
       >
         <Ionicons name="refresh" size={18} color="#FFFFFF" />
         <Text style={[typography.headline, { color: '#FFFFFF', marginLeft: 8 }]}>{t('Reintentar')}</Text>
-      </TouchableOpacity>
+      </Pressable>
     </ScrollView>
   );
 };

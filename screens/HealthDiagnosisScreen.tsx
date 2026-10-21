@@ -5,7 +5,7 @@ import {
   StyleSheet,
   ScrollView,
   Image,
-  TouchableOpacity,
+  Pressable,
   ActivityIndicator,
   Animated,
   Easing,
@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRoute, useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
 import { useAppTheme } from '../theme';
@@ -40,6 +41,7 @@ import { useFeedback } from '../context/FeedbackContext';
 
 export const HealthDiagnosisScreen: React.FC = () => {
   const { colors, isDark, spacing, typography, layout } = useAppTheme();
+  const insets = useSafeAreaInsets();
   const { showToast, confirm } = useFeedback();
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
@@ -312,20 +314,21 @@ export const HealthDiagnosisScreen: React.FC = () => {
           {
             backgroundColor: colors.surface,
             borderBottomColor: colors.border,
-            paddingTop: Platform.OS === 'ios' ? 12 : 16,
+            paddingTop: insets.top + (Platform.OS === 'ios' ? 8 : 12),
           },
         ]}
       >
-        <TouchableOpacity
+        <Pressable
           onPress={() => navigation.goBack()}
-          style={styles.backButton}
+          style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.7 }]}
+          android_ripple={{ color: colors.primaryLight, borderless: true, radius: 24 }}
           accessibilityRole="button"
           accessibilityLabel={t('Volver')}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <Ionicons name="chevron-back" size={26} color={colors.primary} />
           <Text style={[typography.body, { color: colors.primary, fontWeight: '600' }]}>{t('Atrás')}</Text>
-        </TouchableOpacity>
+        </Pressable>
 
         <View style={styles.headerTitleCenter}>
           <Text style={[typography.headline, { color: colors.textPrimary }]} numberOfLines={1}>
@@ -341,7 +344,7 @@ export const HealthDiagnosisScreen: React.FC = () => {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ padding: spacing.md, paddingBottom: 60 }}
+        contentContainerStyle={{ padding: spacing.md, paddingBottom: insets.bottom + 60 }}
       >
         {/* BOTÓN O FOTO DE ANÁLISIS */}
         {!photoUri ? (
@@ -443,18 +446,19 @@ export const HealthDiagnosisScreen: React.FC = () => {
                 </View>
               )}
 
-              <TouchableOpacity
+              <Pressable
                 onPress={() => {
                   setPhotoUri(null);
                   setDiagnosisResult(null);
                   setErrorMessage(null);
                 }}
-                style={styles.retakeFloatingBtn}
+                android_ripple={{ color: '#FFFFFF44', borderless: true, radius: 24 }}
+                style={({ pressed }) => [styles.retakeFloatingBtn, pressed && { opacity: 0.8 }]}
                 accessibilityRole="button"
                 accessibilityLabel={t('Analizar otra foto')}
               >
                 <Ionicons name="refresh" size={20} color="#FFFFFF" />
-              </TouchableOpacity>
+              </Pressable>
             </View>
 
             {errorMessage && (
@@ -564,11 +568,14 @@ export const HealthDiagnosisScreen: React.FC = () => {
 
                 {/* SELECTOR HIG: TRATAMIENTO ORGÁNICO VS QUÍMICO */}
                 <View style={[styles.treatmentSelector, { backgroundColor: isDark ? '#1C1C1E' : '#E5E5EA' }]}>
-                  <TouchableOpacity
-                    style={[
+                  <Pressable
+                    style={({ pressed }) => [
                       styles.treatmentTabBtn,
                       treatmentMode === 'organic' && [styles.treatmentTabActive, { backgroundColor: colors.surface }],
+                      { overflow: 'hidden' },
+                      pressed && { opacity: 0.8 },
                     ]}
+                    android_ripple={{ color: colors.primaryLight }}
                     onPress={() => {
                       Haptics.selectionAsync();
                       setTreatmentMode('organic');
@@ -594,13 +601,16 @@ export const HealthDiagnosisScreen: React.FC = () => {
                     >
                       {t('Opción Orgánica (Eco)')}
                     </Text>
-                  </TouchableOpacity>
+                  </Pressable>
 
-                  <TouchableOpacity
-                    style={[
+                  <Pressable
+                    style={({ pressed }) => [
                       styles.treatmentTabBtn,
                       treatmentMode === 'chemical' && [styles.treatmentTabActive, { backgroundColor: colors.surface }],
+                      { overflow: 'hidden' },
+                      pressed && { opacity: 0.8 },
                     ]}
+                    android_ripple={{ color: colors.primaryLight }}
                     onPress={() => {
                       Haptics.selectionAsync();
                       setTreatmentMode('chemical');
@@ -626,7 +636,7 @@ export const HealthDiagnosisScreen: React.FC = () => {
                     >
                       {t('Opción Química (Rápida)')}
                     </Text>
-                  </TouchableOpacity>
+                  </Pressable>
                 </View>
 
                 {/* DETALLE DEL TRATAMIENTO SELECCIONADO */}

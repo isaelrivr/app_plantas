@@ -4,7 +4,7 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
+  Pressable,
   Share,
   ScrollView,
   Image,
@@ -96,14 +96,15 @@ export const ShareCardModal: React.FC<ShareCardProps> = ({
             >
               {t('Compartir ficha de planta')}
             </Text>
-            <TouchableOpacity
+            <Pressable
               onPress={onClose}
+              android_ripple={{ color: colors.border, borderless: true, radius: 24 }}
+              style={({ pressed }) => [styles.closeButton, pressed && { opacity: 0.7 }]}
               accessibilityRole="button"
               accessibilityLabel={t('Cerrar')}
-              style={styles.closeButton}
             >
               <Ionicons name="close" size={24} color={colors.textSecondary} />
-            </TouchableOpacity>
+            </Pressable>
           </View>
 
           <ScrollView
@@ -296,8 +297,8 @@ const styles = StyleSheet.create({
     borderBottomColor: 'rgba(0, 0, 0, 0.08)',
   },
   closeButton: {
-    minHeight: 44,
-    minWidth: 44,
+    minHeight: 48,
+    minWidth: 48,
     alignItems: 'center',
     justifyContent: 'center',
   },

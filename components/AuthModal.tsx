@@ -4,7 +4,7 @@ import {
   View,
   Text,
   TextInput,
-  TouchableOpacity,
+  Pressable,
   StyleSheet,
   ActivityIndicator,
   ScrollView,
@@ -159,14 +159,20 @@ export const AuthModal: React.FC<AuthModalProps> = ({ visible, onClose }) => {
                   : t('Crea una cuenta opcional para sincronizar tus plantas')}
               </Text>
             </View>
-            <TouchableOpacity
+            <Pressable
               onPress={onClose}
-              style={[styles.closeBtn, { backgroundColor: colors.background }]}
+              android_ripple={{ color: colors.border, borderless: true, radius: 24 }}
+              style={({ pressed }) => [
+                styles.closeBtn,
+                { backgroundColor: colors.background },
+                pressed && { opacity: 0.7 },
+              ]}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               accessibilityRole="button"
               accessibilityLabel={t('Cerrar')}
             >
               <Ionicons name="close" size={20} color={colors.textSecondary} />
-            </TouchableOpacity>
+            </Pressable>
           </View>
 
           <ScrollView style={{ maxHeight: 420 }} showsVerticalScrollIndicator={false}>
@@ -203,8 +209,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({ visible, onClose }) => {
                 </View>
 
                 {/* Botón sincronizar ahora */}
-                <TouchableOpacity
-                  style={[styles.actionButton, { backgroundColor: colors.primary }]}
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.actionButton,
+                    { backgroundColor: colors.primary, overflow: 'hidden' },
+                    pressed && !isSyncing && { opacity: 0.85 },
+                  ]}
+                  android_ripple={{ color: colors.primaryDark }}
                   onPress={handleManualSync}
                   disabled={isSyncing}
                   accessibilityRole="button"
@@ -219,11 +230,16 @@ export const AuthModal: React.FC<AuthModalProps> = ({ visible, onClose }) => {
                       </Text>
                     </>
                   )}
-                </TouchableOpacity>
+                </Pressable>
 
                 {/* Botón cerrar sesión */}
-                <TouchableOpacity
-                  style={[styles.secondaryButton, { borderColor: colors.border }]}
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.secondaryButton,
+                    { borderColor: colors.border, overflow: 'hidden' },
+                    pressed && { opacity: 0.8 },
+                  ]}
+                  android_ripple={{ color: colors.border }}
                   onPress={handleSignOut}
                   accessibilityRole="button"
                 >
@@ -231,7 +247,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ visible, onClose }) => {
                   <Text style={[typography.body, { color: colors.textSecondary, fontWeight: '600' }]}>
                     {t('Cerrar sesión en este dispositivo')}
                   </Text>
-                </TouchableOpacity>
+                </Pressable>
               </View>
             ) : (
               /* Formulario de registro / inicio de sesión */
@@ -282,8 +298,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({ visible, onClose }) => {
                 </View>
 
                 {/* Botón principal */}
-                <TouchableOpacity
-                  style={[styles.actionButton, { backgroundColor: colors.primary }]}
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.actionButton,
+                    { backgroundColor: colors.primary, overflow: 'hidden' },
+                    pressed && !isLoading && { opacity: 0.85 },
+                  ]}
+                  android_ripple={{ color: colors.primaryDark }}
                   onPress={handleAuthAction}
                   disabled={isLoading}
                   accessibilityRole="button"
@@ -295,11 +316,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({ visible, onClose }) => {
                       {mode === 'signup' ? t('Crear cuenta y sincronizar') : t('Iniciar sesión')}
                     </Text>
                   )}
-                </TouchableOpacity>
+                </Pressable>
 
                 {/* Alternador inicio / registro */}
-                <TouchableOpacity
-                  style={{ alignSelf: 'center', marginTop: spacing.sm, padding: 8 }}
+                <Pressable
+                  style={({ pressed }) => [
+                    { alignSelf: 'center', marginTop: spacing.sm, padding: 8, borderRadius: 8, overflow: 'hidden' },
+                    pressed && { opacity: 0.75 },
+                  ]}
+                  android_ripple={{ color: colors.primaryLight }}
                   onPress={() => setMode(mode === 'signin' ? 'signup' : 'signin')}
                 >
                   <Text style={[typography.subheadline, { color: colors.primary, fontWeight: '600' }]}>
@@ -307,18 +332,23 @@ export const AuthModal: React.FC<AuthModalProps> = ({ visible, onClose }) => {
                       ? t('¿No tienes cuenta? Regístrate')
                       : t('¿Ya tienes cuenta? Inicia sesión')}
                   </Text>
-                </TouchableOpacity>
+                </Pressable>
 
                 {/* Opción anónima / invitado */}
-                <TouchableOpacity
-                  style={[styles.secondaryButton, { borderColor: colors.border, marginTop: spacing.md }]}
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.secondaryButton,
+                    { borderColor: colors.border, marginTop: spacing.md, overflow: 'hidden' },
+                    pressed && !isLoading && { opacity: 0.8 },
+                  ]}
+                  android_ripple={{ color: colors.border }}
                   onPress={handleAnonymousSignIn}
                   disabled={isLoading}
                 >
                   <Text style={[typography.subheadline, { color: colors.textSecondary }]}>
                     {t('Continuar como invitado sin cuenta')}
                   </Text>
-                </TouchableOpacity>
+                </Pressable>
               </View>
             )}
           </ScrollView>
@@ -347,9 +377,9 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
   },
   closeBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 12,

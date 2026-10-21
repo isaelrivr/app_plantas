@@ -1,5 +1,5 @@
 import React, { useMemo, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useAppTheme } from '../theme';
@@ -46,14 +46,20 @@ export const WidgetPreviewCard: React.FC = () => {
             {t('Widget de pantalla de inicio')}
           </Text>
         </View>
-        <TouchableOpacity
+        <Pressable
           onPress={handleRefreshWidget}
-          style={[styles.refreshBtn, { backgroundColor: colors.background, borderColor: colors.border }]}
+          android_ripple={{ color: colors.primaryLight, borderless: true, radius: 24 }}
+          style={({ pressed }) => [
+            styles.refreshBtn,
+            { backgroundColor: colors.background, borderColor: colors.border },
+            pressed && { opacity: 0.7 },
+          ]}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           accessibilityRole="button"
           accessibilityLabel={t('Actualizar widget')}
         >
-          <Ionicons name="sync" size={16} color={colors.primary} />
-        </TouchableOpacity>
+          <Ionicons name="sync" size={18} color={colors.primary} />
+        </Pressable>
       </View>
 
       <Text style={[typography.subheadline, { color: colors.textSecondary, marginBottom: spacing.sm }]}>
