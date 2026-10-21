@@ -229,5 +229,38 @@ test('fase 3 base components meet touch target, ripple, and minimalist criteria'
   assert.ok(snackbarCode.includes('minHeight: Math.max(layout.minTouchTarget, 48)'));
 });
 
+test('fase 4 navigation satisfies floating glass pill, fine icons, and active label contract', () => {
+  const navPath = path.join(process.cwd(), 'navigation', 'AppNavigator.tsx');
+  assert.ok(fs.existsSync(navPath), 'AppNavigator.tsx must exist');
+
+  const navCode = fs.readFileSync(navPath, 'utf-8');
+  assert.ok(!navCode.includes('TouchableOpacity'), 'AppNavigator must not use TouchableOpacity');
+  assert.ok(navCode.includes('GlassSurface'), 'AppNavigator must use GlassSurface for floating bar');
+  assert.ok(navCode.includes('useSafeAreaInsets'), 'AppNavigator must use useSafeAreaInsets');
+  assert.ok(navCode.includes('insets.bottom'), 'AppNavigator must respect insets.bottom');
+
+  // Pill and border separation
+  assert.ok(navCode.includes('left: 16'), 'AppNavigator must float with horizontal separation');
+  assert.ok(navCode.includes('right: 16'), 'AppNavigator must float with horizontal separation');
+  assert.ok(navCode.includes('borderRadius={layout.borderRadius.full}'), 'AppNavigator must be pill-shaped');
+
+  // Fine line outline icons
+  assert.ok(navCode.includes('today-outline'));
+  assert.ok(navCode.includes('leaf-outline'));
+  assert.ok(navCode.includes('scan-outline'));
+  assert.ok(navCode.includes('compass-outline'));
+  assert.ok(navCode.includes('person-outline'));
+
+  // Label only on active tab
+  assert.ok(navCode.includes('isFocused ?'), 'Label must appear conditionally only when focused');
+  assert.ok(navCode.includes('activeChip'), 'Active tab must render active chip');
+  assert.ok(navCode.includes('inactiveIconWrapper'), 'Inactive tab must render icon only');
+
+  // Accessibility and touch target >= 48dp
+  assert.ok(navCode.includes('minHeight: Math.max(layout.minTouchTarget, 48)'));
+  assert.ok(navCode.includes('android_ripple'));
+});
+
+
 
 

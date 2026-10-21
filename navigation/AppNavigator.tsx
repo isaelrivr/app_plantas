@@ -1,9 +1,11 @@
 import React from 'react';
-import { Platform, View, StyleSheet } from 'react-native';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Platform, View, StyleSheet, Text, Pressable } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { createBottomTabNavigator, BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
-import { GlassView, BlurTargetContext } from '../components/GlassView';
+import { GlassSurface } from '../components/GlassSurface';
+import { BlurTargetContext } from '../components/GlassBackground';
 import { TodayScreen } from '../screens/TodayScreen';
 import { GardenScreen } from '../screens/GardenScreen';
 import { ScannerScreen } from '../screens/ScannerScreen';
@@ -22,7 +24,7 @@ import { SettingsScreen } from '../screens/SettingsScreen';
 import { PrivacyPolicyScreen } from '../screens/PrivacyPolicyScreen';
 import { TermsOfServiceScreen } from '../screens/TermsOfServiceScreen';
 import { HelpScreen } from '../screens/HelpScreen';
-import { useAppTheme } from '../theme';
+import { useAppTheme, fontWeights, FONT_FAMILY } from '../theme';
 import { usePremium } from '../context/PremiumContext';
 import { useTranslation } from '../i18n';
 
@@ -64,152 +66,193 @@ export type RootStackParamList = {
 const Tab = createBottomTabNavigator<RootTabParamList>();
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
-function BottomTabs() {
-  const { colors, typography, layout } = useAppTheme();
+/**
+ * Barra de navegación inferior flotante con estética de vidrio (pill).
+ * Cumple con todas las directrices de la FASE 4:
+ * - Forma de cápsula (pill) separada de los bordes laterales (16dp).
+ * - Superficie de vidrio con blur por hardware y fallback suave.
+ * - Iconos de línea fina en todas las pestañas.
+ * - Etiqueta visible ÚNICAMENTE en la pestaña activa con chip acolchado.
+ * - Respeta los insets inferiores de navegación de Android e iOS.
+ * - Áreas táctiles mínimas >= 48dp con android_ripple en Android.
+ */
+function FloatingGlassTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
+  const insets = useSafeAreaInsets();
+  const { colors, layout, isDark } = useAppTheme();
   const { isPremium } = usePremium();
   const { t } = useTranslation();
+
+  const getRouteConfig = (routeName: keyof RootTabParamList): {
+    label: string;
+    iconName: keyof typeof Ionicons.glyphMap;
+    accessibilityLabel: string;
+  } => {
+    switch (routeName) {
+      case 'Today':
+        return {
+          label: t('Hoy'),
+          iconName: 'today-outline',
+          accessibilityLabel: t('Pestaña de Hoy'),
+        };
+      case 'Garden':
+        return {
+          label: t('Mi Jardín'),
+          iconName: 'leaf-outline',
+          accessibilityLabel: t('Pestaña de Mi Jardín'),
+        };
+      case 'Scan':
+        return {
+          label: t('Escanear'),
+          iconName: 'scan-outline',
+          accessibilityLabel: t('Pestaña de Escanear'),
+        };
+      case 'Explore':
+        return {
+          label: t('Explorar'),
+          iconName: 'compass-outline',
+          accessibilityLabel: t('Pestaña de Explorar'),
+        };
+      case 'Profile':
+        return {
+          label: isPremium ? t('Yo (Pro)') : t('Yo'),
+          iconName: isPremium ? 'sparkles-outline' : 'person-outline',
+          accessibilityLabel: t('Pestaña de Yo y Perfil'),
+        };
+      default:
+        return {
+          label: String(routeName),
+          iconName: 'ellipse-outline',
+          accessibilityLabel: String(routeName),
+        };
+    }
+  };
+
+  const bottomInset = Math.max(insets.bottom, 10);
+  const bottomMargin = bottomInset + (Platform.OS === 'android' ? 6 : 8);
+
+  return (
+    <View style={[styles.floatingContainer, { bottom: bottomMargin }]} pointerEvents="box-none">
+      <GlassSurface
+        borderRadius={layout.borderRadius.full}
+        intensity={55}
+        elevated
+        style={styles.pillSurface}
+      >
+        <View style={styles.tabRow}>
+          {state.routes.map((route, index) => {
+            const isFocused = state.index === index;
+            const config = getRouteConfig(route.name as keyof RootTabParamList);
+            const { options } = descriptors[route.key];
+
+            const label =
+              typeof options.tabBarLabel === 'string'
+                ? options.tabBarLabel
+                : config.label;
+
+            const isGold = route.name === 'Profile' && isPremium;
+            const activeColor = isGold ? colors.premiumGold : colors.primary;
+            const iconColor = isFocused ? activeColor : colors.textTertiary;
+
+            const onPress = () => {
+              const event = navigation.emit({
+                type: 'tabPress',
+                target: route.key,
+                canPreventDefault: true,
+              });
+
+              if (!isFocused && !event.defaultPrevented) {
+                navigation.navigate(route.name);
+              }
+            };
+
+            const onLongPress = () => {
+              navigation.emit({
+                type: 'tabLongPress',
+                target: route.key,
+              });
+            };
+
+            return (
+              <Pressable
+                key={route.key}
+                onPress={onPress}
+                onLongPress={onLongPress}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: isFocused }}
+                accessibilityLabel={options.tabBarAccessibilityLabel || config.accessibilityLabel}
+                testID={`tab-${route.name.toLowerCase()}`}
+                android_ripple={{
+                  color: colors.primary + '18',
+                  borderless: true,
+                  radius: 28,
+                }}
+                style={({ pressed }) => [
+                  styles.tabItem,
+                  {
+                    minHeight: Math.max(layout.minTouchTarget, 48),
+                    opacity: pressed && Platform.OS === 'ios' ? 0.75 : 1,
+                  },
+                ]}
+              >
+                {isFocused ? (
+                  <View
+                    style={[
+                      styles.activeChip,
+                      {
+                        backgroundColor: isDark
+                          ? 'rgba(255, 255, 255, 0.12)'
+                          : colors.primaryLight,
+                        borderRadius: layout.borderRadius.full,
+                      },
+                    ]}
+                  >
+                    <Ionicons name={config.iconName} size={20} color={activeColor} />
+                    <Text
+                      numberOfLines={1}
+                      style={[
+                        styles.activeLabel,
+                        {
+                          color: activeColor,
+                          fontFamily: FONT_FAMILY,
+                          fontWeight: fontWeights.medium,
+                        },
+                      ]}
+                    >
+                      {label}
+                    </Text>
+                  </View>
+                ) : (
+                  <View style={styles.inactiveIconWrapper}>
+                    <Ionicons name={config.iconName} size={22} color={iconColor} />
+                  </View>
+                )}
+              </Pressable>
+            );
+          })}
+        </View>
+      </GlassSurface>
+    </View>
+  );
+}
+
+function BottomTabs() {
   const tabBlurTargetRef = React.useRef<View | null>(null);
 
   return (
     <BlurTargetContext.Provider value={tabBlurTargetRef}>
       <Tab.Navigator
         initialRouteName="Today"
+        tabBar={(props) => <FloatingGlassTabBar {...props} />}
         screenOptions={{
           headerShown: false,
-          tabBarActiveTintColor: colors.primary,
-          tabBarInactiveTintColor: colors.textTertiary,
-          tabBarBackground: () => (
-            <GlassView
-              blurTarget={tabBlurTargetRef}
-              borderRadius={32}
-              style={StyleSheet.absoluteFill}
-              elevated={false}
-            />
-          ),
-        tabBarStyle: {
-          position: 'absolute',
-          bottom: Platform.OS === 'ios' ? 24 : 16,
-          left: 16,
-          right: 16,
-          height: 68,
-          borderRadius: 32,
-          backgroundColor: 'transparent',
-          borderTopWidth: 0,
-          borderWidth: 0,
-          elevation: 12,
-          shadowColor: '#000000',
-          shadowOffset: { width: 0, height: 6 },
-          shadowOpacity: 0.14,
-          shadowRadius: 12,
-          paddingBottom: 8,
-          paddingTop: 8,
-        },
-        tabBarLabelStyle: {
-          fontSize: 12,
-          fontWeight: '600',
-        },
-        tabBarItemStyle: {
-          minHeight: 48,
-          paddingVertical: 4,
-        },
-      }}
-    >
-      <Tab.Screen
-        name="Today"
-        component={TodayScreen}
-        options={{
-          tabBarLabel: t('Hoy'),
-          tabBarAccessibilityLabel: t('Pestaña de Hoy'),
-          tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons
-              name={focused ? 'today' : 'today-outline'}
-              size={size + 1}
-              color={color}
-            />
-          ),
         }}
-      />
-      <Tab.Screen
-        name="Garden"
-        component={GardenScreen}
-        options={{
-          tabBarLabel: t('Mi Jardín'),
-          tabBarAccessibilityLabel: t('Pestaña de Mi Jardín'),
-          tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons
-              name={focused ? 'leaf' : 'leaf-outline'}
-              size={size + 1}
-              color={color}
-            />
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="Scan"
-        component={ScannerScreen}
-        options={{
-          tabBarLabel: t('Escanear'),
-          tabBarAccessibilityLabel: t('Pestaña de Escanear'),
-          tabBarLabelStyle: {
-            fontSize: 12,
-            fontWeight: '700',
-            color: colors.primary,
-          },
-          tabBarIcon: () => (
-            <View
-              style={{
-                width: 54,
-                height: 54,
-                borderRadius: 27,
-                backgroundColor: colors.primary,
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginTop: -20,
-                shadowColor: colors.primary,
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.35,
-                shadowRadius: 8,
-                elevation: 8,
-                borderWidth: 3,
-                borderColor: colors.surface,
-              }}
-            >
-              <Ionicons name="camera" size={26} color="#FFFFFF" />
-            </View>
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="Explore"
-        component={ExploreScreen}
-        options={{
-          tabBarLabel: t('Explorar'),
-          tabBarAccessibilityLabel: t('Pestaña de Explorar'),
-          tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons
-              name={focused ? 'compass' : 'compass-outline'}
-              size={size + 1}
-              color={color}
-            />
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="Profile"
-        component={ProfileScreen}
-        options={{
-          tabBarLabel: isPremium ? t('Yo (Pro)') : t('Yo'),
-          tabBarAccessibilityLabel: t('Pestaña de Yo y Perfil'),
-          tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons
-              name={focused ? (isPremium ? 'sparkles' : 'person') : (isPremium ? 'sparkles-outline' : 'person-outline')}
-              size={size + 1}
-              color={isPremium ? colors.premiumGold : color}
-            />
-          ),
-        }}
-      />
-    </Tab.Navigator>
+      >
+        <Tab.Screen name="Today" component={TodayScreen} />
+        <Tab.Screen name="Garden" component={GardenScreen} />
+        <Tab.Screen name="Scan" component={ScannerScreen} />
+        <Tab.Screen name="Explore" component={ExploreScreen} />
+        <Tab.Screen name="Profile" component={ProfileScreen} />
+      </Tab.Navigator>
     </BlurTargetContext.Provider>
   );
 }
@@ -267,3 +310,48 @@ export const AppNavigator: React.FC = () => {
     </Stack.Navigator>
   );
 };
+
+const styles = StyleSheet.create({
+  floatingContainer: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    alignItems: 'center',
+    zIndex: 100,
+  },
+  pillSurface: {
+    width: '100%',
+    overflow: 'hidden',
+  },
+  tabRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 6,
+    paddingHorizontal: 6,
+  },
+  tabItem: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 2,
+  },
+  activeChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    gap: 6,
+  },
+  activeLabel: {
+    fontSize: 12,
+    letterSpacing: 0.1,
+  },
+  inactiveIconWrapper: {
+    minWidth: 44,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});
