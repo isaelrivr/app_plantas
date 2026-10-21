@@ -261,6 +261,73 @@ test('fase 4 navigation satisfies floating glass pill, fine icons, and active la
   assert.ok(navCode.includes('android_ripple'));
 });
 
+test('fase 5 screens satisfy flat minimalism and floating glass controls contract', () => {
+  const screens = [
+    'TodayScreen.tsx',
+    'GardenScreen.tsx',
+    'ScannerScreen.tsx',
+    'PlantDetailScreen.tsx',
+    'OnboardingScreen.tsx',
+    'PaywallScreen.tsx',
+    'ProfileScreen.tsx',
+    'CareCalendarScreen.tsx',
+    'EncyclopediaScreen.tsx',
+    'ExploreScreen.tsx',
+    'GrowthDiaryScreen.tsx',
+    'HealthDiagnosisScreen.tsx',
+    'AssistantScreen.tsx',
+    'AchievementsScreen.tsx',
+    'SettingsScreen.tsx',
+    'HelpScreen.tsx',
+  ];
 
+  for (const screen of screens) {
+    const screenPath = path.join(process.cwd(), 'screens', screen);
+    assert.ok(fs.existsSync(screenPath), `${screen} must exist`);
+    const code = fs.readFileSync(screenPath, 'utf-8');
+    assert.ok(!code.includes('TouchableOpacity'), `${screen} must not use TouchableOpacity`);
+  }
 
+  // ScannerScreen & PlantDetailScreen: floating glass controls over camera/photo
+  const scannerCode = fs.readFileSync(path.join(process.cwd(), 'screens', 'ScannerScreen.tsx'), 'utf-8');
+  assert.ok(scannerCode.includes('GlassSurface'), 'ScannerScreen must use GlassSurface for camera controls');
+  assert.ok(scannerCode.includes('variant="strong"'), 'ScannerScreen must use strong glass variant');
 
+  const detailCode = fs.readFileSync(path.join(process.cwd(), 'screens', 'PlantDetailScreen.tsx'), 'utf-8');
+  assert.ok(detailCode.includes('GlassSurface'), 'PlantDetailScreen must use GlassSurface for floating controls');
+
+  // GardenScreen: floating glass add button
+  const gardenCode = fs.readFileSync(path.join(process.cwd(), 'screens', 'GardenScreen.tsx'), 'utf-8');
+  assert.ok(gardenCode.includes('GlassSurface'), 'GardenScreen must use GlassSurface for floating add button');
+
+  // TodayScreen: flat cards with 24dp radii
+  const todayCode = fs.readFileSync(path.join(process.cwd(), 'screens', 'TodayScreen.tsx'), 'utf-8');
+  assert.ok(todayCode.includes('variant="flat"'), 'TodayScreen must use Card variant="flat"');
+});
+
+test('fase 6 polish: light/dark themes, contrast over glass, easy mode, and list performance', () => {
+  // 1. Contrast & Tokens
+  assert.equal(colors.light.brand, '#2E7D32');
+  assert.equal(colors.dark.brand, '#2E7D32');
+  assert.ok(colors.light.glassBorder.includes('255, 255, 255'));
+  assert.ok(colors.dark.glassBorder.includes('255, 255, 255'));
+  assert.ok(colors.light.glassFallback);
+  assert.ok(colors.dark.glassFallback);
+
+  // 2. Easy Mode
+  assert.ok(layout.easyMinTouchTarget >= 56);
+  assert.ok(layout.minTouchTarget >= 48);
+
+  // 3. Contrast over glass
+  const glassCode = fs.readFileSync(path.join(process.cwd(), 'components', 'GlassSurface.tsx'), 'utf-8');
+  assert.ok(glassCode.includes('defaultTintOverlay'), 'GlassSurface must include background tint layer');
+  assert.ok(glassCode.includes('pointerEvents="none"'), 'Tint overlay must not block interactions');
+
+  // 4. List performance: no BlurView inside FlatList item cards
+  const gardenCardCode = fs.readFileSync(path.join(process.cwd(), 'components', 'garden', 'GardenPlantCard.tsx'), 'utf-8');
+  assert.ok(!gardenCardCode.includes('BlurView'), 'GardenPlantCard must not use BlurView');
+  assert.ok(gardenCardCode.includes('variant="flat"'), 'GardenPlantCard must be flat for list performance');
+
+  const encCardCode = fs.readFileSync(path.join(process.cwd(), 'screens', 'EncyclopediaScreen.tsx'), 'utf-8');
+  assert.ok(encCardCode.includes('variant="flat"'), 'EncyclopediaScreen items must use flat variant');
+});
