@@ -8,6 +8,7 @@ import {
   TextStyle,
   StyleProp,
 } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { useAppTheme } from '../theme';
 
 interface ButtonProps {
@@ -94,9 +95,14 @@ export const Button: React.FC<ButtonProps> = ({
 
   return (
     <TouchableOpacity
-      onPress={onPress}
+      onPress={(e) => {
+        try {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        } catch {}
+        onPress();
+      }}
       disabled={disabled || loading}
-      activeOpacity={0.7}
+      activeOpacity={0.75}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel || title}
       accessibilityHint={accessibilityHint}
@@ -106,12 +112,12 @@ export const Button: React.FC<ButtonProps> = ({
         {
           minHeight: getMinHeight(),
           minWidth: layout.minTouchTarget,
-          paddingVertical: 10,
+          paddingVertical: 12,
           backgroundColor: getBackgroundColor(),
           borderColor: getBorderColor(),
           borderWidth: variant === 'outline' ? 1.5 : 0,
-          borderRadius: layout.borderRadius.md,
-          paddingHorizontal: spacing.lg,
+          borderRadius: layout.borderRadius.full,
+          paddingHorizontal: spacing.xl,
         },
         style,
       ]}

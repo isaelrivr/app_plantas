@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { GlassView } from './GlassView';
 import { useAppTheme } from '../theme';
 import { announce } from '../services/accessibilityService';
 
@@ -89,7 +90,7 @@ export const Snackbar: React.FC<SnackbarProps> = ({
       ? '#FFA726'
       : '#42A5F5';
 
-  const bottomPosition = Math.max(insets.bottom + 8, 76);
+  const bottomPosition = Math.max(insets.bottom + 16, 96);
 
   return (
     <Animated.View
@@ -103,38 +104,40 @@ export const Snackbar: React.FC<SnackbarProps> = ({
       ]}
       pointerEvents="box-none"
     >
-      <View
-        style={[
-          styles.content,
-          {
-            backgroundColor: '#1E232A',
-            borderRadius: layout.borderRadius.lg,
-          },
-        ]}
-        accessibilityRole="alert"
-        accessibilityLiveRegion="assertive"
+      <GlassView
+        intensity={80}
+        tint="dark"
+        borderRadius={layout.borderRadius.lg}
+        elevated
+        style={styles.content}
       >
-        <Ionicons name={iconName} size={22} color={iconColor} style={styles.icon} />
-        <Text style={[typography.body, styles.message, { color: '#FFFFFF' }]} numberOfLines={2}>
-          {message}
-        </Text>
-        {actionLabel && onAction ? (
-          <TouchableOpacity
-            style={[styles.actionButton, { minHeight: layout.minTouchTarget }]}
-            onPress={() => {
-              onAction();
-              onDismiss();
-            }}
-            accessibilityRole="button"
-            accessibilityLabel={actionLabel}
-            activeOpacity={0.7}
-          >
-            <Text style={[typography.headline, styles.actionText, { color: '#81C784' }]}>
-              {actionLabel}
-            </Text>
-          </TouchableOpacity>
-        ) : null}
-      </View>
+        <View
+          style={styles.innerContent}
+          accessibilityRole="alert"
+          accessibilityLiveRegion="assertive"
+        >
+          <Ionicons name={iconName} size={22} color={iconColor} style={styles.icon} />
+          <Text style={[typography.body, styles.message, { color: '#FFFFFF' }]} numberOfLines={2}>
+            {message}
+          </Text>
+          {actionLabel && onAction ? (
+            <TouchableOpacity
+              style={[styles.actionButton, { minHeight: layout.minTouchTarget }]}
+              onPress={() => {
+                onAction();
+                onDismiss();
+              }}
+              accessibilityRole="button"
+              accessibilityLabel={actionLabel}
+              activeOpacity={0.7}
+            >
+              <Text style={[typography.headline, styles.actionText, { color: '#81C784' }]}>
+                {actionLabel}
+              </Text>
+            </TouchableOpacity>
+          ) : null}
+        </View>
+      </GlassView>
     </Animated.View>
   );
 };
@@ -149,15 +152,13 @@ const styles = StyleSheet.create({
   },
   content: {
     width: '100%',
+  },
+  innerContent: {
+    width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 10,
+    paddingVertical: 12,
     paddingHorizontal: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-    elevation: 8,
   },
   icon: {
     marginRight: 10,

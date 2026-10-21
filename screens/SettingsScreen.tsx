@@ -5,7 +5,6 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Switch,
   Platform,
   Linking,
   Modal,
@@ -19,6 +18,7 @@ import { useAppTheme } from '../theme';
 import { useFeedback } from '../context/FeedbackContext';
 import { Card } from '../components/Card';
 import { Badge } from '../components/Badge';
+import { MaterialSwitch } from '../components/MaterialSwitch';
 import { useSettings, ThemePreference, AppLanguage, LANGUAGES } from '../context/SettingsContext';
 import { usePremium } from '../context/PremiumContext';
 import { useGarden } from '../context/GardenContext';
@@ -223,18 +223,14 @@ export const SettingsScreen: React.FC = () => {
                 {t('Texto y botones más grandes, navegación directa y explicaciones sencillas pensadas para toda la familia.')}
               </Text>
             </View>
-            <Switch
+            <MaterialSwitch
               value={easyMode}
               onValueChange={(val) => {
-                Haptics.selectionAsync();
                 setEasyMode(val);
                 announce(val ? t('Modo fácil activado') : t('Modo fácil desactivado'));
               }}
-              accessibilityRole="switch"
               accessibilityLabel={t('Modo fácil')}
               accessibilityHint={t('Texto y botones más grandes, menos animaciones y navegación simplificada')}
-              trackColor={{ false: colors.border, true: colors.primaryLight }}
-              thumbColor={easyMode ? colors.primary : '#FFFFFF'}
             />
           </View>
         </Card>
@@ -249,17 +245,13 @@ export const SettingsScreen: React.FC = () => {
                 {t('Te avisaremos al guardar o cuidar plantas que resulten tóxicas o peligrosas para tus animales.')}
               </Text>
             </View>
-            <Switch
+            <MaterialSwitch
               value={hasPets}
               onValueChange={(val) => {
-                try { Haptics.selectionAsync(); } catch {}
                 setHasPets(val);
                 announce(val ? t('Avisos de mascotas activados') : t('Avisos de mascotas desactivados'));
               }}
-              accessibilityRole="switch"
               accessibilityLabel={t('Tengo perros o gatos en casa')}
-              trackColor={{ false: colors.border, true: colors.primaryLight }}
-              thumbColor={hasPets ? colors.primary : '#FFFFFF'}
             />
           </View>
         </Card>
@@ -345,10 +337,9 @@ export const SettingsScreen: React.FC = () => {
                 {t('Aviso diario cuando a tus plantas les falte agua')}
               </Text>
             </View>
-            <Switch
+            <MaterialSwitch
               value={notificationsEnabled}
               onValueChange={handleToggleNotifications}
-              trackColor={{ true: colors.primary, false: colors.border }}
               accessibilityLabel={t('Activar recordatorios de riego')}
             />
           </View>
@@ -520,14 +511,12 @@ export const SettingsScreen: React.FC = () => {
                 {t('Nos ayuda a mejorar la app y detectar fallos. Nunca enviamos fotos, nombres ni datos personales.')}
               </Text>
             </View>
-            <Switch
+            <MaterialSwitch
               value={analyticsConsent}
               onValueChange={(val) => {
-                try { Haptics.selectionAsync(); } catch {}
                 setAnalyticsConsent(val);
                 announce(val ? t('Analítica anónima activada') : t('Analítica anónima desactivada'));
               }}
-              trackColor={{ true: colors.primary, false: colors.border }}
               accessibilityLabel={t('Compartir datos de uso anónimos')}
             />
           </View>

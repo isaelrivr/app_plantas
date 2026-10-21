@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "index.ts",
   "dependencies": {
+    "@expo/ui": "~57.0.26",
     "@expo/vector-icons": "^15.0.2",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-navigation/bottom-tabs": "^7.20.0",
@@ -13,8 +14,10 @@
     "babel-preset-expo": "~57.0.0",
     "d3-geo": "^3.1.1",
     "expo": "~57.0.30",
+    "expo-blur": "~57.0.3",
     "expo-camera": "~57.0.6",
     "expo-crypto": "~57.0.4",
+    "expo-dev-client": "~57.0.20",
     "expo-file-system": "~57.0.7",
     "expo-font": "~57.0.4",
     "expo-haptics": "~57.0.3",
@@ -49,6 +52,14 @@
     "typecheck": "tsc --noEmit",
     "test": "node --test tests/smoke.test.mjs tests/habitat.test.mjs tests/accessibility.test.mjs tests/feedback.test.mjs tests/redesign.test.mjs tests/fase5.test.mjs tests/fase6.test.mjs tests/cloud_widget_auth.test.mjs tests/fase6_final.test.mjs",
     "verify": "npm run typecheck && npm run lint && npm test && npx expo-doctor"
+  },
+  "expo": {
+    "install": {
+      "exclude": [
+        "expo",
+        "expo-location"
+      ]
+    }
   },
   "private": true
 }

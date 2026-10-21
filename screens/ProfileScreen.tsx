@@ -86,7 +86,7 @@ export const ProfileScreen: React.FC = () => {
   return (
     <ScrollView
       style={[styles.container, { backgroundColor: colors.background }]}
-      contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxxl }}
+      contentContainerStyle={{ padding: spacing.md, paddingBottom: 115 }}
     >
       <ScreenHeader
         title={t('Yo')}

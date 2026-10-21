@@ -104,12 +104,12 @@ export const TodayScreen: React.FC = () => {
   return (
     <ScrollView
       style={[styles.container, { backgroundColor: colors.background }]}
-      contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxxl }}
+      contentContainerStyle={{ padding: spacing.md, paddingBottom: 115 }}
       showsVerticalScrollIndicator={false}
     >
       <ScreenHeader
         title={t('Hoy')}
-        subtitle={formattedDate.toUpperCase()}
+        subtitle={formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1)}
         rightAction={
           <TouchableOpacity
             onPress={() => navigation.navigate('CareCalendar')}

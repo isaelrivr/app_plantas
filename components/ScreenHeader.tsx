@@ -29,9 +29,8 @@ export const ScreenHeader: React.FC<ScreenHeaderProps> = ({
                 typography.subheadline,
                 {
                   color: colors.textSecondary,
-                  textTransform: 'uppercase',
-                  fontWeight: '600',
-                  letterSpacing: 0.5,
+                  fontWeight: '500',
+                  letterSpacing: 0.2,
                   marginBottom: spacing.xxs,
                 },
               ]}

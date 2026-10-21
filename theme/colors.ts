@@ -1,28 +1,33 @@
 export const colors = {
   light: {
     // Brand & Tint
-    primary: '#2E7D32', // Forest green (contrast ratio > 5:1 with white)
+    primary: '#1B6A3B', // Deep botanical emerald
     primaryLight: '#E8F5E9',
     primaryDark: '#1B5E20', // Contrast ratio > 9:1 with white / primaryLight
     accent: '#00796B',
 
-    // Surfaces & Backgrounds
-    background: '#F8F9FA', // Apple HIG system grouped background
-    surface: '#FFFFFF',    // Standard card surface
+    // Surfaces & Backgrounds (Minimalist flat surfaces with generous whitespace)
+    background: '#F8FAF8', // Crisp, airy, clean botanical canvas
+    surface: '#FFFFFF',    // Pristine flat card surface
     surfaceElevated: '#FFFFFF',
-    surfaceSecondary: '#F1F3F4',
+    surfaceSecondary: '#F0F4F1',
 
-    // Borders & Dividers
-    border: '#D0D0D4',
-    borderLight: '#E5E5EA',
+    // Borders & Dividers (Subtle minimal hairlines)
+    border: '#E2E7E2',
+    borderLight: '#EDF2ED',
+
+    // Glassmorphism tokens (used ONLY on floating surfaces)
+    glassBackground: 'rgba(255, 255, 255, 0.80)',
+    glassBorder: 'rgba(255, 255, 255, 0.65)',
+    glassFloating: 'rgba(255, 255, 255, 0.90)',
 
     // Typography (WCAG AA compliant: all >= 4.5:1 against white/surface)
-    textPrimary: '#1C1C1E',   // Contrast 15.3:1
-    textSecondary: '#48484A', // Contrast 8.2:1
+    textPrimary: '#1A201C',   // Deep organic charcoal
+    textSecondary: '#4A554E', // Contrast > 7:1
     textTertiary: '#59595E',  // Contrast 5.9:1 (meets WCAG AA >= 4.5:1)
     textInverse: '#FFFFFF',
 
-    // Status & Feedback (Siempre acompañado de iconos en la UI)
+    // Status & Feedback
     success: '#1B5E20',
     warning: '#D84315',
     warningLight: '#FBE9E7',
@@ -31,32 +36,37 @@ export const colors = {
     info: '#0277BD',
 
     // Premium accents
-    premiumGold: '#9A6B00', // Contrast >= 4.6:1
+    premiumGold: '#9A6B00',
     premiumGoldLight: '#FFF8E1',
     badgeBackground: '#E8F5E9',
   },
   dark: {
     // Brand & Tint
-    primary: '#66BB6A', // Vibrant green with excellent dark mode contrast
-    primaryLight: '#1B3820',
-    primaryDark: '#A5D6A7',
-    accent: '#4DB6AC',
+    primary: '#4ADE80', // Luminous botanical mint
+    primaryLight: '#163824',
+    primaryDark: '#86EFAC',
+    accent: '#2DD4BF',
 
     // Surfaces & Backgrounds
-    background: '#000000', // Apple HIG pure black base
-    surface: '#1C1C1E',    // Apple HIG secondary background card
-    surfaceElevated: '#2C2C2E',
-    surfaceSecondary: '#2C2C2E',
+    background: '#0E1411', // Deep botanical obsidian
+    surface: '#161E1A',    // Clean slate-forest surface
+    surfaceElevated: '#202A24',
+    surfaceSecondary: '#1C2520',
 
     // Borders & Dividers
-    border: '#38383A',
-    borderLight: '#2C2C2E',
+    border: '#24322A',
+    borderLight: '#1B2620',
+
+    // Glassmorphism tokens (used ONLY on floating surfaces)
+    glassBackground: 'rgba(22, 30, 26, 0.80)',
+    glassBorder: 'rgba(255, 255, 255, 0.12)',
+    glassFloating: 'rgba(26, 36, 31, 0.90)',
 
     // Typography (WCAG AA compliant)
-    textPrimary: '#FFFFFF',
-    textSecondary: '#D1D1D6', // Contrast 12.8:1
-    textTertiary: '#AEAEB2',  // Contrast 6.7:1 on surface
-    textInverse: '#121212',
+    textPrimary: '#F2F5F3',
+    textSecondary: '#C2CBC4',
+    textTertiary: '#8F9E94',
+    textInverse: '#101412',
 
     // Status & Feedback
     success: '#81C784',

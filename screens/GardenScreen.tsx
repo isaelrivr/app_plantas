@@ -301,7 +301,7 @@ export const GardenScreen: React.FC = () => {
       <SectionList
         sections={sections}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={{ padding: spacing.md, paddingBottom: 100 }}
+        contentContainerStyle={{ padding: spacing.md, paddingBottom: 115 }}
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={
           <>

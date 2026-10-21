@@ -1,8 +1,9 @@
 import React from 'react';
-import { Platform, View } from 'react-native';
+import { Platform, View, StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
+import { GlassView } from '../components/GlassView';
 import { TodayScreen } from '../screens/TodayScreen';
 import { GardenScreen } from '../screens/GardenScreen';
 import { ScannerScreen } from '../screens/ScannerScreen';
@@ -75,25 +76,37 @@ function BottomTabs() {
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textTertiary,
+        tabBarBackground: () => (
+          <GlassView
+            borderRadius={32}
+            style={StyleSheet.absoluteFill}
+            elevated={false}
+          />
+        ),
         tabBarStyle: {
-          backgroundColor: colors.surface,
-          borderTopColor: colors.border,
-          borderTopWidth: 1,
-          minHeight: Platform.OS === 'ios' ? 88 : 72,
-          paddingBottom: Platform.OS === 'ios' ? 22 : 10,
-          paddingTop: 8,
-          elevation: 10,
+          position: 'absolute',
+          bottom: Platform.OS === 'ios' ? 24 : 16,
+          left: 16,
+          right: 16,
+          height: 68,
+          borderRadius: 32,
+          backgroundColor: 'transparent',
+          borderTopWidth: 0,
+          borderWidth: 0,
+          elevation: 12,
           shadowColor: '#000000',
-          shadowOffset: { width: 0, height: -3 },
-          shadowOpacity: 0.08,
-          shadowRadius: 5,
+          shadowOffset: { width: 0, height: 6 },
+          shadowOpacity: 0.14,
+          shadowRadius: 12,
+          paddingBottom: 8,
+          paddingTop: 8,
         },
         tabBarLabelStyle: {
-          fontSize: 13,
+          fontSize: 12,
           fontWeight: '600',
         },
         tabBarItemStyle: {
-          minHeight: layout.minTouchTarget,
+          minHeight: 48,
           paddingVertical: 4,
         },
       }}
@@ -135,25 +148,27 @@ function BottomTabs() {
           tabBarLabel: t('Escanear'),
           tabBarAccessibilityLabel: t('Pestaña de Escanear'),
           tabBarLabelStyle: {
-            fontSize: 13,
+            fontSize: 12,
             fontWeight: '700',
             color: colors.primary,
           },
           tabBarIcon: () => (
             <View
               style={{
-                width: Math.max(layout.minTouchTarget, 52),
-                height: Math.max(layout.minTouchTarget, 52),
-                borderRadius: Math.max(layout.minTouchTarget, 52) / 2,
+                width: 54,
+                height: 54,
+                borderRadius: 27,
                 backgroundColor: colors.primary,
                 alignItems: 'center',
                 justifyContent: 'center',
-                marginTop: -12,
+                marginTop: -20,
                 shadowColor: colors.primary,
                 shadowOffset: { width: 0, height: 4 },
                 shadowOpacity: 0.35,
-                shadowRadius: 6,
-                elevation: 6,
+                shadowRadius: 8,
+                elevation: 8,
+                borderWidth: 3,
+                borderColor: colors.surface,
               }}
             >
               <Ionicons name="camera" size={26} color="#FFFFFF" />

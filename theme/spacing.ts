@@ -17,13 +17,16 @@ export const layout = {
   /** Separación mínima entre botones o controles interactivos contiguos: 8 dp */
   buttonGap: 8,
   borderRadius: {
-    xs: 6,
-    sm: 10,
-    md: 14,
-    lg: 18,
-    xl: 24,
+    xs: 8,
+    sm: 12,
+    md: 16,
+    lg: 20,
+    xl: 26,
+    xxl: 32,
     full: 9999,
+    pill: 9999,
   },
-  cardPadding: 16,
-  screenPadding: 16,
+  cardPadding: 18,
+  screenPadding: 18,
+  floatingBottom: 16,
 };

@@ -10,6 +10,7 @@ import {
   Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '../theme';
 import { useTranslation } from '../i18n';
@@ -33,7 +34,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
   showCloseButton = true,
   maxHeightRatio = 0.88,
 }) => {
-  const { colors, typography, layout, spacing, motion } = useAppTheme();
+  const { colors, typography, spacing, motion, isDark } = useAppTheme();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
 
@@ -96,6 +97,11 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
         style={styles.keyboardContainer}
       >
         <Animated.View style={[styles.backdrop, { opacity: backdropOpacity }]}>
+          <BlurView
+            intensity={Platform.OS === 'android' ? 25 : 30}
+            tint={isDark ? 'dark' : 'systemMaterialDark'}
+            style={StyleSheet.absoluteFill}
+          />
           <TouchableOpacity
             style={StyleSheet.absoluteFill}
             activeOpacity={1}
@@ -110,8 +116,10 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
             styles.sheet,
             {
               backgroundColor: colors.surface,
-              borderTopLeftRadius: layout.borderRadius.xl,
-              borderTopRightRadius: layout.borderRadius.xl,
+              borderTopLeftRadius: 28,
+              borderTopRightRadius: 28,
+              borderTopWidth: 1,
+              borderTopColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)',
               paddingBottom: Math.max(insets.bottom, 16),
               maxHeight: `${Math.round(maxHeightRatio * 100)}%`,
               transform: [{ translateY }],

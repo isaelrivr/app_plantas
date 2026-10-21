@@ -3,6 +3,7 @@ import { StyleSheet, Text, TouchableOpacity, View, ViewStyle } from 'react-nativ
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAppTheme } from '../theme';
 import { Button } from './Button';
+import { GlassView } from './GlassView';
 
 export interface PrimaryActionBarProps {
   primaryTitle: string;
@@ -33,53 +34,61 @@ export const PrimaryActionBar: React.FC<PrimaryActionBarProps> = ({
   return (
     <View
       style={[
-        styles.container,
+        styles.outerContainer,
         {
-          backgroundColor: colors.surface,
-          borderTopColor: colors.border,
           paddingBottom: Math.max(insets.bottom, 12),
-          paddingTop: spacing.sm,
           paddingHorizontal: spacing.md,
         },
         style,
       ]}
     >
-      <Button
-        title={primaryTitle}
-        onPress={onPrimaryPress}
-        icon={primaryIcon}
-        loading={primaryLoading}
-        disabled={primaryDisabled}
-        variant={primaryVariant}
-        size="lg"
-        style={styles.primaryButton}
-      />
+      <GlassView
+        borderRadius={24}
+        intensity={65}
+        elevated
+        style={styles.glassContainer}
+      >
+        <View style={[styles.innerContent, { padding: spacing.sm }]}>
+          <Button
+            title={primaryTitle}
+            onPress={onPrimaryPress}
+            icon={primaryIcon}
+            loading={primaryLoading}
+            disabled={primaryDisabled}
+            variant={primaryVariant}
+            size="lg"
+            style={styles.primaryButton}
+          />
 
-      {secondaryTitle && onSecondaryPress ? (
-        <TouchableOpacity
-          onPress={onSecondaryPress}
-          style={[styles.secondaryButton, { minHeight: layout.minTouchTarget }]}
-          accessibilityRole="button"
-          accessibilityLabel={secondaryTitle}
-          hitSlop={{ top: 8, bottom: 8, left: 16, right: 16 }}
-        >
-          <Text style={[typography.subheadline, { color: colors.primary, fontWeight: '600' }]}>
-            {secondaryTitle}
-          </Text>
-        </TouchableOpacity>
-      ) : null}
+          {secondaryTitle && onSecondaryPress ? (
+            <TouchableOpacity
+              onPress={onSecondaryPress}
+              style={[styles.secondaryButton, { minHeight: layout.minTouchTarget }]}
+              accessibilityRole="button"
+              accessibilityLabel={secondaryTitle}
+              hitSlop={{ top: 8, bottom: 8, left: 16, right: 16 }}
+            >
+              <Text style={[typography.subheadline, { color: colors.primary, fontWeight: '600' }]}>
+                {secondaryTitle}
+              </Text>
+            </TouchableOpacity>
+          ) : null}
+        </View>
+      </GlassView>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    borderTopWidth: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -3 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 8,
+  outerContainer: {
+    width: '100%',
+    paddingTop: 8,
+  },
+  glassContainer: {
+    width: '100%',
+  },
+  innerContent: {
+    width: '100%',
   },
   primaryButton: {
     width: '100%',
