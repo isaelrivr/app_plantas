@@ -68,14 +68,14 @@ async function fetchWithTimeout(url: string, timeoutMs = 10_000): Promise<Respon
 }
 
 const DEFAULT_FALLBACK_WEATHER: WeatherData = {
-  city: 'Ciudad de México, México',
-  temperatureC: 22,
-  humidityPercent: 48,
-  rainProbability: 15,
-  tempMaxC: 26,
-  tempMinC: 12,
-  weatherCode: 1,
-  weatherDescription: 'Mayormente soleado',
+  city: 'Torreón, Coah.',
+  temperatureC: 24,
+  humidityPercent: 35,
+  rainProbability: 5,
+  tempMaxC: 30,
+  tempMinC: 15,
+  weatherCode: 0,
+  weatherDescription: 'Despejado',
   weatherIcon: 'sunny',
 };
 
@@ -126,33 +126,45 @@ function computeClimateAdjustment(weather: WeatherData): ClimateWateringAdjustme
 }
 
 export async function getLiveWeatherAdvice(forceRefresh = false): Promise<WeatherRecommendationResult> {
-  // 1. Revisar caché local válida
+  // 1. Revisar caché local válida (descartar si era la fallback anterior genérica)
   if (!forceRefresh) {
     const cached = await loadJSON<WeatherCacheEntry | null>(STORAGE_KEYS.weatherCache, null);
-    if (cached && Date.now() - cached.savedAt < WEATHER_CACHE_TTL_MS) {
+    if (
+      cached &&
+      Date.now() - cached.savedAt < WEATHER_CACHE_TTL_MS &&
+      !cached.result.weather?.city?.includes('Ciudad de México')
+    ) {
       return cached.result;
     }
   }
 
   try {
-    let latitude = 19.4326;
-    let longitude = -99.1332;
-    let cityName = 'Ciudad de México, México';
+    let latitude = 25.5428;
+    let longitude = -103.4068;
+    let cityName = 'Torreón, Coah.';
 
     // 2. Comprobar si el usuario configuró una ciudad manual
     const manualCityName = await getManualCity();
     const matchedCity = manualCityName
-      ? SUPPORTED_CITIES.find((c) => c.name.toLowerCase() === manualCityName.toLowerCase())
+      ? SUPPORTED_CITIES.find(
+          (c) =>
+            c.name.toLowerCase() === manualCityName.toLowerCase() ||
+            (manualCityName.toLowerCase().includes('torre') && c.name.toLowerCase().includes('torre'))
+        )
       : null;
 
     if (matchedCity) {
       latitude = matchedCity.latitude;
       longitude = matchedCity.longitude;
-      cityName = `${matchedCity.name}, ${matchedCity.country}`;
+      cityName = matchedCity.name.includes('Coah') ? matchedCity.name : `${matchedCity.name}, ${matchedCity.country}`;
     } else {
       // 3. Consultar GPS si no hay ciudad manual
       try {
-        const { status } = await Location.getForegroundPermissionsAsync();
+        let { status } = await Location.getForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          const perm = await Location.requestForegroundPermissionsAsync();
+          status = perm.status;
+        }
         if (status === 'granted') {
           const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
           latitude = loc.coords.latitude;
@@ -161,8 +173,22 @@ export async function getLiveWeatherAdvice(forceRefresh = false): Promise<Weathe
           const geocode = await Location.reverseGeocodeAsync({ latitude, longitude });
           if (geocode.length > 0) {
             const first = geocode[0];
-            cityName = first.city || first.region || first.country || cityName;
-            if (first.country && first.city) cityName = `${first.city}, ${first.country}`;
+            const city = first.city || first.subregion || first.district;
+            const region = first.region;
+            const country = first.country;
+            if (city) {
+              if (city.toLowerCase().includes('torre') || (region && region.toLowerCase().includes('coahuila'))) {
+                cityName = 'Torreón, Coah.';
+              } else if (region) {
+                cityName = `${city}, ${region}`;
+              } else if (country) {
+                cityName = `${city}, ${country}`;
+              } else {
+                cityName = city;
+              }
+            } else if (region) {
+              cityName = region.toLowerCase().includes('coahuila') ? 'Torreón, Coah.' : region;
+            }
           }
         }
       } catch {}

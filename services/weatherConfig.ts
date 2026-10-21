@@ -17,6 +17,7 @@ export type ManualCity = SupportedCity;
 export const WEATHER_CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutos
 
 export const SUPPORTED_CITIES: SupportedCity[] = [
+  { name: 'Torreón, Coah.', country: 'México', latitude: 25.5428, longitude: -103.4068 },
   { name: 'Madrid', country: 'España', latitude: 40.4168, longitude: -3.7038 },
   { name: 'Ciudad de México', country: 'México', latitude: 19.4326, longitude: -99.1332 },
   { name: 'Buenos Aires', country: 'Argentina', latitude: -34.6037, longitude: -58.3816 },

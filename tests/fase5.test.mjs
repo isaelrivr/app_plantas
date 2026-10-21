@@ -158,6 +158,13 @@ test('weather: SUPPORTED_CITIES contains valid latitude and longitude coordinate
   }
 });
 
+test('weather: SUPPORTED_CITIES includes Torreón, Coah.', () => {
+  const torreon = SUPPORTED_CITIES.find((c) => c.name.toLowerCase().includes('torre'));
+  assert.ok(torreon, 'Torreón should be present in SUPPORTED_CITIES');
+  assert.ok(torreon.latitude >= 25 && torreon.latitude <= 26, 'Latitude must correspond to Torreón');
+  assert.ok(torreon.longitude <= -103 && torreon.longitude >= -104, 'Longitude must correspond to Torreón');
+});
+
 test('weather: cache TTL is strictly 30 minutes', () => {
   const CACHE_TTL_MS = 30 * 60 * 1000;
   assert.equal(CACHE_TTL_MS, 1800000);

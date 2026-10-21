@@ -133,22 +133,48 @@ export const TodayScreen: React.FC = () => {
         </Text>
       </View>
 
-      {/* CLIMA EN UNA SOLA LÍNEA (solo si hay ubicación y datos reales) */}
+      {/* CLIMA EN UNA SOLA LÍNEA CON UBICACIÓN */}
       {weather && weather.city ? (
-        <View
+        <TouchableOpacity
+          onPress={() => navigation.navigate('Settings')}
+          activeOpacity={0.7}
           style={[
             styles.weatherOneLine,
             { backgroundColor: colors.surfaceSecondary, borderRadius: layout.borderRadius.md },
           ]}
           accessible
-          accessibilityRole="text"
-          accessibilityLabel={`${weather.city}, ${Math.round(weather.temperatureC)} grados, ${weather.weatherDescription}`}
+          accessibilityRole="button"
+          accessibilityLabel={t('Ubicación: {ciudad}. Clima: {temp} grados, {desc}. Toca para ver ajustes de clima.', {
+            ciudad: weather.city,
+            temp: Math.round(weather.temperatureC),
+            desc: weather.weatherDescription,
+          })}
         >
-          <Ionicons name="sunny-outline" size={16} color={colors.primary} style={{ marginRight: 6 }} />
-          <Text style={[typography.footnote, { color: colors.textSecondary }]} numberOfLines={1}>
-            {weather.city} · {Math.round(weather.temperatureC)}°C · {weather.weatherDescription}
+          <Ionicons name="location-sharp" size={15} color={colors.primary} style={{ marginRight: 4 }} />
+          <Text style={[typography.footnote, { color: colors.textPrimary, fontWeight: '700' }]} numberOfLines={1}>
+            {weather.city}
           </Text>
-        </View>
+          <Text style={[typography.footnote, { color: colors.textTertiary, marginHorizontal: 6 }]}>
+            ·
+          </Text>
+          <Ionicons
+            name={
+              weather.weatherIcon === 'rainy'
+                ? 'rainy-outline'
+                : weather.weatherIcon === 'cloudy'
+                ? 'cloudy-outline'
+                : weather.weatherIcon === 'partly-sunny'
+                ? 'partly-sunny-outline'
+                : 'sunny-outline'
+            }
+            size={15}
+            color={colors.accent}
+            style={{ marginRight: 4 }}
+          />
+          <Text style={[typography.footnote, { color: colors.textSecondary }]} numberOfLines={1}>
+            {Math.round(weather.temperatureC)}°C · {weather.weatherDescription}
+          </Text>
+        </TouchableOpacity>
       ) : null}
 
       {/* RACHA DE CUIDADOS DISCRETA */}

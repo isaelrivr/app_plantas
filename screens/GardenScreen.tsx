@@ -278,9 +278,12 @@ export const GardenScreen: React.FC = () => {
           <View style={styles.weatherTeaserRow}>
             <Ionicons name="partly-sunny" size={24} color={colors.primary} />
             <View style={{ flex: 1, marginLeft: spacing.sm }}>
-              <Text style={[typography.headline, { color: colors.textPrimary }]}>
-                {w.city} · {Math.round(w.temperatureC)}°C
-              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Ionicons name="location-sharp" size={15} color={colors.primary} style={{ marginRight: 4 }} />
+                <Text style={[typography.headline, { color: colors.textPrimary }]}>
+                  {w.city} · {Math.round(w.temperatureC)}°C
+                </Text>
+              </View>
               <Text style={[typography.caption1, { color: colors.textSecondary, marginTop: 2 }]}>
                 {weatherData.adjustment.wateringAdvice}
               </Text>

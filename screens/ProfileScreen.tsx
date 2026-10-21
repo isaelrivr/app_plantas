@@ -67,6 +67,16 @@ export const ProfileScreen: React.FC = () => {
       icon: 'alarm' as const,
     },
     {
+      title: t('Asistente Botánico con IA 24/7'),
+      desc: t('Resuelve todas tus dudas sobre riego, sustrato, plagas y poda.'),
+      icon: 'chatbubbles' as const,
+    },
+    {
+      title: t('Sincronización en la nube y respaldo'),
+      desc: t('Tus plantas y fotos seguras y sincronizadas en todos tus dispositivos.'),
+      icon: 'cloud-done' as const,
+    },
+    {
       title: t('Sin anuncios ni interrupciones'),
       desc: t('Experiencia limpia y rápida para cuidar tus plantas tranquilamente.'),
       icon: 'shield-checkmark' as const,

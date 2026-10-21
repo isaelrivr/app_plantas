@@ -15,25 +15,120 @@ import { useFeedback } from '../context/FeedbackContext';
 
 interface ComparisonRow {
   label: string;
+  detail?: string;
   free: string | boolean;
   pro: string | boolean;
+  icon: keyof typeof Ionicons.glyphMap;
 }
 
 const COMPARISON: ComparisonRow[] = [
-  { label: 'Identificaciones con IA', free: '3 por día', pro: 'Ilimitadas' },
-  { label: 'Plantas en Mi Jardín', free: '5 plantas', pro: 'Ilimitadas' },
-  { label: 'Diagnóstico de hojas y plagas', free: false, pro: true },
-  { label: 'Consejos de clima en tu zona', free: false, pro: true },
-  { label: 'Sin anuncios', free: false, pro: true },
-  { label: 'Calendario de riego básico', free: true, pro: true },
-  { label: 'Diario de crecimiento', free: true, pro: true },
+  {
+    icon: 'scan-outline',
+    label: 'Identificaciones con IA',
+    detail: 'Escaneo y reconocimiento botánico por foto',
+    free: '3 por día',
+    pro: 'Ilimitadas',
+  },
+  {
+    icon: 'leaf-outline',
+    label: 'Plantas en Mi Jardín',
+    detail: 'Capacidad de plantas guardadas en tu colección',
+    free: '5 plantas',
+    pro: 'Ilimitadas',
+  },
+  {
+    icon: 'medkit-outline',
+    label: 'Diagnóstico de hojas y plagas',
+    detail: 'Detección de hongos y remedios botánicos',
+    free: false,
+    pro: true,
+  },
+  {
+    icon: 'partly-sunny-outline',
+    label: 'Clima local en tiempo real',
+    detail: 'Pronóstico y alertas climáticas de tu zona',
+    free: false,
+    pro: true,
+  },
+  {
+    icon: 'water-outline',
+    label: 'Riego adaptativo por clima',
+    detail: 'Ajuste dinámico ante lluvia, frío o calor extremo',
+    free: 'Fijo',
+    pro: 'Dinámico',
+  },
+  {
+    icon: 'chatbubbles-outline',
+    label: 'Asistente botánico IA',
+    detail: 'Consultas botánicas especializadas 24/7',
+    free: '3 consultas',
+    pro: 'Ilimitado',
+  },
+  {
+    icon: 'images-outline',
+    label: 'Diario de crecimiento y fotos',
+    detail: 'Historial fotográfico y comparador Antes/Después',
+    free: '1 foto/planta',
+    pro: 'Ilimitado',
+  },
+  {
+    icon: 'earth-outline',
+    label: 'Mapa interactivo de hábitat',
+    detail: 'Origen geográfico y clima natal de cada especie',
+    free: false,
+    pro: true,
+  },
+  {
+    icon: 'home-outline',
+    label: 'Zonas y habitaciones',
+    detail: 'Organización por salas, terrazas y balcones',
+    free: '1 zona',
+    pro: 'Ilimitadas',
+  },
+  {
+    icon: 'cloud-done-outline',
+    label: 'Sincronización en la nube',
+    detail: 'Respaldo seguro y acceso multidispositivo',
+    free: 'Solo local',
+    pro: 'Nube Pro',
+  },
+  {
+    icon: 'wifi-outline',
+    label: 'Modo sin conexión (Offline)',
+    detail: 'Consulta fichas botánicas sin datos ni WiFi',
+    free: false,
+    pro: true,
+  },
+  {
+    icon: 'apps-outline',
+    label: 'Widgets de inicio',
+    detail: 'Recordatorios de riego directo en tu pantalla',
+    free: false,
+    pro: true,
+  },
+  {
+    icon: 'shield-checkmark-outline',
+    label: 'Sin anuncios',
+    detail: 'Experiencia fluida y 100% libre de publicidad',
+    free: false,
+    pro: true,
+  },
+  {
+    icon: 'ribbon-outline',
+    label: 'Soporte botánico prioritario',
+    detail: 'Atención preferencial por nuestro equipo',
+    free: 'Estándar',
+    pro: 'Prioritario',
+  },
 ];
 
 const PRO_BULLETS = [
-  { icon: 'scan-outline', text: 'Identificaciones ilimitadas de plantas y flores' },
-  { icon: 'medkit-outline', text: 'Diagnóstico de hojas enfermas y remedios prácticos' },
-  { icon: 'partly-sunny-outline', text: 'Recordatorios de riego adaptados al clima de tu ciudad' },
-  { icon: 'shield-checkmark-outline', text: 'Sin publicidad ni interrupciones' },
+  { icon: 'scan-outline', text: 'Identificaciones ilimitadas de plantas y flores con IA' },
+  { icon: 'medkit-outline', text: 'Diagnóstico de hojas enfermas, plagas y remedios prácticos' },
+  { icon: 'partly-sunny-outline', text: 'Alertas de clima local y riego dinámico adaptativo' },
+  { icon: 'chatbubbles-outline', text: 'Asistente botánico inteligente 24/7 para tus consultas' },
+  { icon: 'cloud-done-outline', text: 'Copia de seguridad en la nube y sincronización' },
+  { icon: 'shield-checkmark-outline', text: 'Experiencia 100% libre de anuncios y sin límites' },
 ] as const;
 
 export const PaywallScreen: React.FC = () => {
@@ -113,15 +208,47 @@ export const PaywallScreen: React.FC = () => {
 
   const renderValue = (value: string | boolean, isPro: boolean) => {
     if (value === false) {
-      return <Ionicons name="close" size={18} color={colors.textTertiary} />;
+      return (
+        <View style={styles.valueIconBox}>
+          <Ionicons name="close" size={18} color={colors.textTertiary} />
+        </View>
+      );
     }
     if (value === true) {
-      return <Ionicons name="checkmark-circle" size={18} color={isPro ? colors.primary : colors.textSecondary} />;
+      return (
+        <View style={[styles.valueIconBox, isPro && { backgroundColor: colors.primaryLight }]}>
+          <Ionicons
+            name="checkmark-circle"
+            size={18}
+            color={isPro ? colors.primary : colors.textSecondary}
+          />
+        </View>
+      );
     }
     return (
-      <Text style={[typography.caption1, { color: isPro ? colors.primary : colors.textSecondary, fontWeight: '600' }]}>
-        {t(value)}
-      </Text>
+      <View
+        style={[
+          styles.valueTextBox,
+          {
+            backgroundColor: isPro ? colors.premiumGoldLight : colors.surfaceSecondary,
+            borderColor: isPro ? colors.premiumGold : colors.border,
+          },
+        ]}
+      >
+        <Text
+          style={[
+            typography.caption2,
+            {
+              color: isPro ? colors.textPrimary : colors.textSecondary,
+              fontWeight: isPro ? '700' : '500',
+              textAlign: 'center',
+            },
+          ]}
+          numberOfLines={1}
+        >
+          {t(value)}
+        </Text>
+      </View>
     );
   };
 
@@ -264,28 +391,94 @@ export const PaywallScreen: React.FC = () => {
           {t('Cancela fácilmente en cualquier momento desde Google Play o App Store.')}
         </Text>
 
-        {/* COMPARATIVA TRANSPARENTE */}
-        <Text style={[typography.headline, { color: colors.textPrimary, marginTop: spacing.xl, marginBottom: spacing.sm }]}>
-          {t('Comparativa')}
-        </Text>
-        <Card style={{ padding: 0 }}>
-          <View style={[styles.tableHeader, { borderBottomColor: colors.border }]}>
-            <Text style={[typography.footnote, { color: colors.textSecondary, flex: 1 }]}>{t('Función')}</Text>
-            <Text style={[typography.footnote, { color: colors.textSecondary, width: 84, textAlign: 'center' }]}>Free</Text>
-            <Text style={[typography.footnote, { color: colors.premiumGold, width: 84, textAlign: 'center', fontWeight: '700' }]}>
-              Pro
+        {/* COMPARATIVA TRANSPARENTE ENTRE BÁSICO Y PREMIUM */}
+        <View style={styles.comparisonHeaderRow}>
+          <Text style={[typography.headline, { color: colors.textPrimary }]}>
+            {t('Comparativa de Beneficios')}
+          </Text>
+          <Text style={[typography.caption1, { color: colors.textSecondary, marginTop: 2 }]}>
+            {t('Todo lo que obtienes entre el plan Básico y Premium')}
+          </Text>
+        </View>
+
+        <Card style={{ padding: 0, overflow: 'hidden' }}>
+          <View style={[styles.tableHeader, { borderBottomColor: colors.border, backgroundColor: colors.surfaceSecondary }]}>
+            <Text style={[typography.subheadline, { color: colors.textPrimary, flex: 1, fontWeight: '700' }]}>
+              {t('Beneficio')}
             </Text>
-          </View>
-          {COMPARISON.map((row, index) => (
-            <View
-              key={row.label}
-              style={[styles.tableRow, index < COMPARISON.length - 1 && { borderBottomColor: colors.border, borderBottomWidth: 1 }]}
-            >
-              <Text style={[typography.footnote, { color: colors.textPrimary, flex: 1 }]}>{t(row.label)}</Text>
-              <View style={[styles.tableCell, { width: 84 }]}>{renderValue(row.free, false)}</View>
-              <View style={[styles.tableCell, { width: 84 }]}>{renderValue(row.pro, true)}</View>
+            <View style={{ width: 78, alignItems: 'center' }}>
+              <Text style={[typography.footnote, { color: colors.textSecondary, fontWeight: '700' }]}>
+                {t('Básico')}
+              </Text>
+              <Text style={[typography.caption2, { color: colors.textTertiary }]}>{t('Free')}</Text>
             </View>
-          ))}
+            <View
+              style={{
+                width: 88,
+                alignItems: 'center',
+                backgroundColor: colors.premiumGoldLight,
+                paddingVertical: 4,
+                borderRadius: layout.borderRadius.sm,
+              }}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Ionicons name="sparkles" size={12} color={colors.premiumGold} style={{ marginRight: 3 }} />
+                <Text style={[typography.footnote, { color: colors.textPrimary, fontWeight: '800' }]}>
+                  {t('Premium')}
+                </Text>
+              </View>
+              <Text style={[typography.caption2, { color: colors.textSecondary, fontWeight: '700' }]}>{t('Pro')}</Text>
+            </View>
+          </View>
+
+          {COMPARISON.map((row, index) => {
+            const isLast = index === COMPARISON.length - 1;
+            return (
+              <View
+                key={row.label}
+                style={[
+                  styles.tableRow,
+                  !isLast && { borderBottomColor: colors.border, borderBottomWidth: StyleSheet.hairlineWidth },
+                  index % 2 === 1 && { backgroundColor: colors.surfaceSecondary + '35' },
+                ]}
+              >
+                <View style={{ flex: 1, paddingRight: 6 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <Ionicons name={row.icon} size={16} color={colors.primary} style={{ marginRight: 6 }} />
+                    <Text style={[typography.footnote, { color: colors.textPrimary, fontWeight: '600', flex: 1 }]}>
+                      {t(row.label)}
+                    </Text>
+                  </View>
+                  {row.detail ? (
+                    <Text
+                      style={[typography.caption2, { color: colors.textTertiary, marginTop: 2, marginLeft: 22 }]}
+                      numberOfLines={2}
+                    >
+                      {t(row.detail)}
+                    </Text>
+                  ) : null}
+                </View>
+
+                <View style={[styles.tableCell, { width: 78 }]}>
+                  {renderValue(row.free, false)}
+                </View>
+
+                <View
+                  style={[
+                    styles.tableCell,
+                    {
+                      width: 88,
+                      backgroundColor: colors.premiumGoldLight + '25',
+                      borderRadius: layout.borderRadius.sm,
+                      paddingVertical: 2,
+                    },
+                  ]}
+                >
+                  {renderValue(row.pro, true)}
+                </View>
+              </View>
+            );
+          })}
         </Card>
 
         {/* RESTAURAR COMPRAS */}
@@ -361,6 +554,10 @@ const styles = StyleSheet.create({
     minHeight: 150,
   },
   planBadge: { marginBottom: 8 },
+  comparisonHeaderRow: {
+    marginTop: 24,
+    marginBottom: 8,
+  },
   tableHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -372,9 +569,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingVertical: 12,
   },
   tableCell: { alignItems: 'center', justifyContent: 'center' },
+  valueIconBox: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  valueTextBox: {
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+    borderRadius: 6,
+    borderWidth: 1,
+    minWidth: 68,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   restoreButton: {
     flexDirection: 'row',
     alignItems: 'center',
