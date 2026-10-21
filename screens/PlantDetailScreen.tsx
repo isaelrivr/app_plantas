@@ -4,10 +4,11 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
+  Pressable,
   Image,
   Platform,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
@@ -34,6 +35,7 @@ type TabType = 'cuidados' | 'historia' | 'mas_info';
 export const PlantDetailScreen: React.FC = () => {
   const { colors, spacing, typography, layout } = useAppTheme();
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { addPlant, plants, removePlant, restorePlant } = useGarden();
@@ -173,13 +175,17 @@ export const PlantDetailScreen: React.FC = () => {
           {
             backgroundColor: colors.surface,
             borderBottomColor: colors.border,
-            paddingTop: Platform.OS === 'ios' ? 44 : 16,
+            paddingTop: Math.max(insets.top, Platform.OS === 'ios' ? 44 : 16),
           },
         ]}
       >
-        <TouchableOpacity
+        <Pressable
           onPress={() => navigation.goBack()}
-          style={styles.backButton}
+          style={({ pressed }) => [
+            styles.backButton,
+            { opacity: pressed && Platform.OS === 'ios' ? 0.7 : 1 },
+          ]}
+          android_ripple={{ color: colors.primary + '20', borderless: true, radius: 24 }}
           accessibilityRole="button"
           accessibilityLabel={t('Volver')}
           hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
@@ -188,44 +194,56 @@ export const PlantDetailScreen: React.FC = () => {
           <Text style={[typography.body, { color: colors.primary, fontWeight: '600' }]}>
             {t('Atrás')}
           </Text>
-        </TouchableOpacity>
+        </Pressable>
 
         <Text style={[typography.headline, { color: colors.textPrimary, flex: 1, textAlign: 'center' }]} numberOfLines={1}>
           {plant.name}
         </Text>
 
         <View style={styles.headerActions}>
-          <TouchableOpacity
+          <Pressable
             onPress={() => setLightMeterVisible(true)}
-            style={styles.headerIconButton}
+            style={({ pressed }) => [
+              styles.headerIconButton,
+              { opacity: pressed && Platform.OS === 'ios' ? 0.7 : 1 },
+            ]}
+            android_ripple={{ color: colors.primary + '20', borderless: true, radius: 20 }}
             accessibilityRole="button"
             accessibilityLabel={t('Medidor de luz')}
             hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           >
             <Ionicons name="sunny-outline" size={22} color={colors.textPrimary} />
-          </TouchableOpacity>
-          <TouchableOpacity
+          </Pressable>
+          <Pressable
             onPress={() => navigation.navigate('Assistant', { plantName: plant.name })}
-            style={[styles.headerIconButton, { marginLeft: 4 }]}
+            style={({ pressed }) => [
+              styles.headerIconButton,
+              { marginLeft: 4, opacity: pressed && Platform.OS === 'ios' ? 0.7 : 1 },
+            ]}
+            android_ripple={{ color: colors.primary + '20', borderless: true, radius: 20 }}
             accessibilityRole="button"
             accessibilityLabel={t('Pregúntale a EcoScan')}
             hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           >
             <Ionicons name="chatbubble-ellipses-outline" size={22} color={colors.primary} />
-          </TouchableOpacity>
-          <TouchableOpacity
+          </Pressable>
+          <Pressable
             onPress={() => setShareModalVisible(true)}
-            style={[styles.headerIconButton, { marginLeft: 6 }]}
+            style={({ pressed }) => [
+              styles.headerIconButton,
+              { marginLeft: 6, opacity: pressed && Platform.OS === 'ios' ? 0.7 : 1 },
+            ]}
+            android_ripple={{ color: colors.primary + '20', borderless: true, radius: 20 }}
             accessibilityRole="button"
             accessibilityLabel={t('Compartir')}
             hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           >
             <Ionicons name="share-social-outline" size={22} color={colors.textPrimary} />
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={{ padding: spacing.md, paddingBottom: 110 }}>
+      <ScrollView contentContainerStyle={{ padding: spacing.md, paddingBottom: Math.max(insets.bottom + 140, 160) }}>
         {/* FOTO HERO */}
         {plant.imageUri ? (
           <Image
@@ -415,13 +433,18 @@ export const PlantDetailScreen: React.FC = () => {
       </ScrollView>
 
       {/* BOTÓN FLOTANTE: PREGÚNTALE A ECOSCAN */}
-      <TouchableOpacity
+      <Pressable
         onPress={() => navigation.navigate('Assistant', { plantName: plant.name })}
-        style={[
+        style={({ pressed }) => [
           styles.floatingAssistantBtn,
-          { backgroundColor: colors.primary },
+          {
+            backgroundColor: colors.primary,
+            bottom: Math.max(insets.bottom + 88, 96),
+            overflow: 'hidden',
+            opacity: pressed && Platform.OS === 'ios' ? 0.85 : 1,
+          },
         ]}
-        activeOpacity={0.85}
+        android_ripple={{ color: 'rgba(255,255,255,0.3)' }}
         accessibilityRole="button"
         accessibilityLabel={t('Pregúntale a EcoScan')}
       >
@@ -429,7 +452,7 @@ export const PlantDetailScreen: React.FC = () => {
         <Text style={[typography.subheadline, { color: '#FFFFFF', fontWeight: '700' }]}>
           {t('Preguntar')}
         </Text>
-      </TouchableOpacity>
+      </Pressable>
 
       {/* BARRA INFERIOR DE ACCIÓN PRINCIPAL */}
       <PrimaryActionBar

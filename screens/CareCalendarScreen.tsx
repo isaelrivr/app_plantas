@@ -4,11 +4,12 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
+  Pressable,
   Alert,
   Platform,
   FlatList,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
@@ -82,6 +83,7 @@ export const CareCalendarScreen: React.FC = () => {
   const { colors, isDark, spacing, typography, layout } = useAppTheme();
   const { plants, waterPlantToday, toggleTaskCompleted, removeCareTask, updateCareTask } = useGarden();
   const { showToast } = useFeedback();
+  const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const { t } = useTranslation();
 
@@ -296,9 +298,13 @@ export const CareCalendarScreen: React.FC = () => {
           </View>
 
           {/* Botón checkbox 44x44 HIG */}
-          <TouchableOpacity
-            style={styles.checkButton}
+          <Pressable
+            style={({ pressed }) => [
+              styles.checkButton,
+              { opacity: pressed && Platform.OS === 'ios' ? 0.7 : 1 },
+            ]}
             onPress={() => handleCompleteTask(item.plantId, item.id)}
+            android_ripple={{ color: colors.primary + '25', borderless: true, radius: 22 }}
             accessibilityRole="checkbox"
             accessibilityState={{ checked: item.completed }}
             accessibilityLabel={t('Marcar "{tarea}" como {estado}', {
@@ -311,37 +317,49 @@ export const CareCalendarScreen: React.FC = () => {
               size={24}
               color={item.completed ? colors.primary : colors.textTertiary}
             />
-          </TouchableOpacity>
+          </Pressable>
 
           {!item.completed && (
-            <TouchableOpacity
-              style={styles.checkButton}
+            <Pressable
+              style={({ pressed }) => [
+                styles.checkButton,
+                { opacity: pressed && Platform.OS === 'ios' ? 0.7 : 1 },
+              ]}
               onPress={() => setEditingTask(item)}
+              android_ripple={{ color: colors.primary + '20', borderless: true, radius: 20 }}
               accessibilityRole="button"
               accessibilityLabel={t('Editar tarea "{tarea}"', { tarea: t(item.title) })}
             >
               <Ionicons name="create-outline" size={21} color={colors.primary} />
-            </TouchableOpacity>
+            </Pressable>
           )}
 
           {!item.completed && (
-            <TouchableOpacity
-              style={styles.checkButton}
+            <Pressable
+              style={({ pressed }) => [
+                styles.checkButton,
+                { opacity: pressed && Platform.OS === 'ios' ? 0.7 : 1 },
+              ]}
               onPress={() => handleScheduleTaskReminder(item)}
+              android_ripple={{ color: colors.primary + '20', borderless: true, radius: 20 }}
               accessibilityRole="button"
               accessibilityLabel={t('Programar recordatorio para "{tarea}"', { tarea: t(item.title) })}
             >
               <Ionicons name="notifications-outline" size={22} color={colors.textSecondary} />
-            </TouchableOpacity>
+            </Pressable>
           )}
-          <TouchableOpacity
-            style={styles.checkButton}
+          <Pressable
+            style={({ pressed }) => [
+              styles.checkButton,
+              { opacity: pressed && Platform.OS === 'ios' ? 0.7 : 1 },
+            ]}
             onPress={() => removeCareTask(item.plantId, item.id)}
+            android_ripple={{ color: colors.error + '25', borderless: true, radius: 20 }}
             accessibilityRole="button"
             accessibilityLabel={t('Eliminar tarea "{tarea}"', { tarea: t(item.title) })}
           >
             <Ionicons name="trash-outline" size={21} color={colors.error} />
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </Card>
     );
@@ -349,11 +367,15 @@ export const CareCalendarScreen: React.FC = () => {
 
   const renderPlantHealthSummary = ({ item }: { item: GardenPlant }) => (
     <Card
-      style={[styles.plantHealthCard, { borderColor: colors.border }]}
+      style={[styles.plantHealthCard, { borderColor: colors.border, overflow: 'hidden' }]}
       elevated
     >
-      <TouchableOpacity
+      <Pressable
         onPress={() => navigation.navigate('HealthDiagnosis', { plantId: item.id })}
+        style={({ pressed }) => [
+          { borderRadius: 12, overflow: 'hidden', opacity: pressed && Platform.OS === 'ios' ? 0.75 : 1 },
+        ]}
+        android_ripple={{ color: colors.primary + '18' }}
         accessibilityRole="button"
         accessibilityLabel={t('Ver diagnóstico de salud de {nombre}', { nombre: item.name })}
       >
@@ -375,25 +397,41 @@ export const CareCalendarScreen: React.FC = () => {
             showPercentSymbol={false}
           />
         </View>
-      </TouchableOpacity>
+      </Pressable>
     </Card>
   );
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 60 }}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: Math.max(insets.bottom + 40, 60) }}
+      >
         {/* HEADER */}
-        <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
-          <TouchableOpacity
+        <View
+          style={[
+            styles.header,
+            {
+              backgroundColor: colors.surface,
+              borderBottomColor: colors.border,
+              paddingTop: Math.max(insets.top, Platform.OS === 'ios' ? 12 : 16),
+            },
+          ]}
+        >
+          <Pressable
             onPress={() => navigation.goBack()}
-            style={styles.backButton}
+            style={({ pressed }) => [
+              styles.backButton,
+              { opacity: pressed && Platform.OS === 'ios' ? 0.7 : 1 },
+            ]}
+            android_ripple={{ color: colors.primary + '20', borderless: true, radius: 24 }}
             accessibilityRole="button"
             accessibilityLabel={t('Volver')}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <Ionicons name="chevron-back" size={26} color={colors.primary} />
             <Text style={[typography.body, { color: colors.primary, fontWeight: '600' }]}>{t('Atrás')}</Text>
-          </TouchableOpacity>
+          </Pressable>
           <Text style={[typography.largeTitle, { color: colors.textPrimary, fontWeight: '700', marginTop: 8 }]}>
             {t('Plan de Cuidados')}
           </Text>
@@ -436,20 +474,22 @@ export const CareCalendarScreen: React.FC = () => {
             <Text style={[typography.headline, { color: colors.textPrimary }]}>
               {t('Calendario')}
             </Text>
-            <View style={[styles.viewToggle, { backgroundColor: isDark ? '#1C1C1E' : '#E5E5EA' }]}>
+            <View style={[styles.viewToggle, { backgroundColor: isDark ? '#1C1C1E' : '#E5E5EA', overflow: 'hidden' }]}>
               {(['semana', 'mes'] as CalendarView[]).map((view) => {
                 const active = calendarView === view;
                 return (
-                  <TouchableOpacity
+                  <Pressable
                     key={view}
                     onPress={() => {
                       try { Haptics.selectionAsync(); } catch {}
                       setCalendarView(view);
                     }}
-                    style={[
+                    style={({ pressed }) => [
                       styles.viewToggleBtn,
                       active && { backgroundColor: colors.surface },
+                      { overflow: 'hidden', opacity: pressed && Platform.OS === 'ios' ? 0.75 : 1 },
                     ]}
+                    android_ripple={{ color: colors.primary + '20' }}
                     accessibilityRole="button"
                     accessibilityState={{ selected: active }}
                     accessibilityLabel={t('Ver calendario por {vista}', {
@@ -468,7 +508,7 @@ export const CareCalendarScreen: React.FC = () => {
                     >
                       {view === 'semana' ? t('Semana') : t('Mes')}
                     </Text>
-                  </TouchableOpacity>
+                  </Pressable>
                 );
               })}
             </View>
@@ -476,25 +516,33 @@ export const CareCalendarScreen: React.FC = () => {
 
           <View style={[styles.calendarCard, { borderColor: colors.border, backgroundColor: colors.surface }]}>
             <View style={styles.calendarNavRow}>
-              <TouchableOpacity
+              <Pressable
                 onPress={() => navigatePeriod(-1)}
-                style={styles.calendarNavBtn}
+                style={({ pressed }) => [
+                  styles.calendarNavBtn,
+                  { opacity: pressed && Platform.OS === 'ios' ? 0.7 : 1 },
+                ]}
+                android_ripple={{ color: colors.primary + '20', borderless: true, radius: 20 }}
                 accessibilityRole="button"
                 accessibilityLabel={t('Período anterior')}
               >
                 <Ionicons name="chevron-back" size={20} color={colors.primary} />
-              </TouchableOpacity>
+              </Pressable>
               <Text style={[typography.subheadline, { color: colors.textPrimary, fontWeight: '700' }]}>
                 {periodLabel()}
               </Text>
-              <TouchableOpacity
+              <Pressable
                 onPress={() => navigatePeriod(1)}
-                style={styles.calendarNavBtn}
+                style={({ pressed }) => [
+                  styles.calendarNavBtn,
+                  { opacity: pressed && Platform.OS === 'ios' ? 0.7 : 1 },
+                ]}
+                android_ripple={{ color: colors.primary + '20', borderless: true, radius: 20 }}
                 accessibilityRole="button"
                 accessibilityLabel={t('Período siguiente')}
               >
                 <Ionicons name="chevron-forward" size={20} color={colors.primary} />
-              </TouchableOpacity>
+              </Pressable>
             </View>
 
             <View style={styles.weekLabelsRow}>
@@ -512,9 +560,14 @@ export const CareCalendarScreen: React.FC = () => {
                 const isToday = isSameDay(day, new Date());
                 const isSelected = selectedDay ? isSameDay(day, selectedDay) : false;
                 return (
-                  <TouchableOpacity
+                  <Pressable
                     key={day.toISOString()}
-                    style={[styles.dayCell, isSelected && { backgroundColor: colors.primaryLight }]}
+                    style={({ pressed }) => [
+                      styles.dayCell,
+                      isSelected && { backgroundColor: colors.primaryLight },
+                      { overflow: 'hidden', opacity: pressed && Platform.OS === 'ios' ? 0.75 : 1 },
+                    ]}
+                    android_ripple={{ color: colors.primary + '25' }}
                     onPress={() => {
                       try { Haptics.selectionAsync(); } catch {}
                       setSelectedDay((prev) => (prev && isSameDay(prev, day) ? null : day));
@@ -543,22 +596,26 @@ export const CareCalendarScreen: React.FC = () => {
                         <View key={i} style={[styles.dayDot, { backgroundColor: TASK_COLORS[t.type] }]} />
                       ))}
                     </View>
-                  </TouchableOpacity>
+                  </Pressable>
                 );
               })}
             </View>
 
             {selectedDay && (
-              <TouchableOpacity
+              <Pressable
                 onPress={() => setSelectedDay(null)}
-                style={styles.clearDayChip}
+                style={({ pressed }) => [
+                  styles.clearDayChip,
+                  { overflow: 'hidden', opacity: pressed && Platform.OS === 'ios' ? 0.75 : 1 },
+                ]}
+                android_ripple={{ color: colors.primary + '20' }}
                 accessibilityRole="button"
                 accessibilityLabel={t('Quitar filtro de día')}
               >
                 <Text style={[typography.caption1, { color: colors.primary, fontWeight: '600' }]}>
                   {selectedDay.getDate()}/{selectedDay.getMonth() + 1} · {t('Quitar filtro de día')} ✕
                 </Text>
-              </TouchableOpacity>
+              </Pressable>
             )}
           </View>
 
@@ -582,19 +639,22 @@ export const CareCalendarScreen: React.FC = () => {
               };
 
               return (
-                <TouchableOpacity
+                <Pressable
                   key={type}
                   onPress={() => {
                     try { Haptics.selectionAsync(); } catch {}
                     setFilterType(type);
                   }}
-                  style={[
+                  style={({ pressed }) => [
                     styles.filterPill,
                     {
                       backgroundColor: isActive ? colors.primary : isDark ? '#2C2C2E' : '#E5E5EA',
                       minHeight: 44,
+                      overflow: 'hidden',
+                      opacity: pressed && Platform.OS === 'ios' ? 0.75 : 1,
                     },
                   ]}
+                  android_ripple={{ color: isActive ? 'rgba(255,255,255,0.3)' : colors.primary + '20' }}
                   accessibilityRole="tab"
                   accessibilityState={{ selected: isActive }}
                   accessibilityLabel={t('Filtrar por {filtro}', { filtro: labels[type] })}
@@ -610,7 +670,7 @@ export const CareCalendarScreen: React.FC = () => {
                   >
                     {labels[type]}
                   </Text>
-                </TouchableOpacity>
+                </Pressable>
               );
             })}
           </ScrollView>
@@ -673,21 +733,23 @@ export const CareCalendarScreen: React.FC = () => {
                     {t('Riego cada {dias} días', { dias: plant.wateringFrequencyDays })}
                   </Text>
                 </View>
-                <TouchableOpacity
-                  style={[
+                <Pressable
+                  style={({ pressed }) => [
                     styles.reminderBtn,
                     {
                       backgroundColor: colors.primaryLight,
                       minWidth: 48,
                       minHeight: 48,
+                      opacity: pressed && Platform.OS === 'ios' ? 0.7 : 1,
                     },
                   ]}
+                  android_ripple={{ color: colors.primary + '25', borderless: true, radius: 24 }}
                   onPress={() => handleScheduleWatering(plant.name, plant.wateringFrequencyDays)}
                   accessibilityRole="button"
                   accessibilityLabel={t('Programar recordatorio de riego para {nombre}', { nombre: plant.name })}
                 >
                   <Ionicons name="notifications" size={18} color={colors.primary} />
-                </TouchableOpacity>
+                </Pressable>
               </View>
             </Card>
           ))}
