@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View, Image } from 'react-native';
+import { StyleSheet, Text, Pressable, View, Image, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '../../theme';
 import { Card } from '../Card';
@@ -119,9 +119,13 @@ export const ScanResultCard: React.FC<ScanResultCardProps> = ({
 
         {/* ACCIONES SECUNDARIAS */}
         <View style={[styles.secondaryRow, { borderTopColor: colors.border }]}>
-          <TouchableOpacity
+          <Pressable
             onPress={onDiagnoseHealth}
-            style={styles.secondaryButton}
+            style={({ pressed }) => [
+              styles.secondaryButton,
+              { opacity: pressed && Platform.OS === 'ios' ? 0.7 : 1 },
+            ]}
+            android_ripple={{ color: colors.primary + '18' }}
             accessibilityRole="button"
             accessibilityLabel={t('Diagnosticar salud')}
           >
@@ -129,13 +133,17 @@ export const ScanResultCard: React.FC<ScanResultCardProps> = ({
             <Text style={[typography.caption1, { color: colors.textSecondary, marginLeft: 6, fontWeight: '600' }]}>
               {t('Revisar salud')}
             </Text>
-          </TouchableOpacity>
+          </Pressable>
 
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
-          <TouchableOpacity
+          <Pressable
             onPress={onViewHabitatMap}
-            style={styles.secondaryButton}
+            style={({ pressed }) => [
+              styles.secondaryButton,
+              { opacity: pressed && Platform.OS === 'ios' ? 0.7 : 1 },
+            ]}
+            android_ripple={{ color: colors.primary + '18' }}
             accessibilityRole="button"
             accessibilityLabel={t('Ver origen en el mapa')}
           >
@@ -143,13 +151,17 @@ export const ScanResultCard: React.FC<ScanResultCardProps> = ({
             <Text style={[typography.caption1, { color: colors.textSecondary, marginLeft: 6, fontWeight: '600' }]}>
               {t('Mapa de origen')}
             </Text>
-          </TouchableOpacity>
+          </Pressable>
 
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
-          <TouchableOpacity
+          <Pressable
             onPress={onScanAnother}
-            style={styles.secondaryButton}
+            style={({ pressed }) => [
+              styles.secondaryButton,
+              { opacity: pressed && Platform.OS === 'ios' ? 0.7 : 1 },
+            ]}
+            android_ripple={{ color: colors.primary + '20' }}
             accessibilityRole="button"
             accessibilityLabel={t('Escanear otra')}
           >
@@ -157,7 +169,7 @@ export const ScanResultCard: React.FC<ScanResultCardProps> = ({
             <Text style={[typography.caption1, { color: colors.primary, marginLeft: 6, fontWeight: '700' }]}>
               {t('Escanear otra')}
             </Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </Card>
 
@@ -168,17 +180,20 @@ export const ScanResultCard: React.FC<ScanResultCardProps> = ({
             {t('¿Otra opción? Elige la correcta:')}
           </Text>
           {result.candidates.slice(0, 4).map((alt, idx) => (
-            <TouchableOpacity
+            <Pressable
               key={alt.id}
               onPress={() => onSelectCandidate(alt, idx)}
-              style={[
+              style={({ pressed }) => [
                 styles.candidateRow,
                 {
                   borderColor: alt.id === candidate.id ? colors.primary : colors.border,
                   backgroundColor: alt.id === candidate.id ? colors.primaryLight : 'transparent',
                   borderRadius: layout.borderRadius.md,
+                  overflow: 'hidden',
+                  opacity: pressed && Platform.OS === 'ios' ? 0.75 : 1,
                 },
               ]}
+              android_ripple={{ color: colors.primary + '20' }}
               accessibilityRole="radio"
               accessibilityState={{ selected: alt.id === candidate.id }}
             >
@@ -193,7 +208,7 @@ export const ScanResultCard: React.FC<ScanResultCardProps> = ({
               <Text style={[typography.footnote, { color: colors.textTertiary, fontWeight: '700' }]}>
                 {Math.round(alt.confidence)}%
               </Text>
-            </TouchableOpacity>
+            </Pressable>
           ))}
         </Card>
       ) : null}

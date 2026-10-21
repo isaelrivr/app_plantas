@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View, Image } from 'react-native';
+import { StyleSheet, Text, Pressable, View, Image, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '../../theme';
 import { GardenPlant } from '../../context/GardenContext';
@@ -33,13 +33,16 @@ export const GardenPlantCard: React.FC<GardenPlantCardProps> = ({
   const isWatered = plant.isWateredToday;
 
   return (
-    <Card elevated style={[styles.card, { backgroundColor: colors.surface }]}>
-      <TouchableOpacity
+    <Card elevated style={[styles.card, { backgroundColor: colors.surface, overflow: 'hidden' }]}>
+      <Pressable
         onPress={onPress}
-        activeOpacity={0.88}
         accessibilityRole="button"
         accessibilityLabel={`${plant.name}, ${roomName ? `${roomName}.` : ''} ${isWatered ? t('Todo bien') : t('Necesita agua')}`}
-        style={styles.touchArea}
+        android_ripple={{ color: colors.primary + '10' }}
+        style={({ pressed }) => [
+          styles.touchArea,
+          { opacity: pressed && Platform.OS === 'ios' ? 0.88 : 1 },
+        ]}
       >
         <View style={styles.topRow}>
           {photoUri ? (
@@ -68,15 +71,19 @@ export const GardenPlantCard: React.FC<GardenPlantCardProps> = ({
               >
                 {plant.name}
               </Text>
-              <TouchableOpacity
+              <Pressable
                 onPress={onOptionsPress}
                 accessibilityRole="button"
                 accessibilityLabel={t('Opciones de {nombre}', { nombre: plant.name })}
                 hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-                style={styles.moreButton}
+                android_ripple={{ color: colors.border, borderless: true, radius: 20 }}
+                style={({ pressed }) => [
+                  styles.moreButton,
+                  { opacity: pressed && Platform.OS === 'ios' ? 0.6 : 1 },
+                ]}
               >
                 <Ionicons name="ellipsis-horizontal" size={20} color={colors.textSecondary} />
-              </TouchableOpacity>
+              </Pressable>
             </View>
 
             <Text
@@ -103,14 +110,16 @@ export const GardenPlantCard: React.FC<GardenPlantCardProps> = ({
 
         {/* Barra de acción rápida de riego */}
         <View style={[styles.actionRow, { borderTopColor: colors.border }]}>
-          <TouchableOpacity
+          <Pressable
             onPress={onWater}
-            activeOpacity={0.8}
-            style={[
+            android_ripple={{ color: isWatered ? colors.primary + '25' : 'rgba(255,255,255,0.3)' }}
+            style={({ pressed }) => [
               styles.waterButton,
               {
                 backgroundColor: isWatered ? colors.primaryLight : colors.primary,
                 minHeight: layout.minTouchTarget,
+                overflow: 'hidden',
+                opacity: pressed && Platform.OS === 'ios' ? 0.8 : 1,
               },
             ]}
             accessibilityRole="button"
@@ -133,9 +142,9 @@ export const GardenPlantCard: React.FC<GardenPlantCardProps> = ({
             >
               {isWatered ? t('Hidratada hoy') : t('Regar hoy')}
             </Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
-      </TouchableOpacity>
+      </Pressable>
     </Card>
   );
 };

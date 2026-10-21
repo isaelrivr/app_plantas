@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View, ViewStyle } from 'react-native';
+import { StyleSheet, Text, Pressable, View, ViewStyle, Platform } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useAppTheme } from '../theme';
 
@@ -40,7 +40,7 @@ export const SegmentedControl = <T extends string>({
       {options.map((option) => {
         const isSelected = option.key === selectedKey;
         return (
-          <TouchableOpacity
+          <Pressable
             key={option.key}
             onPress={() => {
               if (!isSelected) {
@@ -53,7 +53,8 @@ export const SegmentedControl = <T extends string>({
             accessibilityRole="tab"
             accessibilityState={{ selected: isSelected }}
             accessibilityLabel={option.label}
-            style={[
+            android_ripple={{ color: colors.primary + '18' }}
+            style={({ pressed }) => [
               styles.segment,
               {
                 borderRadius: layout.borderRadius.sm,
@@ -63,7 +64,9 @@ export const SegmentedControl = <T extends string>({
                 shadowOffset: { width: 0, height: 1 },
                 shadowRadius: 2,
                 elevation: isSelected ? 2 : 0,
-                minHeight: Math.max(layout.minTouchTarget - 8, 40),
+                minHeight: Math.max(layout.minTouchTarget, 44),
+                overflow: 'hidden',
+                opacity: pressed && !isSelected && Platform.OS === 'ios' ? 0.7 : 1,
               },
             ]}
           >
@@ -101,7 +104,7 @@ export const SegmentedControl = <T extends string>({
                 </Text>
               </View>
             ) : null}
-          </TouchableOpacity>
+          </Pressable>
         );
       })}
     </View>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '../theme';
 import { useTranslation } from '../i18n';
@@ -46,9 +46,19 @@ export const ErrorBanner: React.FC<ErrorBannerProps> = ({ message, onRetry, styl
       </View>
 
       {onRetry && (
-        <TouchableOpacity
+        <Pressable
           onPress={onRetry}
-          style={[styles.retryButton, { backgroundColor: colors.error, marginTop: spacing.sm }]}
+          style={({ pressed }) => [
+            styles.retryButton,
+            {
+              backgroundColor: colors.error,
+              marginTop: spacing.sm,
+              minHeight: 48,
+              overflow: 'hidden',
+              opacity: pressed && Platform.OS === 'ios' ? 0.8 : 1,
+            },
+          ]}
+          android_ripple={{ color: 'rgba(255,255,255,0.3)' }}
           accessibilityRole="button"
           accessibilityLabel={t('Reintentar operación')}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -57,7 +67,7 @@ export const ErrorBanner: React.FC<ErrorBannerProps> = ({ message, onRetry, styl
           <Text style={[typography.subheadline, { color: '#FFFFFF', fontWeight: '600', marginLeft: 6 }]}>
             {t('Reintentar')}
           </Text>
-        </TouchableOpacity>
+        </Pressable>
       )}
     </View>
   );

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text, StyleSheet, TouchableOpacity, StyleProp, ViewStyle } from 'react-native';
+import { Text, StyleSheet, Pressable, StyleProp, ViewStyle, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '../theme';
 
@@ -22,18 +22,20 @@ export const FilterChip: React.FC<FilterChipProps> = ({
   const { colors, layout, typography } = useAppTheme();
 
   return (
-    <TouchableOpacity
+    <Pressable
       onPress={onPress}
-      activeOpacity={0.7}
       accessibilityRole="button"
       accessibilityState={{ selected }}
       accessibilityLabel={label}
-      style={[
+      android_ripple={{ color: selected ? 'rgba(255,255,255,0.3)' : colors.primary + '20' }}
+      style={({ pressed }) => [
         styles.chip,
         {
           backgroundColor: selected ? colors.primary : colors.surface,
           borderColor: selected ? colors.primary : colors.border,
           borderRadius: layout.borderRadius.full,
+          overflow: 'hidden',
+          opacity: pressed && Platform.OS === 'ios' ? 0.75 : 1,
         },
         style,
       ]}
@@ -54,7 +56,7 @@ export const FilterChip: React.FC<FilterChipProps> = ({
       >
         {label}
       </Text>
-    </TouchableOpacity>
+    </Pressable>
   );
 };
 
