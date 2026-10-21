@@ -51,15 +51,18 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
             styles.sheet,
             {
               backgroundColor: colors.surface,
-              borderRadius: layout.borderRadius.xl,
-              paddingBottom: Math.max(insets.bottom, 16),
+              borderTopLeftRadius: layout.borderRadius.xxl,
+              borderTopRightRadius: layout.borderRadius.xxl,
+              borderTopWidth: 1,
+              borderTopColor: colors.borderLight,
+              paddingBottom: Math.max(insets.bottom, 20),
             },
           ]}
           onStartShouldSetResponder={() => true}
           accessibilityRole="alert"
           accessibilityLabel={`${title}. ${message}`}
         >
-          <View style={styles.handle} />
+          <View style={[styles.handle, { backgroundColor: colors.border }]} />
 
           <Text
             style={[
@@ -79,6 +82,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
                 marginTop: spacing.sm,
                 marginBottom: spacing.xl,
                 lineHeight: 22,
+                paddingHorizontal: spacing.sm,
               },
             ]}
           >
@@ -89,7 +93,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
             <Button
               title={finalConfirmText}
               onPress={onConfirm}
-              variant={isDestructive ? 'primary' : 'primary'}
+              variant="primary"
               size="lg"
               style={[
                 styles.button,
@@ -115,30 +119,27 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.55)',
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
     justifyContent: 'flex-end',
   },
   sheet: {
     paddingHorizontal: 20,
     paddingTop: 12,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -3 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.1,
     shadowRadius: 10,
-    elevation: 12,
+    elevation: 8,
   },
   handle: {
     width: 40,
     height: 4,
     borderRadius: 2,
-    backgroundColor: '#CCCCCC',
     alignSelf: 'center',
     marginBottom: 16,
   },
   actions: {
-    gap: 10,
+    gap: 12,
   },
   button: {
     width: '100%',

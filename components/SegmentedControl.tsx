@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, Pressable, View, ViewStyle, Platform } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { useAppTheme } from '../theme';
+import { useAppTheme, fontWeights } from '../theme';
 
 export interface SegmentOption<T extends string = string> {
   key: T;
@@ -30,7 +30,7 @@ export const SegmentedControl = <T extends string>({
         styles.container,
         {
           backgroundColor: colors.surfaceSecondary,
-          borderRadius: layout.borderRadius.md,
+          borderRadius: layout.borderRadius.lg,
           padding: 4,
         },
         style,
@@ -53,20 +53,23 @@ export const SegmentedControl = <T extends string>({
             accessibilityRole="tab"
             accessibilityState={{ selected: isSelected }}
             accessibilityLabel={option.label}
-            android_ripple={{ color: colors.primary + '18' }}
+            android_ripple={{
+              color: colors.primary + '18',
+              borderless: false,
+            }}
             style={({ pressed }) => [
               styles.segment,
               {
-                borderRadius: layout.borderRadius.sm,
+                borderRadius: layout.borderRadius.md,
                 backgroundColor: isSelected ? colors.surface : 'transparent',
                 shadowColor: isSelected ? '#000' : 'transparent',
-                shadowOpacity: isSelected ? 0.08 : 0,
+                shadowOpacity: isSelected ? 0.05 : 0,
                 shadowOffset: { width: 0, height: 1 },
-                shadowRadius: 2,
-                elevation: isSelected ? 2 : 0,
-                minHeight: Math.max(layout.minTouchTarget, 44),
+                shadowRadius: 3,
+                elevation: isSelected ? 1 : 0,
+                minHeight: Math.max(layout.minTouchTarget, 48),
                 overflow: 'hidden',
-                opacity: pressed && !isSelected && Platform.OS === 'ios' ? 0.7 : 1,
+                opacity: pressed && !isSelected && Platform.OS === 'ios' ? 0.75 : 1,
               },
             ]}
           >
@@ -75,7 +78,7 @@ export const SegmentedControl = <T extends string>({
                 typography.subheadline,
                 {
                   color: isSelected ? colors.primary : colors.textSecondary,
-                  fontWeight: isSelected ? '700' : '500',
+                  fontWeight: isSelected ? fontWeights.bold : fontWeights.medium,
                 },
               ]}
               numberOfLines={1}
@@ -96,7 +99,7 @@ export const SegmentedControl = <T extends string>({
                     typography.caption2,
                     {
                       color: isSelected ? colors.primary : colors.textSecondary,
-                      fontWeight: '700',
+                      fontWeight: fontWeights.bold,
                     },
                   ]}
                 >
@@ -122,13 +125,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 10,
   },
   badge: {
     marginLeft: 6,
     paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: 999,
+    borderRadius: 9999,
   },
 });

@@ -10,7 +10,7 @@ import {
   Platform,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { useAppTheme } from '../theme';
+import { useAppTheme, fontWeights, FONT_FAMILY } from '../theme';
 
 interface ButtonProps {
   title: string;
@@ -60,7 +60,7 @@ export const Button: React.FC<ButtonProps> = ({
   };
 
   const getBorderColor = () => {
-    if (variant === 'outline') return colors.primary;
+    if (variant === 'outline') return isDark ? colors.primary : colors.primary;
     return 'transparent';
   };
 
@@ -85,15 +85,15 @@ export const Button: React.FC<ButtonProps> = ({
   const getRippleColor = () => {
     switch (variant) {
       case 'primary':
-        return 'rgba(255, 255, 255, 0.25)';
+        return 'rgba(255, 255, 255, 0.28)';
       case 'premium':
-        return 'rgba(0, 0, 0, 0.15)';
+        return 'rgba(0, 0, 0, 0.16)';
       case 'outline':
       case 'ghost':
-        return isDark ? 'rgba(74, 222, 128, 0.15)' : 'rgba(27, 106, 59, 0.12)';
+        return colors.primary + '22';
       case 'secondary':
       default:
-        return isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)';
+        return isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.06)';
     }
   };
 
@@ -132,10 +132,10 @@ export const Button: React.FC<ButtonProps> = ({
         {
           minHeight: getMinHeight(),
           minWidth: layout.minTouchTarget,
-          paddingVertical: 12,
+          paddingVertical: size === 'lg' ? 14 : 12,
           backgroundColor: getBackgroundColor(),
           borderColor: getBorderColor(),
-          borderWidth: variant === 'outline' ? 1.5 : 0,
+          borderWidth: variant === 'outline' ? 1 : 0,
           borderRadius: layout.borderRadius.full,
           paddingHorizontal: spacing.xl,
           opacity: pressed && Platform.OS === 'ios' ? 0.78 : disabled || loading ? 0.6 : 1,
@@ -156,6 +156,8 @@ export const Button: React.FC<ButtonProps> = ({
               styles.text,
               {
                 color: getTextColor(),
+                fontFamily: FONT_FAMILY,
+                fontWeight: fontWeights.medium,
                 marginLeft: icon ? spacing.xs : 0,
               },
               textStyle,
@@ -178,7 +180,7 @@ const styles = StyleSheet.create({
   },
   text: {
     fontSize: 16,
-    fontWeight: '600',
     textAlign: 'center',
+    letterSpacing: 0.1,
   },
 });

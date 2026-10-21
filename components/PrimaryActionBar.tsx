@@ -1,9 +1,9 @@
 import React from 'react';
 import { StyleSheet, Text, Pressable, View, ViewStyle, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useAppTheme } from '../theme';
+import { useAppTheme, fontWeights } from '../theme';
 import { Button } from './Button';
-import { GlassView } from './GlassView';
+import { GlassSurface } from './GlassSurface';
 
 export interface PrimaryActionBarProps {
   primaryTitle: string;
@@ -42,13 +42,13 @@ export const PrimaryActionBar: React.FC<PrimaryActionBarProps> = ({
         style,
       ]}
     >
-      <GlassView
-        borderRadius={24}
-        intensity={65}
+      <GlassSurface
+        borderRadius={layout.borderRadius.lg}
+        intensity={60}
         elevated
         style={styles.glassContainer}
       >
-        <View style={[styles.innerContent, { padding: spacing.sm }]}>
+        <View style={[styles.innerContent, { padding: spacing.md }]}>
           <Button
             title={primaryTitle}
             onPress={onPrimaryPress}
@@ -66,26 +66,31 @@ export const PrimaryActionBar: React.FC<PrimaryActionBarProps> = ({
               style={({ pressed }) => [
                 styles.secondaryButton,
                 {
-                  minHeight: layout.minTouchTarget,
-                  opacity: pressed && Platform.OS === 'ios' ? 0.7 : 1,
+                  minHeight: Math.max(layout.minTouchTarget, 48),
+                  opacity: pressed && Platform.OS === 'ios' ? 0.72 : 1,
                   borderRadius: layout.borderRadius.md,
                 },
               ]}
               android_ripple={{
-                color: 'rgba(27, 106, 59, 0.12)',
+                color: colors.primary + '18',
                 borderless: false,
               }}
               accessibilityRole="button"
               accessibilityLabel={secondaryTitle}
               hitSlop={{ top: 8, bottom: 8, left: 16, right: 16 }}
             >
-              <Text style={[typography.subheadline, { color: colors.primary, fontWeight: '600' }]}>
+              <Text
+                style={[
+                  typography.subheadline,
+                  { color: colors.primary, fontWeight: fontWeights.medium },
+                ]}
+              >
                 {secondaryTitle}
               </Text>
             </Pressable>
           ) : null}
         </View>
-      </GlassView>
+      </GlassSurface>
     </View>
   );
 };
@@ -100,6 +105,7 @@ const styles = StyleSheet.create({
   },
   innerContent: {
     width: '100%',
+    gap: 4,
   },
   primaryButton: {
     width: '100%',
@@ -107,6 +113,5 @@ const styles = StyleSheet.create({
   secondaryButton: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 4,
   },
 });

@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Animated, StyleSheet, Text, Pressable, View, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { GlassView } from './GlassView';
-import { useAppTheme } from '../theme';
+import { GlassSurface } from './GlassSurface';
+import { useAppTheme, fontWeights } from '../theme';
 import { announce } from '../services/accessibilityService';
 
 export interface SnackbarProps {
@@ -25,7 +25,7 @@ export const Snackbar: React.FC<SnackbarProps> = ({
   onDismiss,
   durationMs = 5000,
 }) => {
-  const { typography, motion, layout } = useAppTheme();
+  const { typography, motion, layout, spacing } = useAppTheme();
   const insets = useSafeAreaInsets();
   const [opacity] = useState(() => new Animated.Value(0));
   const [translateY] = useState(() => new Animated.Value(20));
@@ -45,8 +45,8 @@ export const Snackbar: React.FC<SnackbarProps> = ({
           }),
           Animated.spring(translateY, {
             toValue: 0,
-            damping: 18,
-            stiffness: 180,
+            damping: 20,
+            stiffness: 200,
             useNativeDriver: true,
           }),
         ]).start();
@@ -104,15 +104,15 @@ export const Snackbar: React.FC<SnackbarProps> = ({
       ]}
       pointerEvents="box-none"
     >
-      <GlassView
-        intensity={80}
-        tint="dark"
+      <GlassSurface
+        variant="strong"
+        intensity={60}
         borderRadius={layout.borderRadius.lg}
         elevated
         style={styles.content}
       >
         <View
-          style={styles.innerContent}
+          style={[styles.innerContent, { paddingHorizontal: spacing.md, paddingVertical: spacing.sm }]}
           accessibilityRole="alert"
           accessibilityLiveRegion="assertive"
         >
@@ -125,14 +125,16 @@ export const Snackbar: React.FC<SnackbarProps> = ({
               style={({ pressed }) => [
                 styles.actionButton,
                 {
-                  minHeight: layout.minTouchTarget,
+                  minHeight: Math.max(layout.minTouchTarget, 48),
+                  minWidth: 48,
                   opacity: pressed && Platform.OS === 'ios' ? 0.7 : 1,
+                  borderRadius: layout.borderRadius.full,
                 },
               ]}
               android_ripple={{
-                color: 'rgba(129, 199, 132, 0.25)',
+                color: 'rgba(255, 255, 255, 0.2)',
                 borderless: true,
-                radius: 20,
+                radius: 24,
               }}
               onPress={() => {
                 onAction();
@@ -141,13 +143,19 @@ export const Snackbar: React.FC<SnackbarProps> = ({
               accessibilityRole="button"
               accessibilityLabel={actionLabel}
             >
-              <Text style={[typography.headline, styles.actionText, { color: '#81C784' }]}>
+              <Text
+                style={[
+                  typography.subheadline,
+                  styles.actionText,
+                  { color: '#81C784', fontWeight: fontWeights.bold },
+                ]}
+              >
                 {actionLabel}
               </Text>
             </Pressable>
           ) : null}
         </View>
-      </GlassView>
+      </GlassSurface>
     </Animated.View>
   );
 };
@@ -167,15 +175,14 @@ const styles = StyleSheet.create({
     width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
   },
   icon: {
-    marginRight: 10,
+    marginRight: 12,
   },
   message: {
     flex: 1,
     fontSize: 16,
+    lineHeight: 22,
   },
   actionButton: {
     paddingHorizontal: 12,
@@ -184,7 +191,6 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   actionText: {
-    fontWeight: '700',
-    fontSize: 16,
+    letterSpacing: 0.1,
   },
 });

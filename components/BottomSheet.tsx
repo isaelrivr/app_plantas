@@ -12,7 +12,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
-import { useAppTheme } from '../theme';
+import { useAppTheme, useGlass } from '../theme';
 import { useTranslation } from '../i18n';
 
 export interface BottomSheetProps {
@@ -34,7 +34,8 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
   showCloseButton = true,
   maxHeightRatio = 0.88,
 }) => {
-  const { colors, typography, spacing, motion, isDark } = useAppTheme();
+  const { colors, typography, spacing, layout, motion, isDark } = useAppTheme();
+  const glass = useGlass();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
 
@@ -55,8 +56,8 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
           }),
           Animated.spring(translateY, {
             toValue: 0,
-            damping: 22,
-            stiffness: 220,
+            damping: 24,
+            stiffness: 240,
             useNativeDriver: true,
           }),
         ]).start();
@@ -97,11 +98,14 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
         style={styles.keyboardContainer}
       >
         <Animated.View style={[styles.backdrop, { opacity: backdropOpacity }]}>
-          <BlurView
-            intensity={Platform.OS === 'android' ? 25 : 30}
-            tint={isDark ? 'dark' : 'systemMaterialDark'}
-            style={StyleSheet.absoluteFill}
-          />
+          {glass.canUseBlur && (
+            <BlurView
+              intensity={25}
+              tint={isDark ? 'dark' : 'systemMaterialDark'}
+              blurMethod="dimezisBlurViewSdk31Plus"
+              style={StyleSheet.absoluteFill}
+            />
+          )}
           <Pressable
             style={StyleSheet.absoluteFill}
             onPress={onClose}
@@ -118,7 +122,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
               borderTopLeftRadius: 28,
               borderTopRightRadius: 28,
               borderTopWidth: 1,
-              borderTopColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)',
+              borderTopColor: colors.borderLight,
               paddingBottom: Math.max(insets.bottom, 16),
               maxHeight: `${Math.round(maxHeightRatio * 100)}%`,
               transform: [{ translateY }],
@@ -133,7 +137,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
 
           {/* Cabecera con título y botón de cerrar */}
           {title ? (
-            <View style={[styles.header, { paddingHorizontal: spacing.md }]}>
+            <View style={[styles.header, { paddingHorizontal: spacing.lg }]}>
               <View style={{ flex: 1 }}>
                 <Text style={[typography.headline, { color: colors.textPrimary }]}>
                   {title}
@@ -150,17 +154,19 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
                   style={({ pressed }) => [
                     styles.closeBtn,
                     {
+                      minWidth: Math.max(layout.minTouchTarget, 48),
+                      minHeight: Math.max(layout.minTouchTarget, 48),
                       opacity: pressed && Platform.OS === 'ios' ? 0.7 : 1,
                     },
                   ]}
                   android_ripple={{
                     color: colors.border,
                     borderless: true,
-                    radius: 22,
+                    radius: 24,
                   }}
                   accessibilityRole="button"
                   accessibilityLabel={t('Cerrar')}
-                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 >
                   <Ionicons name="close-circle" size={26} color={colors.textTertiary} />
                 </Pressable>
@@ -168,7 +174,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
             </View>
           ) : null}
 
-          <View style={{ paddingHorizontal: spacing.md, paddingTop: spacing.xs }}>
+          <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.xs }}>
             {children}
           </View>
         </Animated.View>
@@ -184,34 +190,32 @@ const styles = StyleSheet.create({
   },
   backdrop: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(0, 0, 0, 0.55)',
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
   },
   sheet: {
     width: '100%',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 16,
+    shadowOffset: { width: 0, height: -3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 8,
   },
   handleContainer: {
     alignItems: 'center',
-    paddingVertical: 10,
+    paddingVertical: 12,
   },
   handle: {
-    width: 44,
-    height: 5,
-    borderRadius: 2.5,
+    width: 40,
+    height: 4,
+    borderRadius: 2,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingBottom: 10,
+    paddingBottom: 12,
   },
   closeBtn: {
-    minWidth: 44,
-    minHeight: 44,
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 8,

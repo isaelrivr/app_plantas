@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, Pressable, View, ViewStyle, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useAppTheme } from '../theme';
+import { useAppTheme, fontWeights } from '../theme';
 
 export interface ListRowProps {
   title: string;
@@ -46,9 +46,9 @@ export const ListRow: React.FC<ListRowProps> = ({
       style={[
         styles.row,
         {
-          minHeight: layout.minTouchTarget,
-          paddingVertical: spacing.sm,
-          paddingHorizontal: spacing.xs,
+          minHeight: Math.max(layout.minTouchTarget, 52),
+          paddingVertical: spacing.md,
+          paddingHorizontal: spacing.sm,
         },
         style,
       ]}
@@ -60,7 +60,13 @@ export const ListRow: React.FC<ListRowProps> = ({
       ) : null}
 
       <View style={styles.textContainer}>
-        <Text style={[typography.body, { color: textColor, fontWeight: '600' }]} numberOfLines={2}>
+        <Text
+          style={[
+            typography.body,
+            { color: textColor, fontWeight: fontWeights.medium },
+          ]}
+          numberOfLines={2}
+        >
           {title}
         </Text>
         {subtitle ? (
@@ -98,19 +104,19 @@ export const ListRow: React.FC<ListRowProps> = ({
       onPress={onPress}
       disabled={disabled}
       android_ripple={{
-        color: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
+        color: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
         borderless: false,
       }}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel || `${title}${subtitle ? `. ${subtitle}` : ''}`}
       accessibilityHint={accessibilityHint}
       accessibilityState={{ disabled }}
-      hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+      hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
       style={({ pressed }) => [
         {
           borderRadius: layout.borderRadius.md,
           overflow: 'hidden',
-          opacity: pressed && Platform.OS === 'ios' ? 0.7 : 1,
+          opacity: pressed && Platform.OS === 'ios' ? 0.72 : 1,
         },
       ]}
     >

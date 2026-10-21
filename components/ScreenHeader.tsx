@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { useAppTheme } from '../theme';
+import { useAppTheme, fontWeights } from '../theme';
 
 interface ScreenHeaderProps {
   title: string;
@@ -15,22 +15,31 @@ export const ScreenHeader: React.FC<ScreenHeaderProps> = ({
   rightAction,
   rightActions,
 }) => {
-  const { colors, typography, spacing } = useAppTheme();
+  const { colors, typography, spacing, layout } = useAppTheme();
 
   const actionsToRender = rightActions ?? (rightAction ? [rightAction] : []);
 
   return (
-    <View style={[styles.container, { paddingHorizontal: spacing.md, paddingTop: spacing.md, paddingBottom: spacing.sm }]}>
+    <View
+      style={[
+        styles.container,
+        {
+          paddingHorizontal: spacing.md,
+          paddingTop: spacing.lg,
+          paddingBottom: spacing.sm,
+        },
+      ]}
+    >
       <View style={styles.topRow}>
-        <View style={{ flex: 1 }}>
+        <View style={{ flex: 1, justifyContent: 'center' }}>
           {subtitle ? (
             <Text
               style={[
                 typography.subheadline,
                 {
                   color: colors.textSecondary,
-                  fontWeight: '500',
-                  letterSpacing: 0.2,
+                  fontWeight: fontWeights.medium,
+                  letterSpacing: 0.15,
                   marginBottom: spacing.xxs,
                 },
               ]}
@@ -43,6 +52,7 @@ export const ScreenHeader: React.FC<ScreenHeaderProps> = ({
               typography.largeTitle,
               {
                 color: colors.textPrimary,
+                fontWeight: fontWeights.bold,
               },
             ]}
           >
@@ -52,7 +62,13 @@ export const ScreenHeader: React.FC<ScreenHeaderProps> = ({
         {actionsToRender.length > 0 ? (
           <View style={styles.rightActionsRow}>
             {actionsToRender.map((action, i) => (
-              <View key={i} style={styles.rightAction}>
+              <View
+                key={i}
+                style={[
+                  styles.rightAction,
+                  { minHeight: layout.minTouchTarget, minWidth: layout.minTouchTarget },
+                ]}
+              >
                 {action}
               </View>
             ))}
@@ -79,6 +95,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   rightAction: {
-    marginLeft: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

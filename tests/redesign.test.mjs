@@ -169,4 +169,65 @@ test('fase 2 glass components satisfy architecture and android constraints', () 
   assert.ok(cardCode.includes('colors.border'), 'Card flat variant must use colors.border');
 });
 
+test('fase 3 base components meet touch target, ripple, and minimalist criteria', () => {
+  const baseComponents = [
+    'Button.tsx',
+    'BottomSheet.tsx',
+    'ConfirmModal.tsx',
+    'Snackbar.tsx',
+    'FilterChip.tsx',
+    'SegmentedControl.tsx',
+    'ListRow.tsx',
+    'ScreenHeader.tsx',
+    'EmptyState.tsx',
+    'PrimaryActionBar.tsx',
+  ];
+
+  for (const comp of baseComponents) {
+    const filePath = path.join(process.cwd(), 'components', comp);
+    assert.ok(fs.existsSync(filePath), `${comp} must exist`);
+    const code = fs.readFileSync(filePath, 'utf-8');
+    assert.ok(!code.includes('TouchableOpacity'), `${comp} must not use TouchableOpacity`);
+  }
+
+  // Button touch target >= 48dp and ripple
+  const buttonCode = fs.readFileSync(path.join(process.cwd(), 'components', 'Button.tsx'), 'utf-8');
+  assert.ok(buttonCode.includes('minHeight: getMinHeight()'));
+  assert.ok(buttonCode.includes('android_ripple'));
+  assert.ok(buttonCode.includes('Math.max(layout.minTouchTarget, 48)'));
+
+  // BottomSheet close button touch target >= 48dp
+  const sheetCode = fs.readFileSync(path.join(process.cwd(), 'components', 'BottomSheet.tsx'), 'utf-8');
+  assert.ok(sheetCode.includes('minWidth: Math.max(layout.minTouchTarget, 48)'));
+  assert.ok(sheetCode.includes('minHeight: Math.max(layout.minTouchTarget, 48)'));
+  assert.ok(sheetCode.includes('android_ripple'));
+
+  // FilterChip touch target >= 48dp
+  const chipCode = fs.readFileSync(path.join(process.cwd(), 'components', 'FilterChip.tsx'), 'utf-8');
+  assert.ok(chipCode.includes('minHeight: Math.max(layout.minTouchTarget, 48)'));
+  assert.ok(chipCode.includes('android_ripple'));
+
+  // SegmentedControl segment touch target >= 48dp
+  const segmentCode = fs.readFileSync(path.join(process.cwd(), 'components', 'SegmentedControl.tsx'), 'utf-8');
+  assert.ok(segmentCode.includes('minHeight: Math.max(layout.minTouchTarget, 48)'));
+  assert.ok(segmentCode.includes('android_ripple'));
+
+  // ListRow touch target >= 48dp
+  const listCode = fs.readFileSync(path.join(process.cwd(), 'components', 'ListRow.tsx'), 'utf-8');
+  assert.ok(listCode.includes('minHeight: Math.max(layout.minTouchTarget, 52)'));
+  assert.ok(listCode.includes('android_ripple'));
+
+  // PrimaryActionBar GlassSurface and secondary button touch target >= 48dp
+  const barCode = fs.readFileSync(path.join(process.cwd(), 'components', 'PrimaryActionBar.tsx'), 'utf-8');
+  assert.ok(barCode.includes('GlassSurface'));
+  assert.ok(barCode.includes('minHeight: Math.max(layout.minTouchTarget, 48)'));
+  assert.ok(barCode.includes('android_ripple'));
+
+  // Snackbar GlassSurface
+  const snackbarCode = fs.readFileSync(path.join(process.cwd(), 'components', 'Snackbar.tsx'), 'utf-8');
+  assert.ok(snackbarCode.includes('GlassSurface'));
+  assert.ok(snackbarCode.includes('minHeight: Math.max(layout.minTouchTarget, 48)'));
+});
+
+
 

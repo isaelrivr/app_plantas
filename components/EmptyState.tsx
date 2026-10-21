@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useAppTheme } from '../theme';
+import { useAppTheme, fontWeights } from '../theme';
 import { Button } from './Button';
 
 interface EmptyStateProps {
@@ -23,7 +23,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
 
   return (
     <View
-      style={[styles.container, { padding: spacing.xl }]}
+      style={[styles.container, { paddingHorizontal: spacing.xl, paddingVertical: 52 }]}
       accessible={true}
       accessibilityLabel={`${title}. ${description}`}
     >
@@ -32,11 +32,11 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
           styles.iconCircle,
           {
             backgroundColor: colors.primaryLight,
-            marginBottom: spacing.md,
+            marginBottom: spacing.lg,
           },
         ]}
       >
-        <Ionicons name={iconName} size={40} color={colors.primary} />
+        <Ionicons name={iconName} size={42} color={colors.primary} />
       </View>
 
       <Text
@@ -45,7 +45,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
           {
             color: colors.textPrimary,
             textAlign: 'center',
-            fontWeight: '700',
+            fontWeight: fontWeights.bold,
             marginBottom: spacing.xs,
           },
         ]}
@@ -59,8 +59,8 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
           {
             color: colors.textSecondary,
             textAlign: 'center',
-            lineHeight: 22,
-            marginBottom: actionTitle ? spacing.lg : 0,
+            lineHeight: 24,
+            marginBottom: actionTitle ? spacing.xl : 0,
             maxWidth: 320,
           },
         ]}
@@ -74,7 +74,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
           onPress={onActionPress}
           variant="primary"
           size="md"
-          icon={<Ionicons name="add" size={18} color="#FFFFFF" />}
+          icon={<Ionicons name="add" size={20} color="#FFFFFF" />}
         />
       )}
     </View>
@@ -85,12 +85,12 @@ const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 36,
+    width: '100%',
   },
   iconCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 88,
+    height: 88,
+    borderRadius: 44,
     alignItems: 'center',
     justifyContent: 'center',
   },
