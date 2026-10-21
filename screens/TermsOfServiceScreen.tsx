@@ -4,11 +4,12 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
+  Pressable,
   Platform,
   Linking,
   Share,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
@@ -22,6 +23,7 @@ const PUBLIC_URL = 'https://ecoscan.app/terminos';
 export const TermsOfServiceScreen: React.FC = () => {
   const { colors, layout, spacing, typography } = useAppTheme();
   const navigation = useNavigation<any>();
+  const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const { showToast } = useFeedback();
 
@@ -49,31 +51,48 @@ export const TermsOfServiceScreen: React.FC = () => {
       <View
         style={[
           styles.header,
-          { backgroundColor: colors.surface, borderBottomColor: colors.border, paddingTop: Platform.OS === 'ios' ? 12 : 16 },
+          {
+            backgroundColor: colors.surface,
+            borderBottomColor: colors.border,
+            paddingTop: Math.max(insets.top, Platform.OS === 'ios' ? 12 : 16),
+          },
         ]}
       >
-        <TouchableOpacity
+        <Pressable
           onPress={() => navigation.goBack()}
-          style={styles.backButton}
+          style={({ pressed }) => [
+            styles.backButton,
+            { opacity: pressed && Platform.OS === 'ios' ? 0.7 : 1 },
+          ]}
+          android_ripple={{ color: colors.primary + '20', borderless: true, radius: 24 }}
           accessibilityRole="button"
           accessibilityLabel={t('Volver')}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <Ionicons name="chevron-back" size={26} color={colors.primary} />
           <Text style={[typography.body, { color: colors.primary, fontWeight: '600' }]}>{t('Atrás')}</Text>
-        </TouchableOpacity>
+        </Pressable>
         <Text style={[typography.headline, { color: colors.textPrimary }]}>{t('Términos de uso')}</Text>
-        <TouchableOpacity
+        <Pressable
           onPress={handleShareUrl}
-          style={styles.actionHeaderBtn}
+          style={({ pressed }) => [
+            styles.actionHeaderBtn,
+            { opacity: pressed && Platform.OS === 'ios' ? 0.7 : 1 },
+          ]}
+          android_ripple={{ color: colors.primary + '20', borderless: true, radius: 20 }}
           accessibilityRole="button"
           accessibilityLabel={t('Compartir enlace público')}
         >
           <Ionicons name="share-outline" size={22} color={colors.primary} />
-        </TouchableOpacity>
+        </Pressable>
       </View>
 
-      <ScrollView contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxxl }}>
+      <ScrollView
+        contentContainerStyle={{
+          padding: spacing.md,
+          paddingBottom: Math.max(insets.bottom + 24, spacing.xxxl),
+        }}
+      >
         {/* ENCABEZADO */}
         <Card elevated style={{ marginBottom: spacing.md }}>
           <View style={styles.badgeRow}>
@@ -85,11 +104,19 @@ export const TermsOfServiceScreen: React.FC = () => {
           <Text style={[typography.body, { color: colors.textSecondary, marginTop: spacing.xs, lineHeight: 22 }]}>
             {t('Al descargar y utilizar EcoScan aceptas los siguientes términos de servicio, pensados para proteger tanto tu experiencia como la integridad de la plataforma.')}
           </Text>
-          <TouchableOpacity onPress={handleOpenBrowser} style={{ marginTop: spacing.sm }}>
+          <Pressable
+            onPress={handleOpenBrowser}
+            style={({ pressed }) => [
+              { marginTop: spacing.sm, minHeight: 48, justifyContent: 'center' },
+              pressed && Platform.OS === 'ios' ? { opacity: 0.7 } : null,
+            ]}
+            accessibilityRole="link"
+            accessibilityLabel={t('Abrir {url} en el navegador', { url: PUBLIC_URL })}
+          >
             <Text style={[typography.caption1, { color: colors.primary, fontWeight: '700' }]}>
               {PUBLIC_URL} ↗
             </Text>
-          </TouchableOpacity>
+          </Pressable>
         </Card>
 
         {/* 1. OBJETO Y PROPÓSITO INFORMATIVO */}

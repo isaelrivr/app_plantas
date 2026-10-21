@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, Linking, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Platform, Linking, Image } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
@@ -134,6 +135,7 @@ const PRO_BULLETS = [
 export const PaywallScreen: React.FC = () => {
   const { colors, layout, spacing, typography } = useAppTheme();
   const navigation = useNavigation<any>();
+  const insets = useSafeAreaInsets();
   const { isPremium, purchase, restore, purchaseLoading } = usePremium();
   const { t } = useTranslation();
   const { showToast, confirm } = useFeedback();
@@ -266,18 +268,32 @@ export const PaywallScreen: React.FC = () => {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <ScrollView contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxxl }}>
+      <ScrollView
+        contentContainerStyle={{
+          padding: spacing.md,
+          paddingBottom: Math.max(insets.bottom + 24, spacing.xxxl),
+        }}
+      >
         {/* BARRA SUPERIOR */}
-        <View style={styles.topBar}>
-          <TouchableOpacity
+        <View
+          style={[
+            styles.topBar,
+            { paddingTop: Math.max(insets.top, Platform.OS === 'ios' ? 8 : 12) },
+          ]}
+        >
+          <Pressable
             onPress={() => navigation.goBack()}
             accessibilityRole="button"
             accessibilityLabel={t('Cerrar')}
-            style={styles.closeButton}
+            style={({ pressed }) => [
+              styles.closeButton,
+              { opacity: pressed && Platform.OS === 'ios' ? 0.7 : 1 },
+            ]}
+            android_ripple={{ color: colors.border, borderless: true, radius: 24 }}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <Ionicons name="close" size={26} color={colors.textSecondary} />
-          </TouchableOpacity>
+          </Pressable>
           <Badge
             label={t('PRUEBA 7 DÍAS GRATIS')}
             variant="premium"
@@ -331,9 +347,8 @@ export const PaywallScreen: React.FC = () => {
           {BILLING_PLANS.map((plan) => {
             const selected = selectedPlan === plan.id;
             return (
-              <TouchableOpacity
+              <Pressable
                 key={plan.id}
-                activeOpacity={0.85}
                 onPress={() => {
                   Haptics.selectionAsync();
                   setSelectedPlan(plan.id);
@@ -345,12 +360,15 @@ export const PaywallScreen: React.FC = () => {
                   precio: plan.priceLabel,
                   periodo: t(plan.periodLabel),
                 })}
-                style={[
+                android_ripple={{ color: colors.premiumGold + '25' }}
+                style={({ pressed }) => [
                   styles.planOption,
                   {
                     borderColor: selected ? colors.premiumGold : colors.border,
                     backgroundColor: selected ? colors.premiumGoldLight : colors.surface,
                     borderRadius: layout.borderRadius.lg,
+                    overflow: 'hidden',
+                    opacity: pressed && Platform.OS === 'ios' ? 0.85 : 1,
                   },
                 ]}
               >
@@ -365,7 +383,7 @@ export const PaywallScreen: React.FC = () => {
                     {t(plan.savingsLabel)}
                   </Text>
                 ) : null}
-              </TouchableOpacity>
+              </Pressable>
             );
           })}
         </View>
@@ -482,31 +500,47 @@ export const PaywallScreen: React.FC = () => {
         </Card>
 
         {/* RESTAURAR COMPRAS */}
-        <TouchableOpacity
+        <Pressable
           onPress={handleRestore}
           accessibilityRole="button"
           accessibilityLabel={t('Restaurar compras')}
-          style={styles.restoreButton}
+          android_ripple={{ color: colors.primary + '18' }}
+          style={({ pressed }) => [
+            styles.restoreButton,
+            { borderRadius: 8, overflow: 'hidden', opacity: pressed && Platform.OS === 'ios' ? 0.7 : 1 },
+          ]}
         >
           <Ionicons name="refresh-outline" size={18} color={colors.primary} style={{ marginRight: 6 }} />
           <Text style={[typography.subheadline, { color: colors.primary, fontWeight: '600' }]}>
             {t('Restaurar compras')}
           </Text>
-        </TouchableOpacity>
+        </Pressable>
 
         {/* ENLACES LEGALES */}
         <View style={styles.legalLinksRow}>
-          <TouchableOpacity onPress={handleShowTerms} accessibilityRole="button" accessibilityLabel={t('Términos de uso')}>
+          <Pressable
+            onPress={handleShowTerms}
+            accessibilityRole="button"
+            accessibilityLabel={t('Términos de uso')}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            style={{ minHeight: 48, justifyContent: 'center' }}
+          >
             <Text style={[typography.caption2, { color: colors.textTertiary, textDecorationLine: 'underline' }]}>
               {t('Términos de uso')}
             </Text>
-          </TouchableOpacity>
+          </Pressable>
           <Text style={[typography.caption2, { color: colors.textTertiary, marginHorizontal: 8 }]}>·</Text>
-          <TouchableOpacity onPress={handleShowPrivacy} accessibilityRole="button" accessibilityLabel={t('Política de privacidad')}>
+          <Pressable
+            onPress={handleShowPrivacy}
+            accessibilityRole="button"
+            accessibilityLabel={t('Política de privacidad')}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            style={{ minHeight: 48, justifyContent: 'center' }}
+          >
             <Text style={[typography.caption2, { color: colors.textTertiary, textDecorationLine: 'underline' }]}>
               {t('Política de privacidad')}
             </Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </ScrollView>
     </View>

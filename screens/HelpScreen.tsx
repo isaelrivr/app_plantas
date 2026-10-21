@@ -4,12 +4,13 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
+  Pressable,
   TextInput,
   Platform,
   Linking,
   Switch,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
@@ -67,6 +68,7 @@ const FAQS: FAQItem[] = [
 export const HelpScreen: React.FC = () => {
   const { colors, layout, spacing, typography, isDark } = useAppTheme();
   const navigation = useNavigation<any>();
+  const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const { showToast } = useFeedback();
 
@@ -114,24 +116,37 @@ export const HelpScreen: React.FC = () => {
       <View
         style={[
           styles.header,
-          { backgroundColor: colors.surface, borderBottomColor: colors.border, paddingTop: Platform.OS === 'ios' ? 12 : 16 },
+          {
+            backgroundColor: colors.surface,
+            borderBottomColor: colors.border,
+            paddingTop: Math.max(insets.top, Platform.OS === 'ios' ? 12 : 16),
+          },
         ]}
       >
-        <TouchableOpacity
+        <Pressable
           onPress={() => navigation.goBack()}
-          style={styles.backButton}
+          style={({ pressed }) => [
+            styles.backButton,
+            { opacity: pressed && Platform.OS === 'ios' ? 0.7 : 1 },
+          ]}
+          android_ripple={{ color: colors.primary + '20', borderless: true, radius: 24 }}
           accessibilityRole="button"
           accessibilityLabel={t('Volver')}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <Ionicons name="chevron-back" size={26} color={colors.primary} />
           <Text style={[typography.body, { color: colors.primary, fontWeight: '600' }]}>{t('Atrás')}</Text>
-        </TouchableOpacity>
+        </Pressable>
         <Text style={[typography.headline, { color: colors.textPrimary }]}>{t('Ayuda')}</Text>
         <View style={styles.actionHeaderBtn} />
       </View>
 
-      <ScrollView contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxxl }}>
+      <ScrollView
+        contentContainerStyle={{
+          padding: spacing.md,
+          paddingBottom: Math.max(insets.bottom + 24, spacing.xxxl),
+        }}
+      >
         {/* CONTACTO RÁPIDO */}
         <Card elevated style={{ marginBottom: spacing.lg }}>
           <View style={styles.contactRow}>
@@ -149,9 +164,18 @@ export const HelpScreen: React.FC = () => {
           </View>
 
           <View style={styles.contactButtonsRow}>
-            <TouchableOpacity
+            <Pressable
               onPress={handleContactEmail}
-              style={[styles.actionBtn, { backgroundColor: colors.primary, minHeight: layout.minTouchTarget }]}
+              style={({ pressed }) => [
+                styles.actionBtn,
+                {
+                  backgroundColor: colors.primary,
+                  minHeight: layout.minTouchTarget,
+                  overflow: 'hidden',
+                  opacity: pressed && Platform.OS === 'ios' ? 0.8 : 1,
+                },
+              ]}
+              android_ripple={{ color: 'rgba(255,255,255,0.3)' }}
               accessibilityRole="button"
               accessibilityLabel={t('Enviar correo a soporte')}
             >
@@ -159,19 +183,22 @@ export const HelpScreen: React.FC = () => {
               <Text style={[typography.subheadline, { color: '#FFFFFF', fontWeight: '700' }]}>
                 {t('Escribir correo')}
               </Text>
-            </TouchableOpacity>
+            </Pressable>
 
-            <TouchableOpacity
+            <Pressable
               onPress={() => setReportModalOpen(true)}
-              style={[
+              style={({ pressed }) => [
                 styles.actionBtn,
                 {
                   backgroundColor: colors.surfaceSecondary,
                   borderColor: colors.border,
                   borderWidth: 1,
                   minHeight: layout.minTouchTarget,
+                  overflow: 'hidden',
+                  opacity: pressed && Platform.OS === 'ios' ? 0.8 : 1,
                 },
               ]}
+              android_ripple={{ color: colors.primary + '20' }}
               accessibilityRole="button"
               accessibilityLabel={t('Reportar un problema técnico')}
             >
@@ -179,7 +206,7 @@ export const HelpScreen: React.FC = () => {
               <Text style={[typography.subheadline, { color: colors.textPrimary, fontWeight: '600' }]}>
                 {t('Reportar fallo')}
               </Text>
-            </TouchableOpacity>
+            </Pressable>
           </View>
         </Card>
 
@@ -198,9 +225,13 @@ export const HelpScreen: React.FC = () => {
             const isExpanded = expandedFaq === faq.id;
             return (
               <Card key={faq.id} style={{ padding: 0, overflow: 'hidden' }}>
-                <TouchableOpacity
+                <Pressable
                   onPress={() => toggleFaq(faq.id)}
-                  style={styles.faqHeader}
+                  style={({ pressed }) => [
+                    styles.faqHeader,
+                    { opacity: pressed && Platform.OS === 'ios' ? 0.75 : 1 },
+                  ]}
+                  android_ripple={{ color: colors.primary + '18' }}
                   accessibilityRole="button"
                   accessibilityState={{ expanded: isExpanded }}
                   accessibilityLabel={t(faq.question)}
@@ -214,7 +245,7 @@ export const HelpScreen: React.FC = () => {
                     color={colors.textSecondary}
                     style={{ marginLeft: 8 }}
                   />
-                </TouchableOpacity>
+                </Pressable>
 
                 {isExpanded && (
                   <View style={[styles.faqBody, { backgroundColor: isDark ? '#1C1C1E' : '#F9F9FB', borderTopColor: colors.border }]}>
@@ -274,9 +305,19 @@ export const HelpScreen: React.FC = () => {
             />
           </View>
 
-          <TouchableOpacity
+          <Pressable
             onPress={handleSendReport}
-            style={[styles.submitReportBtn, { backgroundColor: colors.primary, minHeight: layout.minTouchTarget, marginTop: spacing.xl }]}
+            style={({ pressed }) => [
+              styles.submitReportBtn,
+              {
+                backgroundColor: colors.primary,
+                minHeight: layout.minTouchTarget,
+                marginTop: spacing.xl,
+                overflow: 'hidden',
+                opacity: pressed && Platform.OS === 'ios' ? 0.85 : 1,
+              },
+            ]}
+            android_ripple={{ color: 'rgba(255,255,255,0.3)' }}
             accessibilityRole="button"
             accessibilityLabel={t('Enviar reporte de fallo')}
           >
@@ -284,7 +325,7 @@ export const HelpScreen: React.FC = () => {
             <Text style={[typography.headline, { color: '#FFFFFF', fontWeight: '700' }]}>
               {t('Enviar reporte')}
             </Text>
-          </TouchableOpacity>
+          </Pressable>
         </ScrollView>
       </BottomSheet>
     </View>
