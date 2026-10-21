@@ -1,5 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
 import spanishOnboarding from '../i18n/fragments/onboarding.ts';
 import spanishGarden from '../i18n/fragments/garden.ts';
 import { normalizeDiacritics } from '../utils/textUtils.ts';
@@ -135,4 +137,36 @@ test('fase 1 design tokens satisfy glassmorphism and material 3 requirements', (
   assert.ok(material3Scale.headlineLarge);
   assert.ok(material3Scale.bodyLarge);
 });
+
+test('fase 2 glass components satisfy architecture and android constraints', () => {
+  const glassSurfacePath = path.join(process.cwd(), 'components', 'GlassSurface.tsx');
+  const glassBackgroundPath = path.join(process.cwd(), 'components', 'GlassBackground.tsx');
+  const cardPath = path.join(process.cwd(), 'components', 'Card.tsx');
+
+  assert.ok(fs.existsSync(glassSurfacePath), 'GlassSurface.tsx must exist');
+  assert.ok(fs.existsSync(glassBackgroundPath), 'GlassBackground.tsx must exist');
+  assert.ok(fs.existsSync(cardPath), 'Card.tsx must exist');
+
+  const surfaceCode = fs.readFileSync(glassSurfacePath, 'utf-8');
+  assert.ok(surfaceCode.includes('BlurView'), 'GlassSurface must include BlurView');
+  assert.ok(surfaceCode.includes('dimezisBlurViewSdk31Plus'), 'GlassSurface must use dimezisBlurViewSdk31Plus');
+  assert.ok(surfaceCode.includes('useGlass'), 'GlassSurface must use useGlass hook');
+  assert.ok(surfaceCode.includes('pointerEvents="none"'), 'GlassSurface must include tint layer with pointerEvents="none"');
+  assert.ok(surfaceCode.includes('fallbackColor'), 'GlassSurface must support fallbackColor');
+
+  const bgCode = fs.readFileSync(glassBackgroundPath, 'utf-8');
+  assert.ok(bgCode.includes('BlurTargetView'), 'GlassBackground must include BlurTargetView');
+  assert.ok(bgCode.includes('BlurTargetContext'), 'GlassBackground must export BlurTargetContext');
+  assert.ok(bgCode.includes('useBlurTarget'), 'GlassBackground must export useBlurTarget');
+  assert.ok(bgCode.includes('LinearGradient'), 'GlassBackground must use LinearGradient');
+  assert.ok(bgCode.includes('backgroundGradient'), 'GlassBackground must use backgroundGradient token');
+
+  const cardCode = fs.readFileSync(cardPath, 'utf-8');
+  assert.ok(cardCode.includes("CardVariant = 'flat' | 'glass'"), 'Card must export flat and glass variants');
+  assert.ok(cardCode.includes("variant = 'flat'"), 'Card default variant must be flat');
+  assert.ok(cardCode.includes('GlassSurface'), 'Card must integrate GlassSurface for glass variant');
+  assert.ok(cardCode.includes('colors.surface'), 'Card flat variant must use colors.surface');
+  assert.ok(cardCode.includes('colors.border'), 'Card flat variant must use colors.border');
+});
+
 
