@@ -20,8 +20,8 @@ export const layout = {
     xs: 8,
     sm: 12,
     md: 16,
-    lg: 20,
-    xl: 26,
+    lg: 24, // Radio ampliado a 24dp para estética Material 3 moderna
+    xl: 28,
     xxl: 32,
     full: 9999,
     pill: 9999,
@@ -29,4 +29,11 @@ export const layout = {
   cardPadding: 18,
   screenPadding: 18,
   floatingBottom: 16,
+  glass: {
+    intensity: 45,
+    tint: 'default' as const,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.25)', // Borde 1px blanco 25% (20-30%)
+    fallbackOpacity: 0.96,
+  },
 };

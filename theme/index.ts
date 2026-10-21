@@ -3,3 +3,4 @@ export * from './typography';
 export * from './spacing';
 export * from './motion';
 export * from './useTheme';
+export * from './useGlass';

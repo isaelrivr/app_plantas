@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, StyleProp, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useAppTheme, ThemeColors } from '../theme';
+import { useAppTheme, ColorKey } from '../theme';
 import { useTranslation } from '../i18n';
 import { getToxicity, toxicityLevelMeta, ToxicityLevel } from '../services/toxicityService';
 
@@ -12,7 +12,7 @@ interface ToxicityBadgeProps {
   style?: StyleProp<ViewStyle>;
 }
 
-const levelVariant: Record<ToxicityLevel, { bg: keyof ThemeColors; fg: keyof ThemeColors }> = {
+const levelVariant: Record<ToxicityLevel, { bg: ColorKey; fg: ColorKey }> = {
   safe: { bg: 'primaryLight', fg: 'primaryDark' },
   caution: { bg: 'warningLight', fg: 'warning' },
   toxic: { bg: 'errorLight', fg: 'error' },

@@ -1,13 +1,61 @@
-export const colors = {
+export const BRAND_COLOR = '#2E7D32';
+
+export interface ThemeColors {
+  primary: string;
+  primaryLight: string;
+  primaryDark: string;
+  accent: string;
+  brand: string;
+
+  background: string;
+  backgroundGradient: readonly [string, string];
+  surface: string;
+  surfaceElevated: string;
+  surfaceSecondary: string;
+
+  border: string;
+  borderLight: string;
+
+  glassFill: string;
+  glassFillStrong: string;
+  glassBorder: string;
+  glassFallback: string;
+  glassBackground: string;
+  glassFloating: string;
+
+  textPrimary: string;
+  textSecondary: string;
+  textTertiary: string;
+  textInverse: string;
+
+  success: string;
+  warning: string;
+  warningLight: string;
+  error: string;
+  errorLight: string;
+  info: string;
+
+  premiumGold: string;
+  premiumGoldLight: string;
+  badgeBackground: string;
+}
+
+export type ColorKey = {
+  [K in keyof ThemeColors]: ThemeColors[K] extends string ? K : never;
+}[keyof ThemeColors];
+
+export const colors: { light: ThemeColors; dark: ThemeColors } = {
   light: {
     // Brand & Tint
-    primary: '#1B6A3B', // Deep botanical emerald
+    primary: BRAND_COLOR, // Verde botánico oficial EcoScan (único color de marca)
     primaryLight: '#E8F5E9',
     primaryDark: '#1B5E20', // Contrast ratio > 9:1 with white / primaryLight
     accent: '#00796B',
+    brand: BRAND_COLOR,
 
     // Surfaces & Backgrounds (Minimalist flat surfaces with generous whitespace)
     background: '#F8FAF8', // Crisp, airy, clean botanical canvas
+    backgroundGradient: ['#F8FAF8', '#F1F5F2'] as const,
     surface: '#FFFFFF',    // Pristine flat card surface
     surfaceElevated: '#FFFFFF',
     surfaceSecondary: '#F0F4F1',
@@ -17,8 +65,11 @@ export const colors = {
     borderLight: '#EDF2ED',
 
     // Glassmorphism tokens (used ONLY on floating surfaces)
+    glassFill: 'rgba(255, 255, 255, 0.70)',
+    glassFillStrong: 'rgba(255, 255, 255, 0.88)',
+    glassBorder: 'rgba(255, 255, 255, 0.25)', // Borde 1px blanco 25% (20-30%)
+    glassFallback: '#F4F7F4', // Fallback opaco de alto contraste para Android viejo/lento
     glassBackground: 'rgba(255, 255, 255, 0.80)',
-    glassBorder: 'rgba(255, 255, 255, 0.65)',
     glassFloating: 'rgba(255, 255, 255, 0.90)',
 
     // Typography (WCAG AA compliant: all >= 4.5:1 against white/surface)
@@ -42,13 +93,15 @@ export const colors = {
   },
   dark: {
     // Brand & Tint
-    primary: '#4ADE80', // Luminous botanical mint
+    primary: '#4ADE80', // Luminous botanical mint para contraste en dark mode
     primaryLight: '#163824',
     primaryDark: '#86EFAC',
     accent: '#2DD4BF',
+    brand: BRAND_COLOR,
 
     // Surfaces & Backgrounds
     background: '#0E1411', // Deep botanical obsidian
+    backgroundGradient: ['#0E1411', '#141D18'] as const,
     surface: '#161E1A',    // Clean slate-forest surface
     surfaceElevated: '#202A24',
     surfaceSecondary: '#1C2520',
@@ -58,8 +111,11 @@ export const colors = {
     borderLight: '#1B2620',
 
     // Glassmorphism tokens (used ONLY on floating surfaces)
+    glassFill: 'rgba(22, 30, 26, 0.70)',
+    glassFillStrong: 'rgba(26, 36, 31, 0.88)',
+    glassBorder: 'rgba(255, 255, 255, 0.20)', // Borde blanco 20%
+    glassFallback: '#161E1A', // Fallback opaco oscuro
     glassBackground: 'rgba(22, 30, 26, 0.80)',
-    glassBorder: 'rgba(255, 255, 255, 0.12)',
     glassFloating: 'rgba(26, 36, 31, 0.90)',
 
     // Typography (WCAG AA compliant)
@@ -82,5 +138,3 @@ export const colors = {
     badgeBackground: '#1C3322',
   },
 };
-
-export type ThemeColors = typeof colors.light;
