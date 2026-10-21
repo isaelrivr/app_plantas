@@ -38,7 +38,7 @@ export const RegionCard: React.FC<RegionCardProps> = ({ plantName, region, onClo
 };
 
 const styles = StyleSheet.create({
-  card: { margin: 12, padding: 14, borderRadius: 18, borderWidth: StyleSheet.hairlineWidth, shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 4 },
+  card: { margin: 12, padding: 16, borderRadius: 24, borderWidth: 1 },
   header: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
   eyebrow: { fontSize: 11, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5 },
   title: { fontSize: 16, fontWeight: '800', marginTop: 2 },

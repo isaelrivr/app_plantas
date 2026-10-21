@@ -75,7 +75,7 @@ export const ErrorBanner: React.FC<ErrorBannerProps> = ({ message, onRetry, styl
 
 const styles = StyleSheet.create({
   container: {
-    borderRadius: 14,
+    borderRadius: 24,
     borderWidth: 1,
     marginVertical: 8,
   },
@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 10,
-    borderRadius: 8,
-    minHeight: 44, // HIG 44x44
+    borderRadius: 12,
+    minHeight: 48,
   },
 });

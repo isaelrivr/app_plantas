@@ -668,7 +668,7 @@ export const CareCalendarScreen: React.FC = () => {
                     styles.filterPill,
                     {
                       backgroundColor: isActive ? colors.primary : isDark ? '#2C2C2E' : '#E5E5EA',
-                      minHeight: 44,
+                      minHeight: 48,
                       overflow: 'hidden',
                       opacity: pressed && Platform.OS === 'ios' ? 0.75 : 1,
                     },
@@ -878,8 +878,8 @@ const styles = StyleSheet.create({
   },
   viewToggleBtn: {
     paddingHorizontal: 14,
-    minHeight: 40,
-    borderRadius: 10,
+    minHeight: 48,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -340,8 +340,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
     paddingVertical: 8,
+    minHeight: 48,
     gap: 6,
   },
   activeLabel: {
@@ -349,8 +350,8 @@ const styles = StyleSheet.create({
     letterSpacing: 0.1,
   },
   inactiveIconWrapper: {
-    minWidth: 44,
-    minHeight: 44,
+    minWidth: 48,
+    minHeight: 48,
     alignItems: 'center',
     justifyContent: 'center',
   },

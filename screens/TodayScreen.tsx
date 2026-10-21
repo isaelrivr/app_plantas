@@ -475,9 +475,9 @@ const styles = StyleSheet.create({
   streakBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    minHeight: 40,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    minHeight: 48,
   },
   emptyGardenCard: {
     padding: 24,

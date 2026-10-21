@@ -94,7 +94,16 @@ export const TermsOfServiceScreen: React.FC = () => {
         }}
       >
         {/* ENCABEZADO */}
-        <Card elevated style={{ marginBottom: spacing.md }}>
+        <Card
+          variant="flat"
+          style={{
+            marginBottom: spacing.md,
+            borderRadius: layout.borderRadius.lg,
+            borderWidth: 1,
+            borderColor: colors.border,
+            backgroundColor: colors.surface,
+          }}
+        >
           <View style={styles.badgeRow}>
             <Ionicons name="document-text" size={24} color={colors.primary} />
             <Text style={[typography.headline, { color: colors.primary, marginLeft: 8 }]}>
@@ -120,7 +129,16 @@ export const TermsOfServiceScreen: React.FC = () => {
         </Card>
 
         {/* 1. OBJETO Y PROPÓSITO INFORMATIVO */}
-        <Card style={{ marginBottom: spacing.md }}>
+        <Card
+          variant="flat"
+          style={{
+            marginBottom: spacing.md,
+            borderRadius: layout.borderRadius.lg,
+            borderWidth: 1,
+            borderColor: colors.border,
+            backgroundColor: colors.surface,
+          }}
+        >
           <Text style={[typography.headline, { color: colors.textPrimary, marginBottom: 6 }]}>
             {t('1. Propósito Informativo y Educativo')}
           </Text>
@@ -130,7 +148,16 @@ export const TermsOfServiceScreen: React.FC = () => {
         </Card>
 
         {/* 2. PLANES Y SUSCRIPCIÓN PRO */}
-        <Card style={{ marginBottom: spacing.md }}>
+        <Card
+          variant="flat"
+          style={{
+            marginBottom: spacing.md,
+            borderRadius: layout.borderRadius.lg,
+            borderWidth: 1,
+            borderColor: colors.border,
+            backgroundColor: colors.surface,
+          }}
+        >
           <Text style={[typography.headline, { color: colors.textPrimary, marginBottom: 6 }]}>
             {t('2. Planes Free y Suscripción Pro')}
           </Text>
@@ -140,7 +167,16 @@ export const TermsOfServiceScreen: React.FC = () => {
         </Card>
 
         {/* 3. RENOVACIÓN Y CANCELACIÓN */}
-        <Card style={{ marginBottom: spacing.md }}>
+        <Card
+          variant="flat"
+          style={{
+            marginBottom: spacing.md,
+            borderRadius: layout.borderRadius.lg,
+            borderWidth: 1,
+            borderColor: colors.border,
+            backgroundColor: colors.surface,
+          }}
+        >
           <Text style={[typography.headline, { color: colors.textPrimary, marginBottom: 6 }]}>
             {t('3. Renovación y Cancelación Transparente')}
           </Text>
@@ -150,7 +186,16 @@ export const TermsOfServiceScreen: React.FC = () => {
         </Card>
 
         {/* 4. PROPIEDAD INTELECTUAL */}
-        <Card style={{ marginBottom: spacing.md }}>
+        <Card
+          variant="flat"
+          style={{
+            marginBottom: spacing.md,
+            borderRadius: layout.borderRadius.lg,
+            borderWidth: 1,
+            borderColor: colors.border,
+            backgroundColor: colors.surface,
+          }}
+        >
           <Text style={[typography.headline, { color: colors.textPrimary, marginBottom: 6 }]}>
             {t('4. Propiedad del Contenido')}
           </Text>
@@ -160,7 +205,16 @@ export const TermsOfServiceScreen: React.FC = () => {
         </Card>
 
         {/* 5. CONTACTO */}
-        <Card style={{ marginBottom: spacing.lg }}>
+        <Card
+          variant="flat"
+          style={{
+            marginBottom: spacing.lg,
+            borderRadius: layout.borderRadius.lg,
+            borderWidth: 1,
+            borderColor: colors.border,
+            backgroundColor: colors.surface,
+          }}
+        >
           <Text style={[typography.headline, { color: colors.textPrimary, marginBottom: 6 }]}>
             {t('5. Soporte y Consultas Legales')}
           </Text>

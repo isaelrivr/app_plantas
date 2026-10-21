@@ -94,7 +94,16 @@ export const PrivacyPolicyScreen: React.FC = () => {
         }}
       >
         {/* ENCABEZADO Y RESUMEN */}
-        <Card elevated style={{ marginBottom: spacing.md }}>
+        <Card
+          variant="flat"
+          style={{
+            marginBottom: spacing.md,
+            borderRadius: layout.borderRadius.lg,
+            borderWidth: 1,
+            borderColor: colors.border,
+            backgroundColor: colors.surface,
+          }}
+        >
           <View style={styles.badgeRow}>
             <Ionicons name="shield-checkmark" size={24} color={colors.primary} />
             <Text style={[typography.headline, { color: colors.primary, marginLeft: 8 }]}>
@@ -120,7 +129,16 @@ export const PrivacyPolicyScreen: React.FC = () => {
         </Card>
 
         {/* 1. FOTOS Y CÁMARA */}
-        <Card style={{ marginBottom: spacing.md }}>
+        <Card
+          variant="flat"
+          style={{
+            marginBottom: spacing.md,
+            borderRadius: layout.borderRadius.lg,
+            borderWidth: 1,
+            borderColor: colors.border,
+            backgroundColor: colors.surface,
+          }}
+        >
           <Text style={[typography.headline, { color: colors.textPrimary, marginBottom: 6 }]}>
             {t('1. Cámara y Fotografías')}
           </Text>
@@ -130,7 +148,16 @@ export const PrivacyPolicyScreen: React.FC = () => {
         </Card>
 
         {/* 2. UBICACIÓN Y CLIMA */}
-        <Card style={{ marginBottom: spacing.md }}>
+        <Card
+          variant="flat"
+          style={{
+            marginBottom: spacing.md,
+            borderRadius: layout.borderRadius.lg,
+            borderWidth: 1,
+            borderColor: colors.border,
+            backgroundColor: colors.surface,
+          }}
+        >
           <Text style={[typography.headline, { color: colors.textPrimary, marginBottom: 6 }]}>
             {t('2. Ubicación y Datos del Clima')}
           </Text>
@@ -140,7 +167,16 @@ export const PrivacyPolicyScreen: React.FC = () => {
         </Card>
 
         {/* 3. ALMACENAMIENTO LOCAL */}
-        <Card style={{ marginBottom: spacing.md }}>
+        <Card
+          variant="flat"
+          style={{
+            marginBottom: spacing.md,
+            borderRadius: layout.borderRadius.lg,
+            borderWidth: 1,
+            borderColor: colors.border,
+            backgroundColor: colors.surface,
+          }}
+        >
           <Text style={[typography.headline, { color: colors.textPrimary, marginBottom: 6 }]}>
             {t('3. Almacenamiento y Control Total')}
           </Text>
@@ -150,7 +186,16 @@ export const PrivacyPolicyScreen: React.FC = () => {
         </Card>
 
         {/* 4. DIAGNÓSTICO ANÓNIMO Y CALIDAD */}
-        <Card style={{ marginBottom: spacing.md }}>
+        <Card
+          variant="flat"
+          style={{
+            marginBottom: spacing.md,
+            borderRadius: layout.borderRadius.lg,
+            borderWidth: 1,
+            borderColor: colors.border,
+            backgroundColor: colors.surface,
+          }}
+        >
           <Text style={[typography.headline, { color: colors.textPrimary, marginBottom: 6 }]}>
             {t('4. Analítica y Diagnóstico Opcional')}
           </Text>
@@ -160,7 +205,16 @@ export const PrivacyPolicyScreen: React.FC = () => {
         </Card>
 
         {/* 5. CONTACTO */}
-        <Card style={{ marginBottom: spacing.lg }}>
+        <Card
+          variant="flat"
+          style={{
+            marginBottom: spacing.lg,
+            borderRadius: layout.borderRadius.lg,
+            borderWidth: 1,
+            borderColor: colors.border,
+            backgroundColor: colors.surface,
+          }}
+        >
           <Text style={[typography.headline, { color: colors.textPrimary, marginBottom: 6 }]}>
             {t('5. Contacto del Responsable')}
           </Text>

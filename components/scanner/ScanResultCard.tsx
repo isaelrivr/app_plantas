@@ -50,7 +50,18 @@ export const ScanResultCard: React.FC<ScanResultCardProps> = ({
 
   return (
     <View style={styles.container}>
-      <Card elevated style={[styles.mainCard, { backgroundColor: colors.surface }]}>
+      <Card
+        variant="flat"
+        style={[
+          styles.mainCard,
+          {
+            backgroundColor: colors.surface,
+            borderColor: colors.border,
+            borderWidth: 1,
+            borderRadius: layout.borderRadius.lg,
+          },
+        ]}
+      >
         {previewImage ? (
           <Image
             source={{ uri: previewImage }}
@@ -175,7 +186,16 @@ export const ScanResultCard: React.FC<ScanResultCardProps> = ({
 
       {/* CANDIDATOS ALTERNATIVOS SI EXISTEN */}
       {result.candidates.length > 1 ? (
-        <Card style={{ marginTop: spacing.md, backgroundColor: colors.surface }}>
+        <Card
+          variant="flat"
+          style={{
+            marginTop: spacing.md,
+            backgroundColor: colors.surface,
+            borderColor: colors.border,
+            borderWidth: 1,
+            borderRadius: layout.borderRadius.lg,
+          }}
+        >
           <Text style={[typography.headline, { color: colors.textPrimary, marginBottom: spacing.sm }]}>
             {t('¿Otra opción? Elige la correcta:')}
           </Text>
@@ -252,7 +272,7 @@ const styles = StyleSheet.create({
   secondaryButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    minHeight: 44,
+    minHeight: 48,
     paddingHorizontal: 8,
   },
   divider: {

@@ -11,11 +11,22 @@ export interface PlantTodayActionCardProps {
 }
 
 export const PlantTodayActionCard: React.FC<PlantTodayActionCardProps> = ({ plant }) => {
-  const { colors, spacing, typography } = useAppTheme();
+  const { colors, layout, spacing, typography } = useAppTheme();
   const { t } = useTranslation();
 
   return (
-    <Card elevated style={[styles.card, { backgroundColor: colors.surface }]}>
+    <Card
+      variant="flat"
+      style={[
+        styles.card,
+        {
+          backgroundColor: colors.surface,
+          borderColor: colors.border,
+          borderWidth: 1,
+          borderRadius: layout.borderRadius.lg,
+        },
+      ]}
+    >
       <View style={styles.header}>
         <Ionicons name="sparkles" size={20} color={colors.primary} style={{ marginRight: 8 }} />
         <Text style={[typography.headline, { color: colors.textPrimary, fontWeight: '800' }]}>

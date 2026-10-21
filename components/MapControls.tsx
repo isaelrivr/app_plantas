@@ -68,7 +68,7 @@ export const MapControls: React.FC<MapControlsProps> = ({
 
 const styles = StyleSheet.create({
   container: { position: 'absolute', right: 12, top: 12, gap: 10, alignItems: 'flex-end' },
-  button: { width: 48, height: 48, borderRadius: 14, borderWidth: StyleSheet.hairlineWidth, alignItems: 'center', justifyContent: 'center' },
-  reset: { minHeight: 48, minWidth: 48, paddingHorizontal: 12, borderRadius: 12, borderWidth: StyleSheet.hairlineWidth, flexDirection: 'row', alignItems: 'center', gap: 6 },
+  button: { width: 48, height: 48, borderRadius: 24, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  reset: { minHeight: 48, minWidth: 48, paddingHorizontal: 16, borderRadius: 24, borderWidth: 1, flexDirection: 'row', alignItems: 'center', gap: 6 },
   resetText: { fontSize: 14, fontWeight: '700' },
 });

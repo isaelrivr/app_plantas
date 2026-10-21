@@ -341,14 +341,14 @@ const styles = StyleSheet.create({
     borderBottomColor: 'rgba(0, 0, 0, 0.08)',
   },
   closeButton: {
-    minHeight: 44,
-    minWidth: 44,
+    minHeight: 48,
+    minWidth: 48,
     alignItems: 'center',
     justifyContent: 'center',
   },
   meterCard: {
     padding: 16,
-    borderRadius: 16,
+    borderRadius: 24,
   },
   gaugeHeader: {
     flexDirection: 'row',

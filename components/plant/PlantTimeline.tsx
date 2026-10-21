@@ -49,7 +49,15 @@ export const PlantTimeline: React.FC<PlantTimelineProps> = ({
     <View style={{ gap: spacing.md }}>
       {/* TARJETA COMPARADOR ANTES / DESPUÉS */}
       {entries.length >= 2 ? (
-        <Card elevated style={{ backgroundColor: colors.surface }}>
+        <Card
+          variant="flat"
+          style={{
+            backgroundColor: colors.surface,
+            borderColor: colors.border,
+            borderWidth: 1,
+            borderRadius: layout.borderRadius.lg,
+          }}
+        >
           <View style={styles.headerRow}>
             <View style={[styles.iconBox, { backgroundColor: colors.primaryLight }]}>
               <Ionicons name="git-compare" size={22} color={colors.primary} />
@@ -74,7 +82,15 @@ export const PlantTimeline: React.FC<PlantTimelineProps> = ({
       ) : null}
 
       {/* EVENTOS CRONOLÓGICOS */}
-      <Card style={{ backgroundColor: colors.surface }}>
+      <Card
+        variant="flat"
+        style={{
+          backgroundColor: colors.surface,
+          borderColor: colors.border,
+          borderWidth: 1,
+          borderRadius: layout.borderRadius.lg,
+        }}
+      >
         <Text style={[typography.headline, { color: colors.textPrimary, marginBottom: spacing.md }]}>
           {t('Historia de cuidados')}
         </Text>
