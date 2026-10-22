@@ -1,0 +1,66 @@
+# EAS Build ignore file
+# Based on .gitignore + non-build assets and tooling
+
+# dependencies
+node_modules/
+
+# local copies / snapshots
+/app_plantas/
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Native
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Metro
+.metro-health-check*
+
+# debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS
+.DS_Store
+*.pem
+
+# local env files
+.env*.local
+.env
+
+# firebase / cloud functions
+functions/
+.firebase/
+firebase-debug.log*
+firestore-debug.log
+ui-debug.log
+
+# typescript
+*.tsbuildinfo
+
+# generated native folders
+/ios
+/android
+
+# Agent tooling, local IDE configs, symlinks (fixes Windows EPERM symlink error)
+.agents/
+.aider-desk/
+.claude/
+.github/
+.githooks/
+.maestro/
+skills-lock.json
+
+# Documentation and tests not needed for compilation
+tests/
+*.md
