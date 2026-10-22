@@ -7,8 +7,14 @@ import { useBlurTarget } from './GlassBackground';
 export interface GlassSurfaceProps extends ViewProps {
   children?: React.ReactNode;
   style?: StyleProp<ViewStyle>;
-  /** Variante de opacidad del vidrio: 'standard' (70% fill) o 'strong' (88% fill para modales/prominente) */
+  /** Variante de opacidad del vidrio: 'standard' o 'strong' */
   variant?: 'standard' | 'strong';
+  /**
+   * Tono del vidrio:
+   * - 'default': Adaptable al tema (claro/oscuro) con desenfoque de fondo.
+   * - 'overlay' | 'scrim': Siempre oscuro rgba(0, 0, 0, 0.55) con borde blanco 20%, sin BlurView (para cámara o fotos).
+   */
+  tone?: 'default' | 'overlay' | 'scrim';
   /** Intensidad del desenfoque (por defecto layout.glass.intensity = 45) */
   intensity?: number;
   /** Tinte del desenfoque ('light', 'dark', 'default', etc.) */
@@ -32,19 +38,22 @@ export interface GlassSurfaceProps extends ViewProps {
 }
 
 /**
- * Superficie flotante con efecto glassmórfico refinado.
+ * Superficie flotante con efecto glassmórfico refinado y arquitectura limpia.
  *
- * Cumple con todas las directrices técnicas y de accesibilidad:
+ * Directrices técnicas y de accesibilidad para Android SDK 31+ e iOS:
  * - Decisión automática blur vs fallback mediante `useGlass()`
- * - blurMethod="dimezisBlurViewSdk31Plus" en Android con blurTarget
- * - Capa de tinte protectora para asegurar contraste WCAG AA en todo texto/ícono
- * - Fallback semitransparente más opaco para Android viejo (< 31), modo fácil o dispositivos lentos
- * - Borde sutil blanco de 1px (20-30% opacidad)
+ * - En Android con dimezisBlurViewSdk31Plus, requiere blurTarget válido como hermano
+ * - Si no hay blurTarget disponible en Android, activa fallback opaco sin montar BlurView
+ * - UNA sola capa de tinte (eliminada la acumulación de 3 capas superpuestas)
+ * - blurReductionFactor={4} en Android para calibrar la difusión idéntica a iOS
+ * - Fallback opaco sólido para Android < 12 (SDK < 31), Modo Fácil y Reducir Movimiento
+ * - Variante overlay/scrim (siempre oscura sin BlurView para cámara/foto)
  */
 export const GlassSurface: React.FC<GlassSurfaceProps> = ({
   children,
   style,
   variant = 'standard',
+  tone = 'default',
   intensity,
   tint,
   borderRadius,
@@ -61,17 +70,37 @@ export const GlassSurface: React.FC<GlassSurfaceProps> = ({
   const contextTarget = useBlurTarget();
   const resolvedBlurTarget = blurTarget ?? contextTarget ?? undefined;
 
+  const isOverlay = tone === 'overlay' || tone === 'scrim';
+
+  // En Android SDK 31+ dimezis requiere un target para muestrear. Si no existe, usamos fallback seguro
+  const hasValidTarget = Platform.OS === 'ios' || Boolean(resolvedBlurTarget);
+  const canMountBlur = !isOverlay && glass.canUseBlur && !forceFallback && hasValidTarget;
+
   const resolvedRadius = borderRadius ?? glass.borderRadius;
   const resolvedBorderWidth = borderWidth ?? glass.borderWidth;
-  const resolvedBorderColor = borderColor ?? glass.borderColor;
+  const resolvedBorderColor =
+    borderColor ?? (isOverlay ? 'rgba(255, 255, 255, 0.20)' : glass.borderColor);
 
-  // Fill translúcido según variante (standard vs strong) o fallback opaco
-  const resolvedFill = variant === 'strong' ? glass.fillStrongColor : glass.fillColor;
-  const backgroundColor = glass.canUseBlur ? resolvedFill : glass.fallbackColor;
+  // UNA sola capa de color base:
+  // - Si es overlay (cámara/foto): fondo oscuro rgba(0, 0, 0, 0.55)
+  // - Si monta BlurView: fondo transparente (para no apilar tintes opacos bajo el desenfoque)
+  // - Si es fallback (Android < 12, sin target o ahorro): fallbackColor opaco del tema
+  const backgroundColor = isOverlay
+    ? 'rgba(0, 0, 0, 0.55)'
+    : canMountBlur
+    ? 'transparent'
+    : glass.fallbackColor;
 
   const defaultTintOverlay = glass.isDark
     ? 'rgba(16, 22, 18, 0.35)'
     : 'rgba(255, 255, 255, 0.35)';
+
+  // Una sola capa de tinte sobre el desenfoque (o transparente si es fallback/overlay)
+  const resolvedTintOverlay = isOverlay
+    ? (tintOverlayColor || 'transparent')
+    : canMountBlur
+    ? (tintOverlayColor || defaultTintOverlay)
+    : 'transparent';
 
   return (
     <View
@@ -89,21 +118,22 @@ export const GlassSurface: React.FC<GlassSurfaceProps> = ({
         style,
       ]}
     >
-      {glass.canUseBlur && (
+      {canMountBlur && (
         <BlurView
           intensity={glass.intensity}
           tint={glass.tint}
           blurMethod={glass.blurMethod}
           blurTarget={resolvedBlurTarget}
+          blurReductionFactor={Platform.OS === 'android' ? 4 : undefined}
           style={[StyleSheet.absoluteFill, { borderRadius: resolvedRadius }]}
         />
       )}
-      {/* Capa de tinte para garantizar contraste WCAG AA detrás del contenido */}
+      {/* Capa única de tinte para garantizar contraste WCAG AA sobre el blur */}
       <View
         style={[
           StyleSheet.absoluteFill,
           {
-            backgroundColor: tintOverlayColor || defaultTintOverlay,
+            backgroundColor: resolvedTintOverlay,
             borderRadius: resolvedRadius,
           },
         ]}

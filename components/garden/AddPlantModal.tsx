@@ -106,6 +106,7 @@ export const AddPlantModal: React.FC<AddPlantModalProps> = ({
       onClose={handleClose}
       title={manualMode ? t('Añadir planta manual') : t('Añadir nueva planta')}
       subtitle={manualMode ? t('Indica el nombre, apodo y maceta') : t('Elige cómo deseas agregarla a tu jardín')}
+      scrollable={manualMode}
     >
       {manualMode ? (
         <View style={{ paddingTop: spacing.xs, paddingBottom: spacing.lg }}>

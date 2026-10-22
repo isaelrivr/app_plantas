@@ -9,12 +9,14 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  Keyboard,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useAppTheme } from '../theme';
+import { GlassBackground } from '../components/GlassBackground';
 import { ChatBubble } from '../components/ChatBubble';
 import { useGarden } from '../context/GardenContext';
 import {
@@ -63,10 +65,29 @@ export const AssistantScreen: React.FC = () => {
   });
   const [input, setInput] = useState('');
   const [typing, setTyping] = useState(false);
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
 
   const scrollToEnd = () => {
     requestAnimationFrame(() => scrollRef.current?.scrollToEnd({ animated: true }));
   };
+
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+    const showSub = Keyboard.addListener(showEvent, () => {
+      setIsKeyboardVisible(true);
+      scrollToEnd();
+    });
+    const hideSub = Keyboard.addListener(hideEvent, () => {
+      setIsKeyboardVisible(false);
+    });
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   useEffect(() => {
     scrollToEnd();
@@ -100,7 +121,7 @@ export const AssistantScreen: React.FC = () => {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <GlassBackground style={styles.container}>
       <View
         style={[
           styles.header,
@@ -205,7 +226,7 @@ export const AssistantScreen: React.FC = () => {
               backgroundColor: colors.surface,
               borderTopColor: colors.border,
               paddingHorizontal: spacing.md,
-              paddingBottom: Math.max(insets.bottom, 10),
+              paddingBottom: isKeyboardVisible ? 10 : Math.max(insets.bottom, 10),
             },
           ]}
         >
@@ -246,7 +267,7 @@ export const AssistantScreen: React.FC = () => {
           </Pressable>
         </View>
       </KeyboardAvoidingView>
-    </View>
+    </GlassBackground>
   );
 };
 

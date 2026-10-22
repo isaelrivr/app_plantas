@@ -2,6 +2,8 @@
  * Diccionario de traducciones al portugués (EcoScan).
  */
 export const PT: Record<string, string> = {
+  'hoy': 'hoje',
+  'PRO': 'PRO',
   'Hoy': 'Hoje',
   'Mi Jardín': 'Meu Jardim',
   'Escanear': 'Escanear',

@@ -216,6 +216,7 @@ export const ScanResultCard: React.FC<ScanResultCardProps> = ({
               android_ripple={{ color: colors.primary + '20' }}
               accessibilityRole="radio"
               accessibilityState={{ selected: alt.id === candidate.id }}
+              accessibilityLabel={t('Elegir opción: {nombre}', { nombre: alt.name })}
             >
               <View style={{ flex: 1 }}>
                 <Text style={[typography.body, { color: colors.textPrimary, fontWeight: '600' }]}>

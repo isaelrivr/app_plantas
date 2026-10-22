@@ -170,10 +170,10 @@ export const ShareCardModal: React.FC<ShareCardProps> = ({
                       {
                         backgroundColor:
                           toxicity.pets === 'safe'
-                            ? '#E8F5E9'
+                            ? colors.successLight
                             : toxicity.pets === 'caution'
-                            ? '#FFF8E1'
-                            : '#FFEBEE',
+                            ? colors.warningLight
+                            : colors.errorLight,
                       },
                     ]}
                   >
@@ -182,10 +182,10 @@ export const ShareCardModal: React.FC<ShareCardProps> = ({
                       size={14}
                       color={
                         toxicity.pets === 'safe'
-                          ? '#2E7D32'
+                          ? colors.success
                           : toxicity.pets === 'caution'
-                          ? '#F57F17'
-                          : '#C62828'
+                          ? colors.warning
+                          : colors.error
                       }
                     />
                     <Text
@@ -194,10 +194,10 @@ export const ShareCardModal: React.FC<ShareCardProps> = ({
                         {
                           color:
                             toxicity.pets === 'safe'
-                              ? '#2E7D32'
+                              ? colors.success
                               : toxicity.pets === 'caution'
-                              ? '#F57F17'
-                              : '#C62828',
+                              ? colors.warning
+                              : colors.error,
                           marginLeft: 4,
                           fontWeight: '600',
                         },
@@ -241,7 +241,7 @@ export const ShareCardModal: React.FC<ShareCardProps> = ({
                 </View>
 
                 <View style={[styles.infoRow, { marginTop: 6 }]}>
-                  <Ionicons name="sunny-outline" size={18} color="#F57F17" />
+                  <Ionicons name="sunny-outline" size={18} color={colors.warning} />
                   <Text
                     style={[
                       typography.caption1,

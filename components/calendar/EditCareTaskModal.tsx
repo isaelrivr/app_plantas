@@ -71,7 +71,12 @@ const EditCareTaskForm: React.FC<FormProps> = ({ task, onClose, onSave, onDelete
   };
 
   return (
-    <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.container}>
+    <ScrollView
+      showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="on-drag"
+      contentContainerStyle={styles.container}
+    >
       <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: spacing.xs }]}>
         {t('Planta')}: {task.plantName}
       </Text>
@@ -122,6 +127,7 @@ const EditCareTaskForm: React.FC<FormProps> = ({ task, onClose, onSave, onDelete
               ]}
               accessibilityRole="button"
               accessibilityState={{ selected: isSelected }}
+              accessibilityLabel={t('Fecha {fecha}', { fecha: t(preset.label) })}
             >
               <Text
                 style={[
@@ -162,6 +168,7 @@ const EditCareTaskForm: React.FC<FormProps> = ({ task, onClose, onSave, onDelete
               ]}
               accessibilityRole="button"
               accessibilityState={{ selected: isSelected }}
+              accessibilityLabel={t('Frecuencia {frecuencia}', { frecuencia: t(preset.label) })}
             >
               <Text
                 style={[
@@ -241,7 +248,7 @@ export const EditCareTaskModal: React.FC<EditCareTaskModalProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    paddingBottom: 24,
+    paddingBottom: 36,
   },
   input: {
     height: 50,

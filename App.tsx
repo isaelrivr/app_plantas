@@ -1,13 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer, DefaultTheme, DarkTheme, LinkingOptions } from '@react-navigation/native';
 import { AppNavigator, RootStackParamList } from './navigation/AppNavigator';
+import { navigationRef } from './navigation/navigationRef';
 import { PremiumProvider, usePremium } from './context/PremiumContext';
 import { GardenProvider, useGarden } from './context/GardenContext';
 import { SettingsProvider, useSettings } from './context/SettingsContext';
 import { FeedbackProvider } from './context/FeedbackContext';
+import { TabBarVisibilityProvider } from './context/TabBarVisibilityContext';
+import { ActiveBlurTargetProvider } from './context/ActiveBlurTargetContext';
 import { OnboardingScreen } from './screens/OnboardingScreen';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { AppLoading } from './components/AppLoading';
@@ -58,12 +61,12 @@ function MainApp() {
   };
 
   return (
-    <SafeAreaView style={[styles.root, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
+    <View style={[styles.root, { backgroundColor: colors.background }]}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
-      <NavigationContainer theme={navigationTheme} linking={linking}>
+      <NavigationContainer ref={navigationRef} theme={navigationTheme} linking={linking}>
         <AppNavigator />
       </NavigationContainer>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -100,10 +103,10 @@ function RootGate() {
 
   if (!hasOnboarded) {
     return (
-      <SafeAreaView style={[styles.root, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
+      <View style={[styles.root, { backgroundColor: colors.background }]}>
         <StatusBar style={isDark ? 'light' : 'dark'} />
         <OnboardingScreen onComplete={completeOnboarding} />
-      </SafeAreaView>
+      </View>
     );
   }
 
@@ -116,11 +119,15 @@ export default function App() {
       <SettingsProvider>
         <PremiumProvider>
           <GardenProvider>
-            <FeedbackProvider>
-              <ErrorBoundary>
-                <RootGate />
-              </ErrorBoundary>
-            </FeedbackProvider>
+            <TabBarVisibilityProvider>
+              <ActiveBlurTargetProvider>
+                <FeedbackProvider>
+                  <ErrorBoundary>
+                    <RootGate />
+                  </ErrorBoundary>
+                </FeedbackProvider>
+              </ActiveBlurTargetProvider>
+            </TabBarVisibilityProvider>
           </GardenProvider>
         </PremiumProvider>
       </SettingsProvider>

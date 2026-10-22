@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Animated, StyleSheet, Text, Pressable, View, Platform } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { GlassSurface } from './GlassSurface';
 import { useAppTheme, fontWeights } from '../theme';
+import { useFloatingBarMetrics } from '../hooks/useFloatingBarMetrics';
+import { useTabBarVisibility } from '../context/TabBarVisibilityContext';
+import { navigationRef, isCurrentRouteInTabs } from '../navigation/navigationRef';
 import { announce } from '../services/accessibilityService';
 
 export interface SnackbarProps {
@@ -14,6 +16,8 @@ export interface SnackbarProps {
   onAction?: () => void;
   onDismiss: () => void;
   durationMs?: number;
+  hasTabBar?: boolean;
+  bottomPosition?: number;
 }
 
 export const Snackbar: React.FC<SnackbarProps> = ({
@@ -24,11 +28,26 @@ export const Snackbar: React.FC<SnackbarProps> = ({
   onAction,
   onDismiss,
   durationMs = 5000,
+  hasTabBar,
+  bottomPosition: customBottomPosition,
 }) => {
-  const { typography, motion, layout, spacing } = useAppTheme();
-  const insets = useSafeAreaInsets();
+  const { colors, typography, motion, layout, spacing, isDark } = useAppTheme();
   const [opacity] = useState(() => new Animated.Value(0));
   const [translateY] = useState(() => new Animated.Value(20));
+  const { isTabBarVisible } = useTabBarVisibility();
+  const [inTabs, setInTabs] = useState<boolean>(() => isCurrentRouteInTabs());
+
+  useEffect(() => {
+    if (!navigationRef.isReady()) return;
+    const unsubscribe = navigationRef.addListener('state', () => {
+      setInTabs(isCurrentRouteInTabs());
+    });
+    return unsubscribe;
+  }, []);
+
+  const activeHasTabBar = hasTabBar ?? (inTabs && isTabBarVisible);
+  const { snackbarBottom } = useFloatingBarMetrics({ hasTabBar: activeHasTabBar });
+  const finalBottomPosition = customBottomPosition ?? snackbarBottom;
 
   useEffect(() => {
     if (visible) {
@@ -83,21 +102,19 @@ export const Snackbar: React.FC<SnackbarProps> = ({
 
   const iconColor =
     type === 'success'
-      ? '#66BB6A'
+      ? colors.success
       : type === 'error'
-      ? '#EF5350'
+      ? colors.error
       : type === 'warning'
-      ? '#FFA726'
-      : '#42A5F5';
-
-  const bottomPosition = Math.max(insets.bottom + 16, 96);
+      ? colors.warning
+      : colors.info;
 
   return (
     <Animated.View
       style={[
         styles.container,
         {
-          bottom: bottomPosition,
+          bottom: finalBottomPosition,
           opacity,
           transform: [{ translateY }],
         },
@@ -105,6 +122,7 @@ export const Snackbar: React.FC<SnackbarProps> = ({
       pointerEvents="box-none"
     >
       <GlassSurface
+        forceFallback
         variant="strong"
         intensity={60}
         borderRadius={layout.borderRadius.lg}
@@ -117,7 +135,7 @@ export const Snackbar: React.FC<SnackbarProps> = ({
           accessibilityLiveRegion="assertive"
         >
           <Ionicons name={iconName} size={22} color={iconColor} style={styles.icon} />
-          <Text style={[typography.body, styles.message, { color: '#FFFFFF' }]} numberOfLines={2}>
+          <Text style={[typography.body, styles.message, { color: colors.textPrimary }]} numberOfLines={2}>
             {message}
           </Text>
           {actionLabel && onAction ? (
@@ -132,7 +150,7 @@ export const Snackbar: React.FC<SnackbarProps> = ({
                 },
               ]}
               android_ripple={{
-                color: 'rgba(255, 255, 255, 0.2)',
+                color: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.10)',
                 borderless: true,
                 radius: 24,
               }}
@@ -147,7 +165,7 @@ export const Snackbar: React.FC<SnackbarProps> = ({
                 style={[
                   typography.subheadline,
                   styles.actionText,
-                  { color: '#81C784', fontWeight: fontWeights.bold },
+                  { color: colors.primary, fontWeight: fontWeights.bold },
                 ]}
               >
                 {actionLabel}

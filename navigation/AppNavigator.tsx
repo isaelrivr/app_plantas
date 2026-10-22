@@ -1,11 +1,11 @@
-import React from 'react';
-import { Platform, View, StyleSheet, Text, Pressable } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { Platform, View, StyleSheet, Text, Pressable, Keyboard } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { createBottomTabNavigator, BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { GlassSurface } from '../components/GlassSurface';
-import { BlurTargetContext } from '../components/GlassBackground';
+import { useActiveBlurTarget } from '../context/ActiveBlurTargetContext';
 import { TodayScreen } from '../screens/TodayScreen';
 import { GardenScreen } from '../screens/GardenScreen';
 import { ScannerScreen } from '../screens/ScannerScreen';
@@ -25,6 +25,9 @@ import { PrivacyPolicyScreen } from '../screens/PrivacyPolicyScreen';
 import { TermsOfServiceScreen } from '../screens/TermsOfServiceScreen';
 import { HelpScreen } from '../screens/HelpScreen';
 import { useAppTheme, fontWeights, FONT_FAMILY } from '../theme';
+import { useFloatingBarMetrics } from '../hooks/useFloatingBarMetrics';
+import { useTabBarVisibility } from '../context/TabBarVisibilityContext';
+import { shouldRenderFloatingTabBar } from '../utils/tabBarVisibility';
 import { usePremium } from '../context/PremiumContext';
 import { useTranslation } from '../i18n';
 
@@ -81,6 +84,7 @@ function FloatingGlassTabBar({ state, descriptors, navigation }: BottomTabBarPro
   const { colors, layout, isDark } = useAppTheme();
   const { isPremium } = usePremium();
   const { t } = useTranslation();
+  const { activeBlurTargetRef } = useActiveBlurTarget();
 
   const getRouteConfig = (routeName: keyof RootTabParamList): {
     label: string;
@@ -127,18 +131,55 @@ function FloatingGlassTabBar({ state, descriptors, navigation }: BottomTabBarPro
     }
   };
 
-  const bottomInset = Math.max(insets.bottom, 10);
-  const bottomMargin = bottomInset + (Platform.OS === 'android' ? 6 : 8);
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+    const showSub = Keyboard.addListener(showEvent, () => setIsKeyboardVisible(true));
+    const hideSub = Keyboard.addListener(hideEvent, () => setIsKeyboardVisible(false));
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
+
+  const { isTabBarVisible } = useTabBarVisibility();
+  const currentRoute = state.routes[state.index];
+  const focusedOptions = descriptors[currentRoute.key]?.options;
+  const tabBarStyle = focusedOptions?.tabBarStyle as any;
+  const hideOnKeyboard = (focusedOptions?.tabBarHideOnKeyboard as boolean | undefined) ?? true;
+
+  // Oculta la barra con teclado abierto (tabBarHideOnKeyboard), o si la ruta/contexto lo solicitan
+  const shouldShow = shouldRenderFloatingTabBar({
+    hideOnKeyboard,
+    isKeyboardVisible,
+    isTabBarVisible,
+    tabBarStyle,
+    tabBarVisibleOption: (focusedOptions as any)?.tabBarVisible,
+  });
+
+  if (!shouldShow || (hideOnKeyboard && isKeyboardVisible)) {
+    return null;
+  }
+
+  const { tabBarBottomMargin, tabBarHeight } = useFloatingBarMetrics();
+  // insets.bottom es respetado centralizadamente vía useFloatingBarMetrics
+  const _bottomInset = insets.bottom;
+  const bottomMargin = tabBarBottomMargin;
 
   return (
     <View style={[styles.floatingContainer, { bottom: bottomMargin }]} pointerEvents="box-none">
       <GlassSurface
+        blurTarget={activeBlurTargetRef ?? undefined}
         borderRadius={layout.borderRadius.full}
         intensity={55}
         elevated
-        style={styles.pillSurface}
+        style={[styles.pillSurface, { minHeight: tabBarHeight }]}
       >
-        <View style={styles.tabRow}>
+        <View style={[styles.tabRow, { minHeight: tabBarHeight }]}>
           {state.routes.map((route, index) => {
             const isFocused = state.index === index;
             const config = getRouteConfig(route.name as keyof RootTabParamList);
@@ -236,24 +277,21 @@ function FloatingGlassTabBar({ state, descriptors, navigation }: BottomTabBarPro
 }
 
 function BottomTabs() {
-  const tabBlurTargetRef = React.useRef<View | null>(null);
-
   return (
-    <BlurTargetContext.Provider value={tabBlurTargetRef}>
-      <Tab.Navigator
-        initialRouteName="Today"
-        tabBar={(props) => <FloatingGlassTabBar {...props} />}
-        screenOptions={{
-          headerShown: false,
-        }}
-      >
-        <Tab.Screen name="Today" component={TodayScreen} />
-        <Tab.Screen name="Garden" component={GardenScreen} />
-        <Tab.Screen name="Scan" component={ScannerScreen} />
-        <Tab.Screen name="Explore" component={ExploreScreen} />
-        <Tab.Screen name="Profile" component={ProfileScreen} />
-      </Tab.Navigator>
-    </BlurTargetContext.Provider>
+    <Tab.Navigator
+      initialRouteName="Today"
+      tabBar={(props) => <FloatingGlassTabBar {...props} />}
+      screenOptions={{
+        headerShown: false,
+        tabBarHideOnKeyboard: true,
+      }}
+    >
+      <Tab.Screen name="Today" component={TodayScreen} />
+      <Tab.Screen name="Garden" component={GardenScreen} />
+      <Tab.Screen name="Scan" component={ScannerScreen} />
+      <Tab.Screen name="Explore" component={ExploreScreen} />
+      <Tab.Screen name="Profile" component={ProfileScreen} />
+    </Tab.Navigator>
   );
 }
 

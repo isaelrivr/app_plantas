@@ -2,6 +2,8 @@
  * Diccionario de traducciones al francés (EcoScan).
  */
 export const FR: Record<string, string> = {
+  'hoy': "aujourd'hui",
+  'PRO': 'PRO',
   'Hoy': "Aujourd'hui",
   'Mi Jardín': 'Mon Jardin',
   'Escanear': 'Scanner',

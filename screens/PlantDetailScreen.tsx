@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
 import { useAppTheme } from '../theme';
+import { useFloatingBarMetrics } from '../hooks/useFloatingBarMetrics';
 import { useTranslation } from '../i18n';
 import { Card } from '../components/Card';
 import { GlassSurface } from '../components/GlassSurface';
@@ -167,10 +168,12 @@ export const PlantDetailScreen: React.FC = () => {
     );
   }
 
+  const { fabBottom } = useFloatingBarMetrics({ hasTabBar: false });
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView
-        contentContainerStyle={{ paddingBottom: Math.max(insets.bottom + 140, 160) }}
+        contentContainerStyle={{ paddingBottom: fabBottom + 72 }}
         showsVerticalScrollIndicator={false}
       >
         {/* HERO CONTAINER CON CONTROLES FLOTANTES DE VIDRIO SOBRE FOTO */}
@@ -190,10 +193,10 @@ export const PlantDetailScreen: React.FC = () => {
 
           {/* CONTROLES FLOTANTES DE VIDRIO SOBRE LA FOTO */}
           <View
-            style={[styles.floatingControlsOverlay, { paddingTop: Math.max(insets.top, Platform.OS === 'ios' ? 44 : 16) }]}
+            style={[styles.floatingControlsOverlay, { paddingTop: insets.top + (Platform.OS === 'ios' ? 8 : 12) }]}
             pointerEvents="box-none"
           >
-            <GlassSurface variant="strong" borderRadius={24} style={styles.floatingGlassBtn}>
+            <GlassSurface tone="overlay" variant="strong" borderRadius={24} style={styles.floatingGlassBtn}>
               <Pressable
                 onPress={() => navigation.goBack()}
                 style={({ pressed }) => [styles.glassBtnPressable, pressed && { opacity: 0.7 }]}
@@ -207,7 +210,7 @@ export const PlantDetailScreen: React.FC = () => {
             </GlassSurface>
 
             <View style={styles.floatingRightActions}>
-              <GlassSurface variant="strong" borderRadius={24} style={styles.floatingGlassBtn}>
+              <GlassSurface tone="overlay" variant="strong" borderRadius={24} style={styles.floatingGlassBtn}>
                 <Pressable
                   onPress={() => setLightMeterVisible(true)}
                   style={({ pressed }) => [styles.glassBtnPressable, pressed && { opacity: 0.7 }]}
@@ -220,7 +223,7 @@ export const PlantDetailScreen: React.FC = () => {
                 </Pressable>
               </GlassSurface>
 
-              <GlassSurface variant="strong" borderRadius={24} style={[styles.floatingGlassBtn, { marginLeft: 8 }]}>
+              <GlassSurface tone="overlay" variant="strong" borderRadius={24} style={[styles.floatingGlassBtn, { marginLeft: 8 }]}>
                 <Pressable
                   onPress={() => navigation.navigate('Assistant', { plantName: plant.name })}
                   style={({ pressed }) => [styles.glassBtnPressable, pressed && { opacity: 0.7 }]}
@@ -233,7 +236,7 @@ export const PlantDetailScreen: React.FC = () => {
                 </Pressable>
               </GlassSurface>
 
-              <GlassSurface variant="strong" borderRadius={24} style={[styles.floatingGlassBtn, { marginLeft: 8 }]}>
+              <GlassSurface tone="overlay" variant="strong" borderRadius={24} style={[styles.floatingGlassBtn, { marginLeft: 8 }]}>
                 <Pressable
                   onPress={() => setShareModalVisible(true)}
                   style={({ pressed }) => [styles.glassBtnPressable, pressed && { opacity: 0.7 }]}
@@ -403,8 +406,8 @@ export const PlantDetailScreen: React.FC = () => {
                 }}
               >
                 <View style={styles.actionCardRow}>
-                  <View style={[styles.actionIconBox, { backgroundColor: '#E3F2FD' }]}>
-                    <Ionicons name="earth" size={24} color="#0D47A1" />
+                  <View style={[styles.actionIconBox, { backgroundColor: colors.infoLight }]}>
+                    <Ionicons name="earth" size={24} color={colors.info} />
                   </View>
                   <View style={{ flex: 1, marginLeft: spacing.md }}>
                     <Text style={[typography.headline, { color: colors.textPrimary }]}>
@@ -436,8 +439,8 @@ export const PlantDetailScreen: React.FC = () => {
                 }}
               >
                 <View style={styles.actionCardRow}>
-                  <View style={[styles.actionIconBox, { backgroundColor: '#FFF3E0' }]}>
-                    <Ionicons name="medkit" size={24} color="#E65100" />
+                  <View style={[styles.actionIconBox, { backgroundColor: colors.warningLight }]}>
+                    <Ionicons name="medkit" size={24} color={colors.warning} />
                   </View>
                   <View style={{ flex: 1, marginLeft: spacing.md }}>
                     <Text style={[typography.headline, { color: colors.textPrimary }]}>
@@ -485,7 +488,7 @@ export const PlantDetailScreen: React.FC = () => {
 
       {/* BOTÓN FLOTANTE: PREGÚNTALE A ECOSCAN */}
       <View
-        style={[styles.floatingAssistantContainer, { bottom: Math.max(insets.bottom + 88, 96) }]}
+        style={[styles.floatingAssistantContainer, { bottom: fabBottom }]}
         pointerEvents="box-none"
       >
         <GlassSurface

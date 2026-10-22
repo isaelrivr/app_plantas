@@ -16,6 +16,7 @@ import * as Haptics from 'expo-haptics';
 import { useAppTheme } from '../theme';
 import { useGarden, GardenPlant, CareTask, CareTaskType } from '../context/GardenContext';
 import { Card } from '../components/Card';
+import { GlassBackground } from '../components/GlassBackground';
 import { ConfidenceRing } from '../components/ConfidenceRing';
 import { EmptyState } from '../components/EmptyState';
 import { ErrorBanner } from '../components/ErrorBanner';
@@ -298,7 +299,7 @@ export const CareCalendarScreen: React.FC = () => {
             </View>
 
             <View style={styles.taskMeta}>
-              <Text style={styles.plantChip}>
+              <Text style={[styles.plantChip, { color: colors.textSecondary }]}>
                 {item.plantEmoji} {item.plantName}
               </Text>
               <Text style={[typography.caption1, { color: item.completed ? colors.textTertiary : colors.warning }]}>
@@ -421,9 +422,10 @@ export const CareCalendarScreen: React.FC = () => {
   );
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <GlassBackground style={styles.container}>
       <ScrollView
         showsVerticalScrollIndicator={false}
+        style={{ flex: 1 }}
         contentContainerStyle={{ paddingBottom: Math.max(insets.bottom + 40, 60) }}
       >
         {/* HEADER */}
@@ -493,7 +495,7 @@ export const CareCalendarScreen: React.FC = () => {
             <Text style={[typography.headline, { color: colors.textPrimary }]}>
               {t('Calendario')}
             </Text>
-            <View style={[styles.viewToggle, { backgroundColor: isDark ? '#1C1C1E' : '#E5E5EA', overflow: 'hidden' }]}>
+            <View style={[styles.viewToggle, { backgroundColor: colors.surfaceSecondary, overflow: 'hidden' }]}>
               {(['semana', 'mes'] as CalendarView[]).map((view) => {
                 const active = calendarView === view;
                 return (
@@ -667,7 +669,7 @@ export const CareCalendarScreen: React.FC = () => {
                   style={({ pressed }) => [
                     styles.filterPill,
                     {
-                      backgroundColor: isActive ? colors.primary : isDark ? '#2C2C2E' : '#E5E5EA',
+                      backgroundColor: isActive ? colors.primary : colors.surfaceSecondary,
                       minHeight: 48,
                       overflow: 'hidden',
                       opacity: pressed && Platform.OS === 'ios' ? 0.75 : 1,
@@ -792,7 +794,7 @@ export const CareCalendarScreen: React.FC = () => {
         onSave={handleUpdateTask}
         onDelete={handleDeleteTask}
       />
-    </View>
+    </GlassBackground>
   );
 };
 

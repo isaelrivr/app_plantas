@@ -436,7 +436,7 @@ export const HealthDiagnosisScreen: React.FC = () => {
                     style={[
                       styles.laserLine,
                       {
-                        backgroundColor: '#FF5252',
+                        backgroundColor: colors.error,
                         transform: [
                           {
                             translateY: laserAnim.interpolate({
@@ -554,7 +554,7 @@ export const HealthDiagnosisScreen: React.FC = () => {
                   ) : null}
 
                   {/* SÍNTOMAS IDENTIFICADOS */}
-                  <View style={[styles.symptomsBox, { backgroundColor: isDark ? '#2C2C2E' : '#F8F9FA' }]}>
+                  <View style={[styles.symptomsBox, { backgroundColor: colors.surfaceSecondary }]}>
                     <Text style={[typography.subheadline, { color: colors.textPrimary, fontWeight: '600', marginBottom: 6 }]}>
                       {t('Síntomas visuales detectados:')}
                     </Text>
@@ -580,7 +580,7 @@ export const HealthDiagnosisScreen: React.FC = () => {
                             key={`${refKey}-${idx}`}
                             accessible={true}
                             accessibilityLabel={t('Foto de referencia {indice}: {nombre}', { indice: idx + 1, nombre: refKey.replace(/_/g, ' ') })}
-                            style={[styles.referenceTile, { backgroundColor: isDark ? '#2C2C2E' : '#EFF3EE' }]}
+                            style={[styles.referenceTile, { backgroundColor: colors.surfaceSecondary }]}
                           >
                             <Ionicons name="image-outline" size={26} color={colors.textTertiary} />
                             <Text
@@ -597,7 +597,7 @@ export const HealthDiagnosisScreen: React.FC = () => {
                 </Card>
 
                 {/* SELECTOR HIG: TRATAMIENTO ORGÁNICO VS QUÍMICO */}
-                <View style={[styles.treatmentSelector, { backgroundColor: isDark ? '#1C1C1E' : '#E5E5EA' }]}>
+                <View style={[styles.treatmentSelector, { backgroundColor: colors.surfaceSecondary }]}>
                   <Pressable
                     style={({ pressed }) => [
                       styles.treatmentTabBtn,
@@ -749,7 +749,7 @@ export const HealthDiagnosisScreen: React.FC = () => {
                       borderRadius: layout.borderRadius.lg,
                       borderWidth: 1,
                       borderColor: colors.warning,
-                      backgroundColor: isDark ? '#2E1A0A' : '#FFF8E1',
+                      backgroundColor: isDark ? 'rgba(255, 183, 77, 0.12)' : colors.warningLight,
                     },
                   ]}
                 >
@@ -762,21 +762,21 @@ export const HealthDiagnosisScreen: React.FC = () => {
 
                   <View style={styles.safetyChipsRow}>
                     {diagnosisResult.treatment.safetyAlert.hasPetsWarning && (
-                      <View style={[styles.safetyChip, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#FFE0B2' }]}>
+                      <View style={[styles.safetyChip, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : colors.warningLight }]}>
                         <Text style={[typography.caption2, { color: colors.textPrimary, fontWeight: '600' }]}>
                           {t('🐾 Proteger mascotas')}
                         </Text>
                       </View>
                     )}
                     {diagnosisResult.treatment.safetyAlert.hasChildrenWarning && (
-                      <View style={[styles.safetyChip, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#FFE0B2' }]}>
+                      <View style={[styles.safetyChip, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : colors.warningLight }]}>
                         <Text style={[typography.caption2, { color: colors.textPrimary, fontWeight: '600' }]}>
                           {t('👶 Fuera de alcance infantil')}
                         </Text>
                       </View>
                     )}
                     {diagnosisResult.treatment.safetyAlert.requireGloves && (
-                      <View style={[styles.safetyChip, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#FFE0B2' }]}>
+                      <View style={[styles.safetyChip, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : colors.warningLight }]}>
                         <Text style={[typography.caption2, { color: colors.textPrimary, fontWeight: '600' }]}>
                           {t('🧤 Usar guantes')}
                         </Text>

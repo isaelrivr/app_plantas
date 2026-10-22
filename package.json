@@ -52,7 +52,7 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
-    "test": "node --test tests/smoke.test.mjs tests/habitat.test.mjs tests/accessibility.test.mjs tests/feedback.test.mjs tests/redesign.test.mjs tests/fase5.test.mjs tests/fase6.test.mjs tests/cloud_widget_auth.test.mjs tests/fase6_final.test.mjs",
+    "test": "node --test tests/smoke.test.mjs tests/habitat.test.mjs tests/accessibility.test.mjs tests/feedback.test.mjs tests/redesign.test.mjs tests/fase5.test.mjs tests/fase6.test.mjs tests/cloud_widget_auth.test.mjs tests/fase6_final.test.mjs tests/contrast.test.mjs tests/blur_architecture.test.mjs tests/keyboard_modals.test.mjs tests/quality.test.mjs tests/behavioral.test.mjs",
     "verify": "npm run typecheck && npm run lint && npm test && npx expo-doctor"
   },
   "expo": {

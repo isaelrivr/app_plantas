@@ -29,6 +29,8 @@ export const layout = {
   cardPadding: 18,
   screenPadding: 18,
   floatingBottom: 16,
+  tabBarHeight: 60,
+  tabBarGap: 14,
   glass: {
     intensity: 45,
     tint: 'default' as const,

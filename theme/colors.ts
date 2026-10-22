@@ -29,11 +29,13 @@ export interface ThemeColors {
   textInverse: string;
 
   success: string;
+  successLight: string;
   warning: string;
   warningLight: string;
   error: string;
   errorLight: string;
   info: string;
+  infoLight: string;
 
   premiumGold: string;
   premiumGoldLight: string;
@@ -80,11 +82,13 @@ export const colors: { light: ThemeColors; dark: ThemeColors } = {
 
     // Status & Feedback
     success: '#1B5E20',
+    successLight: '#E8F5E9',
     warning: '#D84315',
     warningLight: '#FBE9E7',
     error: '#C62828',
     errorLight: '#FFEBEE',
     info: '#0277BD',
+    infoLight: '#E1F5FE',
 
     // Premium accents
     premiumGold: '#9A6B00',
@@ -126,11 +130,13 @@ export const colors: { light: ThemeColors; dark: ThemeColors } = {
 
     // Status & Feedback
     success: '#81C784',
+    successLight: '#163824',
     warning: '#FFB74D',
     warningLight: '#3E2723',
     error: '#EF5350',
     errorLight: '#3E1D1D',
     info: '#4FC3F7',
+    infoLight: '#0D2B3E',
 
     // Premium accents
     premiumGold: '#FFE082',

@@ -1,5 +1,7 @@
 /** Traducciones al inglés: Escáner. Clave = texto fuente en español. */
 const fragment: Record<string, string> = {
+  hoy: 'today',
+  PRO: 'PRO',
   'Analizando patrones...': 'Analyzing patterns...',
   'Analizando forma y nervadura foliar...': 'Analyzing leaf shape and venation...',
   'Consultando el proveedor botánico...': 'Consulting the botanical provider...',

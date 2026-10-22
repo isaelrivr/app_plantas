@@ -12,6 +12,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useAppTheme } from '../theme';
+import { useFloatingBarMetrics } from '../hooks/useFloatingBarMetrics';
 import { useGarden, GardenPlant } from '../context/GardenContext';
 import { useFeedback } from '../context/FeedbackContext';
 import { useSettings } from '../context/SettingsContext';
@@ -19,7 +20,7 @@ import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { StatusPill } from '../components/StatusPill';
-import { BlurTargetView, useBlurTarget } from '../components/GlassView';
+import { GlassBackground } from '../components/GlassBackground';
 import { getLocalWeatherAndRecommendations, WeatherData } from '../services/weatherService';
 import { announce } from '../services/accessibilityService';
 import { useTranslation } from '../i18n';
@@ -27,7 +28,6 @@ import { useTranslation } from '../i18n';
 export const TodayScreen: React.FC = () => {
   const { colors, layout, spacing, typography } = useAppTheme();
   const insets = useSafeAreaInsets();
-  const blurTargetRef = useBlurTarget();
   const navigation = useNavigation<any>();
   const { plants, rooms, stats, waterPlantToday, undoWaterPlant } = useGarden();
   const { userGoal } = useSettings();
@@ -106,14 +106,16 @@ export const TodayScreen: React.FC = () => {
     return t('Tus plantas agradecen el riego a tiempo');
   }, [userGoal, t]);
 
+  const { tabBarClearance } = useFloatingBarMetrics();
+
   return (
-    <BlurTargetView ref={blurTargetRef} style={styles.container}>
+    <GlassBackground style={styles.container}>
       <ScrollView
-        style={[styles.container, { backgroundColor: colors.background }]}
+        style={styles.container}
         contentContainerStyle={{
           paddingHorizontal: spacing.md,
           paddingTop: Math.max(insets.top, spacing.md),
-          paddingBottom: 110 + insets.bottom,
+          paddingBottom: tabBarClearance,
         }}
         showsVerticalScrollIndicator={false}
       >
@@ -318,7 +320,7 @@ export const TodayScreen: React.FC = () => {
                   >
                     <View style={styles.bigTaskHeader}>
                       <View style={[styles.taskAvatarCircle, { backgroundColor: colors.primaryLight }]}>
-                        <Ionicons name="water" size={26} color="#0288D1" />
+                        <Ionicons name="water" size={26} color={colors.info} />
                       </View>
                       <View style={{ flex: 1, marginLeft: spacing.md }}>
                         <Text style={[typography.title3, { color: colors.textPrimary, fontWeight: '800' }]} numberOfLines={1}>
@@ -452,9 +454,9 @@ export const TodayScreen: React.FC = () => {
           </Pressable>
         </>
       )}
-    </ScrollView>
-  </BlurTargetView>
-);
+      </ScrollView>
+    </GlassBackground>
+  );
 };
 
 const styles = StyleSheet.create({

@@ -10,7 +10,9 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  Keyboard,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useAppTheme } from '../theme';
@@ -35,11 +37,13 @@ interface AuthModalProps {
 
 export const AuthModal: React.FC<AuthModalProps> = ({ visible, onClose }) => {
   const { colors, typography, spacing } = useAppTheme();
+  const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const { plants, rooms, hydrateGarden } = useGarden();
   const { showToast } = useFeedback();
 
   const [user, setUser] = useState<UserProfile | null>(getCurrentUser());
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -47,6 +51,19 @@ export const AuthModal: React.FC<AuthModalProps> = ({ visible, onClose }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
+
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+    const showSub = Keyboard.addListener(showEvent, () => setIsKeyboardVisible(true));
+    const hideSub = Keyboard.addListener(hideEvent, () => setIsKeyboardVisible(false));
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged((newUser) => {
@@ -141,12 +158,30 @@ export const AuthModal: React.FC<AuthModalProps> = ({ visible, onClose }) => {
   };
 
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      animationType="slide"
+      transparent
+      onRequestClose={onClose}
+      statusBarTranslucent
+      navigationBarTranslucent
+    >
       <KeyboardAvoidingView
         style={styles.overlay}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'android' ? insets.bottom : 0}
       >
-        <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
+        <View
+          style={[
+            styles.sheet,
+            {
+              backgroundColor: colors.surface,
+              paddingBottom: isKeyboardVisible
+                ? 12
+                : (Platform.OS === 'ios' ? Math.max(insets.bottom, 24) : Math.max(insets.bottom, 16)),
+            },
+          ]}
+        >
           {/* Cabecera */}
           <View style={styles.header}>
             <View style={{ flex: 1 }}>
@@ -175,7 +210,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({ visible, onClose }) => {
             </Pressable>
           </View>
 
-          <ScrollView style={{ maxHeight: 420 }} showsVerticalScrollIndicator={false}>
+          <ScrollView
+            style={{ maxHeight: 420 }}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={{ paddingBottom: isKeyboardVisible ? 16 : 24 }}
+          >
             {user ? (
               /* Usuario autenticado */
               <View style={{ paddingTop: spacing.md }}>
@@ -219,6 +259,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ visible, onClose }) => {
                   onPress={handleManualSync}
                   disabled={isSyncing}
                   accessibilityRole="button"
+                  accessibilityLabel={t('Sincronizar mi jardín ahora')}
                 >
                   {isSyncing ? (
                     <ActivityIndicator color="#FFFFFF" size="small" />
@@ -242,6 +283,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ visible, onClose }) => {
                   android_ripple={{ color: colors.border }}
                   onPress={handleSignOut}
                   accessibilityRole="button"
+                  accessibilityLabel={t('Cerrar sesión en este dispositivo')}
                 >
                   <Ionicons name="log-out-outline" size={18} color={colors.textSecondary} style={{ marginRight: 8 }} />
                   <Text style={[typography.body, { color: colors.textSecondary, fontWeight: '600' }]}>
@@ -308,6 +350,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ visible, onClose }) => {
                   onPress={handleAuthAction}
                   disabled={isLoading}
                   accessibilityRole="button"
+                  accessibilityLabel={mode === 'signup' ? t('Crear cuenta y sincronizar') : t('Iniciar sesión')}
                 >
                   {isLoading ? (
                     <ActivityIndicator color="#FFFFFF" size="small" />
@@ -326,6 +369,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({ visible, onClose }) => {
                   ]}
                   android_ripple={{ color: colors.primaryLight }}
                   onPress={() => setMode(mode === 'signin' ? 'signup' : 'signin')}
+                  accessibilityRole="button"
+                  accessibilityLabel={
+                    mode === 'signin'
+                      ? t('¿No tienes cuenta? Regístrate')
+                      : t('¿Ya tienes cuenta? Inicia sesión')
+                  }
                 >
                   <Text style={[typography.subheadline, { color: colors.primary, fontWeight: '600' }]}>
                     {mode === 'signin'
@@ -344,6 +393,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ visible, onClose }) => {
                   android_ripple={{ color: colors.border }}
                   onPress={handleAnonymousSignIn}
                   disabled={isLoading}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('Continuar como invitado sin cuenta')}
                 >
                   <Text style={[typography.subheadline, { color: colors.textSecondary }]}>
                     {t('Continuar como invitado sin cuenta')}

@@ -7,11 +7,19 @@ import {
   ScrollView,
   Pressable,
   ActivityIndicator,
-  Animated,
-  Easing,
   Platform,
   Linking,
+  useWindowDimensions,
 } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withRepeat,
+  withSequence,
+  withTiming,
+  Easing as ReanimatedEasing,
+  cancelAnimation,
+} from 'react-native-reanimated';
 import { CameraView, useCameraPermissions, CameraType } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
@@ -19,6 +27,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAppTheme } from '../theme';
+import { useFloatingBarMetrics } from '../hooks/useFloatingBarMetrics';
+import { useTabBarVisibility } from '../context/TabBarVisibilityContext';
+import { isScannerCameraActive } from '../utils/tabBarVisibility';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { GlassSurface } from '../components/GlassSurface';
@@ -44,11 +55,16 @@ export const ScannerScreen: React.FC = () => {
   const { colors, spacing, typography, layout } = useAppTheme();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const { tabBarClearance } = useFloatingBarMetrics();
   const { showToast, confirm } = useFeedback();
   const { addPlant, registerIdentification } = useGarden();
   const limits = usePlanLimits();
   const navigation = useNavigation<any>();
   const isFocused = useIsFocused();
+  const { setTabBarVisible } = useTabBarVisibility();
+  const { height: windowHeight } = useWindowDimensions();
+  const isShortScreen = windowHeight < 700;
+  const reticleSize = isShortScreen ? 220 : 260;
 
   // Permisos y cámara
   const [permission, requestPermission] = useCameraPermissions();
@@ -71,29 +87,20 @@ export const ScannerScreen: React.FC = () => {
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [guideVisible, setGuideVisible] = useState<boolean>(false);
 
-  // Animación de línea láser
-  const [scanLineAnim] = useState(() => new Animated.Value(0));
+  // Animación de línea láser con Reanimated 4
+  const scanProgress = useSharedValue(0);
 
   useEffect(() => {
     if (isIdentifying) {
-      scanLineAnim.setValue(0);
-      const loop = Animated.loop(
-        Animated.sequence([
-          Animated.timing(scanLineAnim, {
-            toValue: 1,
-            duration: 1100,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-          Animated.timing(scanLineAnim, {
-            toValue: 0,
-            duration: 1100,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-        ])
+      scanProgress.value = 0;
+      scanProgress.value = withRepeat(
+        withSequence(
+          withTiming(1, { duration: 1100, easing: ReanimatedEasing.inOut(ReanimatedEasing.ease) }),
+          withTiming(0, { duration: 1100, easing: ReanimatedEasing.inOut(ReanimatedEasing.ease) })
+        ),
+        -1,
+        false
       );
-      loop.start();
 
       const timer1 = setTimeout(() => setScanStepText(t('Revisando las hojas...')), 400);
       const timer2 = setTimeout(() => setScanStepText(t('Buscando en la enciclopedia...')), 900);
@@ -101,10 +108,40 @@ export const ScannerScreen: React.FC = () => {
       return () => {
         clearTimeout(timer1);
         clearTimeout(timer2);
-        loop.stop();
+        cancelAnimation(scanProgress);
       };
+    } else {
+      cancelAnimation(scanProgress);
+      scanProgress.value = 0;
     }
-  }, [isIdentifying, scanLineAnim, t]);
+  }, [isIdentifying, scanProgress, t]);
+
+  const laserAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: scanProgress.value * (reticleSize - 20) }],
+  }));
+
+  // La cámara está activa exclusivamente durante la captura en vivo
+  const isCameraActive = isScannerCameraActive({
+    isFocused,
+    hasCapturedPhoto: !!capturedPhoto,
+    isIdentifying,
+    hasIdentificationResult: !!identificationResult,
+    hasErrorMessage: !!errorMessage,
+    hasMountError: !!mountError,
+    permissionGranted: !!permission?.granted,
+  });
+
+  useEffect(() => {
+    navigation.setOptions({
+      tabBarStyle: isCameraActive ? { display: 'none' } : undefined,
+    });
+    setTabBarVisible(!isCameraActive);
+
+    return () => {
+      navigation.setOptions({ tabBarStyle: undefined });
+      setTabBarVisible(true);
+    };
+  }, [isCameraActive, navigation, setTabBarVisible]);
 
   const toggleCameraFacing = () => {
     try {
@@ -328,7 +365,16 @@ export const ScannerScreen: React.FC = () => {
   // CASO 2: ERROR DE MONTAJE DE CÁMARA (SIMULADOR O HARDWARE NO DISPONIBLE)
   if (mountError) {
     return (
-      <View style={[styles.permissionContainer, { backgroundColor: colors.background }]}>
+      <View
+        style={[
+          styles.permissionContainer,
+          {
+            backgroundColor: colors.background,
+            paddingTop: insets.top + 16,
+            paddingBottom: tabBarClearance,
+          },
+        ]}
+      >
         <View style={[styles.permissionIconCircle, { backgroundColor: colors.surfaceSecondary }]}>
           <Ionicons name="camera-outline" size={54} color={colors.textSecondary} />
         </View>
@@ -369,7 +415,16 @@ export const ScannerScreen: React.FC = () => {
     const isPermanentlyDenied = !permission.canAskAgain && permission.status === 'denied';
 
     return (
-      <View style={[styles.permissionContainer, { backgroundColor: colors.background }]}>
+      <View
+        style={[
+          styles.permissionContainer,
+          {
+            backgroundColor: colors.background,
+            paddingTop: insets.top + 16,
+            paddingBottom: tabBarClearance,
+          },
+        ]}
+      >
         <View style={[styles.permissionIconCircle, { backgroundColor: colors.primaryLight }]}>
           <Ionicons name="camera" size={54} color={colors.primary} />
         </View>
@@ -423,7 +478,11 @@ export const ScannerScreen: React.FC = () => {
     return (
       <ScrollView
         style={[styles.container, { backgroundColor: colors.background }]}
-        contentContainerStyle={{ paddingTop: Platform.OS === 'ios' ? 44 : 20 }}
+        contentContainerStyle={{
+          paddingTop: Math.max(insets.top, spacing.md),
+          paddingBottom: tabBarClearance,
+        }}
+        showsVerticalScrollIndicator={false}
       >
         <ScanResultCard
           result={identificationResult}
@@ -462,7 +521,16 @@ export const ScannerScreen: React.FC = () => {
   // CASO: ESTADO DE ERROR TRAS ANALIZAR
   if (errorMessage) {
     return (
-      <View style={[styles.errorContainer, { backgroundColor: colors.background }]}>
+      <View
+        style={[
+          styles.errorContainer,
+          {
+            backgroundColor: colors.background,
+            paddingTop: insets.top + 16,
+            paddingBottom: tabBarClearance,
+          },
+        ]}
+      >
         <EmptyState
           iconName="alert-circle-outline"
           title={t('No pudimos reconocer la planta')}
@@ -494,7 +562,7 @@ export const ScannerScreen: React.FC = () => {
       <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
         {/* BARRA SUPERIOR SOBRE LA CÁMARA */}
         <View style={[styles.cameraTopBar, { paddingTop: insets.top + (Platform.OS === 'ios' ? 8 : 12) }]}>
-          <GlassSurface variant="strong" borderRadius={24} style={styles.topBarGlassBtn}>
+          <GlassSurface tone="overlay" variant="strong" borderRadius={24} style={styles.topBarGlassBtn}>
             <Pressable
               onPress={() => navigation.goBack()}
               android_ripple={{ color: '#FFFFFF33', borderless: true, radius: 24 }}
@@ -509,15 +577,15 @@ export const ScannerScreen: React.FC = () => {
 
           {!limits.isPremium ? (
             <Badge
-              label={`${Math.max(0, limits.identificationLimit - limits.identificationsToday)}/${limits.identificationLimit} hoy`}
+              label={`${Math.max(0, limits.identificationLimit - limits.identificationsToday)}/${limits.identificationLimit} ${t('hoy')}`}
               variant="neutral"
               style={{ backgroundColor: 'rgba(0,0,0,0.55)' }}
             />
           ) : (
-            <Badge label="PRO" variant="premium" />
+            <Badge label={t('PRO')} variant="premium" />
           )}
 
-          <GlassSurface variant="strong" borderRadius={24} style={styles.topBarGlassBtn}>
+          <GlassSurface tone="overlay" variant="strong" borderRadius={24} style={styles.topBarGlassBtn}>
             <Pressable
               onPress={toggleTorch}
               android_ripple={{ color: '#FFFFFF33', borderless: true, radius: 24 }}
@@ -536,7 +604,12 @@ export const ScannerScreen: React.FC = () => {
         </View>
 
         {/* SELECTOR DE MODO: IDENTIFICAR vs ENFERMEDADES */}
-        <GlassSurface variant="strong" borderRadius={28} style={styles.modeSelectorGlass}>
+        <GlassSurface
+          tone="overlay"
+          variant="strong"
+          borderRadius={28}
+          style={[styles.modeSelectorGlass, { marginTop: isShortScreen ? 6 : 12 }]}
+        >
           <View style={styles.modeSelectorInner}>
             <Pressable
               style={({ pressed }) => [
@@ -616,33 +689,24 @@ export const ScannerScreen: React.FC = () => {
 
         {/* ÁREA CENTRAL CON RETÍCULA Y AYUDA CONTEXTUAL */}
         <View style={styles.centerArea}>
-          <View style={styles.reticle}>
+          <View style={[styles.reticle, { width: reticleSize, height: reticleSize }]}>
             <View style={[styles.reticleCorner, styles.cornerTL]} />
             <View style={[styles.reticleCorner, styles.cornerTR]} />
             <View style={[styles.reticleCorner, styles.cornerBL]} />
             <View style={[styles.reticleCorner, styles.cornerBR]} />
 
             {isIdentifying ? (
-              <Animated.View
-                style={[
-                  styles.laserLine,
-                  {
-                    transform: [
-                      {
-                        translateY: scanLineAnim.interpolate({
-                          inputRange: [0, 1],
-                          outputRange: [0, 240],
-                        }),
-                      },
-                    ],
-                  },
-                ]}
-              />
+              <Animated.View style={[styles.laserLine, laserAnimatedStyle]} />
             ) : null}
           </View>
 
           {/* Ayuda contextual de una sola línea */}
-          <GlassSurface variant="strong" borderRadius={24} style={styles.contextTipGlass}>
+          <GlassSurface
+            tone="overlay"
+            variant="strong"
+            borderRadius={24}
+            style={[styles.contextTipGlass, { marginTop: isShortScreen ? 12 : 20 }]}
+          >
             <Pressable
               onPress={() => setGuideVisible(true)}
               android_ripple={{ color: '#FFFFFF33' }}
@@ -681,9 +745,14 @@ export const ScannerScreen: React.FC = () => {
         ) : null}
 
         {/* BARRA INFERIOR: UNA SOLA COSA GRANDE (BOTÓN DE CAPTURA) */}
-        <View style={[styles.cameraBottomBar, { paddingBottom: Math.max(insets.bottom, 24) }]}>
+        <View
+          style={[
+            styles.cameraBottomBar,
+            { paddingBottom: insets.bottom + (Platform.OS === 'ios' ? 16 : 24) },
+          ]}
+        >
           {/* LADO IZQUIERDO: GALERÍA */}
-          <GlassSurface variant="strong" borderRadius={25} style={styles.glassSideBtn}>
+          <GlassSurface tone="overlay" variant="strong" borderRadius={25} style={styles.glassSideBtn}>
             <Pressable
               onPress={handlePickGallery}
               android_ripple={{ color: '#FFFFFF33', borderless: true, radius: 25 }}
@@ -717,7 +786,7 @@ export const ScannerScreen: React.FC = () => {
               style={[
                 styles.shutterButtonInner,
                 {
-                  backgroundColor: scanMode === 'diagnose' ? '#F57C00' : colors.primary,
+                  backgroundColor: scanMode === 'diagnose' ? colors.warning : colors.primary,
                   alignItems: 'center',
                   justifyContent: 'center',
                 },
@@ -736,7 +805,7 @@ export const ScannerScreen: React.FC = () => {
           </Pressable>
 
           {/* LADO DERECHO: CAMBIAR CÁMARA */}
-          <GlassSurface variant="strong" borderRadius={25} style={styles.glassSideBtn}>
+          <GlassSurface tone="overlay" variant="strong" borderRadius={25} style={styles.glassSideBtn}>
             <Pressable
               onPress={toggleCameraFacing}
               android_ripple={{ color: '#FFFFFF33', borderless: true, radius: 25 }}
@@ -860,8 +929,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
-    paddingBottom: Platform.OS === 'ios' ? 44 : 28,
     paddingHorizontal: 20,
+    gap: 16,
   },
   shutterButtonOuter: {
     width: 82,
@@ -879,9 +948,9 @@ const styles = StyleSheet.create({
     borderRadius: 33,
   },
   glassSideBtn: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     overflow: 'hidden',
   },
   modeSelectorGlass: {

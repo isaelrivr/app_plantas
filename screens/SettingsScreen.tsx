@@ -18,6 +18,7 @@ import * as Haptics from 'expo-haptics';
 import { useAppTheme } from '../theme';
 import { useFeedback } from '../context/FeedbackContext';
 import { Card } from '../components/Card';
+import { GlassBackground } from '../components/GlassBackground';
 import { Badge } from '../components/Badge';
 import { MaterialSwitch } from '../components/MaterialSwitch';
 import { useSettings, ThemePreference, AppLanguage, LANGUAGES } from '../context/SettingsContext';
@@ -193,7 +194,7 @@ export const SettingsScreen: React.FC = () => {
   );
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <GlassBackground style={styles.container}>
       <View
         style={[
           styles.header,
@@ -442,6 +443,7 @@ export const SettingsScreen: React.FC = () => {
                         android_ripple={{ color: active ? 'rgba(255,255,255,0.3)' : colors.primary + '20' }}
                         accessibilityRole="button"
                         accessibilityState={{ selected: active }}
+                        accessibilityLabel={t('Hora de aviso {hora}', { hora: hour })}
                       >
                         <Text style={[typography.caption1, { color: active ? '#FFFFFF' : colors.textPrimary, fontWeight: active ? '700' : '500' }]}>
                           {hour}
@@ -838,7 +840,7 @@ export const SettingsScreen: React.FC = () => {
         animationType="slide"
         onRequestClose={() => setIsImportModalVisible(false)}
       >
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 }}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'center', padding: 20 }}>
           <View style={{ backgroundColor: colors.surface, borderRadius: 16, padding: 20, maxHeight: '80%' }}>
             <Text style={[typography.headline, { color: colors.textPrimary, marginBottom: 8 }]}>
               {t('Importar copia de seguridad')}
@@ -908,7 +910,7 @@ export const SettingsScreen: React.FC = () => {
         visible={isAuthModalVisible}
         onClose={() => setIsAuthModalVisible(false)}
       />
-    </View>
+    </GlassBackground>
   );
 };
 

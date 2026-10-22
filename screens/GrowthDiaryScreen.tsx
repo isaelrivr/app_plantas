@@ -4,6 +4,7 @@ import {
   Text,
   StyleSheet,
   ScrollView,
+  FlatList,
   Pressable,
   Image,
   Platform,
@@ -185,41 +186,86 @@ export const GrowthDiaryScreen: React.FC = () => {
         <View style={styles.actionHeaderBtn} />
       </View>
 
-      <ScrollView contentContainerStyle={{ padding: spacing.md, paddingBottom: insets.bottom + spacing.xxxl }}>
-        <Text style={[typography.title2, { color: colors.textPrimary }]}>{plantName}</Text>
-        <Text style={[typography.subheadline, { color: colors.textSecondary, marginBottom: spacing.md }]}>
-          {t('{n} registros · sigue la evolución de tu planta', { n: entries.length })}
-        </Text>
-
-        {loading ? (
-          <>
-            <SkeletonBox width="100%" height={240} borderRadius={18} />
-            <SkeletonBox width="100%" height={80} borderRadius={14} style={{ marginTop: spacing.md }} />
-            <SkeletonBox width="100%" height={80} borderRadius={14} style={{ marginTop: spacing.sm }} />
-          </>
-        ) : entries.length === 0 ? (
+      <FlatList
+        data={loading ? [] : entries}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item: entry }) => (
           <Card
+            key={entry.id}
             variant="flat"
             style={{
-              alignItems: 'center',
+              marginBottom: spacing.sm,
               borderRadius: layout.borderRadius.lg,
               borderWidth: 1,
               borderColor: colors.border,
               backgroundColor: colors.surface,
-              padding: spacing.xl,
             }}
           >
-            <Ionicons name="camera-outline" size={40} color={colors.textTertiary} />
-            <Text style={[typography.headline, { color: colors.textPrimary, marginTop: spacing.sm }]}>
-              {t('Aún no hay registros')}
-            </Text>
-            <Text style={[typography.footnote, { color: colors.textSecondary, textAlign: 'center', marginTop: 4 }]}>
-              {t('Añade tu primera foto para empezar a documentar el crecimiento.')}
-            </Text>
+            <View style={styles.entryRow}>
+              <Image
+                source={{ uri: entry.photoUri }}
+                style={[styles.thumb, { borderRadius: layout.borderRadius.md }]}
+                accessible
+                accessibilityLabel={t('Foto del {fecha}', { fecha: formatEntryDate(entry.date) })}
+              />
+              <View style={{ flex: 1, marginLeft: spacing.md, marginRight: spacing.xs }}>
+                <Text style={[typography.footnote, { color: colors.textTertiary }]}>
+                  {formatEntryDate(entry.date)}
+                </Text>
+                <Text style={[typography.callout, { color: colors.textPrimary, marginTop: 2 }]}>
+                  {entry.note}
+                </Text>
+                <View style={styles.deltaRow}>
+                  {entry.heightCm != null ? (
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <Ionicons name="resize-outline" size={13} color={colors.textSecondary} style={{ marginRight: 4 }} />
+                      <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+                        {entry.heightCm} cm
+                      </Text>
+                    </View>
+                  ) : null}
+                  {entry.leafCount != null ? (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: 10 }}>
+                      <Ionicons name="leaf-outline" size={13} color={colors.textSecondary} style={{ marginRight: 4 }} />
+                      <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+                        {t('{n} hojas', { n: entry.leafCount })}
+                      </Text>
+                    </View>
+                  ) : null}
+                </View>
+              </View>
+              <Pressable
+                onPress={() => handleDeleteEntry(entry)}
+                android_ripple={{ color: colors.error + '25', borderless: true, radius: 20 }}
+                style={({ pressed }) => [styles.deleteEntryBtn, pressed && { opacity: 0.7 }]}
+                accessibilityRole="button"
+                accessibilityLabel={t('Eliminar registro del {fecha}', { fecha: formatEntryDate(entry.date) })}
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              >
+                <Ionicons name="trash-outline" size={20} color={colors.error} />
+              </Pressable>
+            </View>
           </Card>
-        ) : (
+        )}
+        contentContainerStyle={{ padding: spacing.md, paddingBottom: insets.bottom + spacing.xxxl }}
+        showsVerticalScrollIndicator={false}
+        initialNumToRender={5}
+        maxToRenderPerBatch={5}
+        windowSize={5}
+        ListHeaderComponent={
           <>
-            {comparison.before && comparison.after && comparison.before.id !== comparison.after.id ? (
+            <Text style={[typography.title2, { color: colors.textPrimary }]}>{plantName}</Text>
+            <Text style={[typography.subheadline, { color: colors.textSecondary, marginBottom: spacing.md }]}>
+              {t('{n} registros · sigue la evolución de tu planta', { n: entries.length })}
+            </Text>
+
+            {loading ? (
+              <>
+                <SkeletonBox width="100%" height={240} borderRadius={18} />
+                <SkeletonBox width="100%" height={80} borderRadius={14} style={{ marginTop: spacing.md }} />
+                <SkeletonBox width="100%" height={80} borderRadius={14} style={{ marginTop: spacing.sm }} />
+              </>
+            ) : comparison.before && comparison.after && comparison.before.id !== comparison.after.id ? (
               <Card
                 variant="flat"
                 style={{
@@ -249,78 +295,46 @@ export const GrowthDiaryScreen: React.FC = () => {
               </Card>
             ) : null}
 
-            <Text style={[typography.headline, { color: colors.textPrimary, marginTop: spacing.sm, marginBottom: spacing.sm }]}>
-              {t('Línea de tiempo')}
-            </Text>
-            {entries.map((entry) => (
-              <Card
-                key={entry.id}
-                variant="flat"
-                style={{
-                  marginBottom: spacing.sm,
-                  borderRadius: layout.borderRadius.lg,
-                  borderWidth: 1,
-                  borderColor: colors.border,
-                  backgroundColor: colors.surface,
-                }}
-              >
-                <View style={styles.entryRow}>
-                  <Image
-                    source={{ uri: entry.photoUri }}
-                    style={[styles.thumb, { borderRadius: layout.borderRadius.md }]}
-                    accessible
-                    accessibilityLabel={t('Foto del {fecha}', { fecha: formatEntryDate(entry.date) })}
-                  />
-                  <View style={{ flex: 1, marginLeft: spacing.md, marginRight: spacing.xs }}>
-                    <Text style={[typography.footnote, { color: colors.textTertiary }]}>
-                      {formatEntryDate(entry.date)}
-                    </Text>
-                    <Text style={[typography.callout, { color: colors.textPrimary, marginTop: 2 }]}>
-                      {entry.note}
-                    </Text>
-                    <View style={styles.deltaRow}>
-                      {entry.heightCm != null ? (
-                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                          <Ionicons name="resize-outline" size={13} color={colors.textSecondary} style={{ marginRight: 4 }} />
-                          <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-                            {entry.heightCm} cm
-                          </Text>
-                        </View>
-                      ) : null}
-                      {entry.leafCount != null ? (
-                        <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: 10 }}>
-                          <Ionicons name="leaf-outline" size={13} color={colors.textSecondary} style={{ marginRight: 4 }} />
-                          <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-                            {t('{n} hojas', { n: entry.leafCount })}
-                          </Text>
-                        </View>
-                      ) : null}
-                    </View>
-                  </View>
-                  <Pressable
-                    onPress={() => handleDeleteEntry(entry)}
-                    android_ripple={{ color: colors.error + '25', borderless: true, radius: 20 }}
-                    style={({ pressed }) => [styles.deleteEntryBtn, pressed && { opacity: 0.7 }]}
-                    accessibilityRole="button"
-                    accessibilityLabel={t('Eliminar registro del {fecha}', { fecha: formatEntryDate(entry.date) })}
-                    hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-                  >
-                    <Ionicons name="trash-outline" size={20} color={colors.error} />
-                  </Pressable>
-                </View>
-              </Card>
-            ))}
+            {!loading && entries.length > 0 ? (
+              <Text style={[typography.headline, { color: colors.textPrimary, marginTop: spacing.sm, marginBottom: spacing.sm }]}>
+                {t('Línea de tiempo')}
+              </Text>
+            ) : null}
           </>
-        )}
-
-        <Button
-          title={t('Añadir foto al diario')}
-          onPress={handleAddPhoto}
-          variant="primary"
-          icon={<Ionicons name="add" size={18} color="#FFFFFF" />}
-          style={{ marginTop: spacing.md }}
-        />
-      </ScrollView>
+        }
+        ListEmptyComponent={
+          !loading ? (
+            <Card
+              variant="flat"
+              style={{
+                alignItems: 'center',
+                borderRadius: layout.borderRadius.lg,
+                borderWidth: 1,
+                borderColor: colors.border,
+                backgroundColor: colors.surface,
+                padding: spacing.xl,
+              }}
+            >
+              <Ionicons name="camera-outline" size={40} color={colors.textTertiary} />
+              <Text style={[typography.headline, { color: colors.textPrimary, marginTop: spacing.sm }]}>
+                {t('Aún no hay registros')}
+              </Text>
+              <Text style={[typography.footnote, { color: colors.textSecondary, textAlign: 'center', marginTop: 4 }]}>
+                {t('Añade tu primera foto para empezar a documentar el crecimiento.')}
+              </Text>
+            </Card>
+          ) : null
+        }
+        ListFooterComponent={
+          <Button
+            title={t('Añadir foto al diario')}
+            onPress={handleAddPhoto}
+            variant="primary"
+            icon={<Ionicons name="add" size={18} color="#FFFFFF" />}
+            style={{ marginTop: spacing.md }}
+          />
+        }
+      />
 
       <Modal visible={modalVisible} transparent animationType="slide" onRequestClose={() => setModalVisible(false)}>
         <View style={styles.modalOverlay}>

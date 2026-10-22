@@ -8,11 +8,12 @@ import {
   Animated,
   KeyboardAvoidingView,
   Platform,
+  Keyboard,
+  ScrollView,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
-import { useAppTheme, useGlass } from '../theme';
+import { useAppTheme } from '../theme';
 import { useTranslation } from '../i18n';
 
 export interface BottomSheetProps {
@@ -23,6 +24,8 @@ export interface BottomSheetProps {
   children: React.ReactNode;
   showCloseButton?: boolean;
   maxHeightRatio?: number;
+  /** Si debe envolver los hijos en un ScrollView interno para formularios con teclado (por defecto false) */
+  scrollable?: boolean;
 }
 
 export const BottomSheet: React.FC<BottomSheetProps> = ({
@@ -33,14 +36,28 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
   children,
   showCloseButton = true,
   maxHeightRatio = 0.88,
+  scrollable = false,
 }) => {
-  const { colors, typography, spacing, layout, motion, isDark } = useAppTheme();
-  const glass = useGlass();
+  const { colors, typography, spacing, layout, motion } = useAppTheme();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
 
   const [translateY] = useState(() => new Animated.Value(400));
   const [backdropOpacity] = useState(() => new Animated.Value(0));
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+    const showSub = Keyboard.addListener(showEvent, () => setIsKeyboardVisible(true));
+    const hideSub = Keyboard.addListener(hideEvent, () => setIsKeyboardVisible(false));
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   useEffect(() => {
     if (visible) {
@@ -92,20 +109,14 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
       animationType="none"
       onRequestClose={onClose}
       statusBarTranslucent
+      navigationBarTranslucent
     >
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'android' ? insets.bottom : 0}
         style={styles.keyboardContainer}
       >
         <Animated.View style={[styles.backdrop, { opacity: backdropOpacity }]}>
-          {glass.canUseBlur && (
-            <BlurView
-              intensity={25}
-              tint={isDark ? 'dark' : 'systemMaterialDark'}
-              blurMethod="dimezisBlurViewSdk31Plus"
-              style={StyleSheet.absoluteFill}
-            />
-          )}
           <Pressable
             style={StyleSheet.absoluteFill}
             onPress={onClose}
@@ -123,7 +134,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
               borderTopRightRadius: 28,
               borderTopWidth: 1,
               borderTopColor: colors.borderLight,
-              paddingBottom: Math.max(insets.bottom, 16),
+              paddingBottom: isKeyboardVisible ? 12 : Math.max(insets.bottom, 16),
               maxHeight: `${Math.round(maxHeightRatio * 100)}%`,
               transform: [{ translateY }],
             },
@@ -174,9 +185,24 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
             </View>
           ) : null}
 
-          <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.xs }}>
-            {children}
-          </View>
+          {scrollable ? (
+            <ScrollView
+              bounces={false}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{
+                paddingHorizontal: spacing.lg,
+                paddingTop: spacing.xs,
+                paddingBottom: isKeyboardVisible ? 16 : Math.max(insets.bottom, 16),
+              }}
+            >
+              {children}
+            </ScrollView>
+          ) : (
+            <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.xs }}>
+              {children}
+            </View>
+          )}
         </Animated.View>
       </KeyboardAvoidingView>
     </Modal>

@@ -13,6 +13,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useAppTheme } from '../theme';
+import { useFloatingBarMetrics } from '../hooks/useFloatingBarMetrics';
 import { useGarden, GardenPlant, Room } from '../context/GardenContext';
 import { usePremium } from '../context/PremiumContext';
 import { ScreenHeader } from '../components/ScreenHeader';
@@ -25,7 +26,7 @@ import { ErrorBanner } from '../components/ErrorBanner';
 import { BottomSheet } from '../components/BottomSheet';
 import { ListRow } from '../components/ListRow';
 import { GlassSurface } from '../components/GlassSurface';
-import { BlurTargetView, useBlurTarget } from '../components/GlassView';
+import { GlassBackground } from '../components/GlassBackground';
 import { GardenPlantCard } from '../components/garden/GardenPlantCard';
 import { AddPlantModal, ManualPlantData } from '../components/garden/AddPlantModal';
 import { PlantActionSheet } from '../components/garden/PlantActionSheet';
@@ -44,7 +45,6 @@ const speciesIdFor = (name: string, scientificName?: string): string =>
 export const GardenScreen: React.FC = () => {
   const { colors, isDark, spacing, typography, layout } = useAppTheme();
   const insets = useSafeAreaInsets();
-  const blurTargetRef = useBlurTarget();
   const { showToast, confirm } = useFeedback();
   const {
     plants,
@@ -334,15 +334,17 @@ export const GardenScreen: React.FC = () => {
     return null;
   };
 
+  const { fabBottom } = useFloatingBarMetrics();
+
   return (
-    <BlurTargetView ref={blurTargetRef} style={styles.container}>
+    <GlassBackground style={styles.container}>
       <SectionList
         sections={sections}
         keyExtractor={(item) => item.id}
         contentContainerStyle={{
           paddingHorizontal: spacing.md,
           paddingTop: Math.max(insets.top, spacing.md),
-          paddingBottom: 160 + insets.bottom,
+          paddingBottom: fabBottom + 68,
         }}
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={
@@ -433,13 +435,12 @@ export const GardenScreen: React.FC = () => {
 
       {/* BOTÓN FLOTANTE: + AÑADIR PLANTA (Superficie flotante de vidrio) */}
       <View
-        style={[styles.fabContainer, { bottom: Math.max(insets.bottom + 16, 96) }]}
+        style={[styles.fabContainer, { bottom: fabBottom }]}
         pointerEvents="box-none"
       >
         <GlassSurface
           variant="strong"
           borderRadius={layout.borderRadius.full}
-          blurTarget={blurTargetRef}
           style={styles.fabGlass}
         >
           <Pressable
@@ -596,7 +597,7 @@ export const GardenScreen: React.FC = () => {
           )}
         </View>
       </BottomSheet>
-    </BlurTargetView>
+    </GlassBackground>
   );
 };
 

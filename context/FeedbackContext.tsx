@@ -8,6 +8,8 @@ export interface ToastOptions {
   actionLabel?: string;
   onAction?: () => void;
   durationMs?: number;
+  hasTabBar?: boolean;
+  bottomPosition?: number;
 }
 
 export interface ConfirmOptions {
@@ -59,6 +61,8 @@ export const FeedbackProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       actionLabel,
       onAction,
       durationMs = 5000,
+      hasTabBar,
+      bottomPosition,
     }: ToastOptions) => {
       setToast({
         visible: true,
@@ -67,6 +71,8 @@ export const FeedbackProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         actionLabel,
         onAction,
         durationMs,
+        hasTabBar,
+        bottomPosition,
         onDismiss: hideToast,
       });
     },

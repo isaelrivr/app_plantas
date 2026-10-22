@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAppTheme } from '../theme';
+import { useFloatingBarMetrics } from '../hooks/useFloatingBarMetrics';
 import { usePremium } from '../context/PremiumContext';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { Card } from '../components/Card';
@@ -20,13 +21,12 @@ import { Badge } from '../components/Badge';
 import { Button } from '../components/Button';
 import { ErrorBanner } from '../components/ErrorBanner';
 import { SkeletonBox } from '../components/SkeletonLoader';
-import { BlurTargetView, useBlurTarget } from '../components/GlassView';
+import { GlassBackground } from '../components/GlassBackground';
 import { useTranslation } from '../i18n';
 
 export const ProfileScreen: React.FC = () => {
   const { colors, layout, spacing, typography } = useAppTheme();
   const insets = useSafeAreaInsets();
-  const blurTargetRef = useBlurTarget();
   const navigation = useNavigation<any>();
   const { isPremium, price } = usePremium();
   const colorScheme = useColorScheme();
@@ -88,14 +88,16 @@ export const ProfileScreen: React.FC = () => {
     },
   ];
 
+  const { tabBarClearance } = useFloatingBarMetrics();
+
   return (
-    <BlurTargetView ref={blurTargetRef} style={styles.container}>
+    <GlassBackground style={styles.container}>
       <ScrollView
-        style={[styles.container, { backgroundColor: colors.background }]}
+        style={styles.container}
         contentContainerStyle={{
           paddingHorizontal: spacing.md,
           paddingTop: Math.max(insets.top, spacing.md),
-          paddingBottom: 110 + insets.bottom,
+          paddingBottom: tabBarClearance,
         }}
       >
         <ScreenHeader
@@ -484,7 +486,7 @@ export const ProfileScreen: React.FC = () => {
         </View>
       </Card>
     </ScrollView>
-  </BlurTargetView>
+  </GlassBackground>
 );
 };
 

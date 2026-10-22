@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useAppTheme } from '../theme';
 import { Card } from '../components/Card';
+import { GlassBackground } from '../components/GlassBackground';
 import { Badge } from '../components/Badge';
 import { Button } from '../components/Button';
 import { BottomSheet } from '../components/BottomSheet';
@@ -178,7 +179,7 @@ export const EncyclopediaScreen: React.FC = () => {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <GlassBackground style={styles.container}>
       {/* HEADER NAVEGACIÓN */}
       <View
         style={[
@@ -487,7 +488,7 @@ export const EncyclopediaScreen: React.FC = () => {
           </View>
         </View>
       </BottomSheet>
-    </View>
+    </GlassBackground>
   );
 };
 

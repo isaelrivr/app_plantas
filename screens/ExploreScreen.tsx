@@ -14,10 +14,11 @@ import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useAppTheme } from '../theme';
+import { useFloatingBarMetrics } from '../hooks/useFloatingBarMetrics';
 import { Card } from '../components/Card';
 import { Badge } from '../components/Badge';
 import { ScreenHeader } from '../components/ScreenHeader';
-import { BlurTargetView, useBlurTarget } from '../components/GlassView';
+import { GlassBackground } from '../components/GlassBackground';
 import {
   searchEncyclopedia,
   DEFAULT_FILTERS,
@@ -28,7 +29,6 @@ import { useTranslation } from '../i18n';
 export const ExploreScreen: React.FC = () => {
   const { colors, layout, spacing, typography } = useAppTheme();
   const insets = useSafeAreaInsets();
-  const blurTargetRef = useBlurTarget();
   const navigation = useNavigation<any>();
   const { t } = useTranslation();
 
@@ -66,14 +66,16 @@ export const ExploreScreen: React.FC = () => {
     navigation.navigate('Encyclopedia');
   };
 
+  const { tabBarClearance } = useFloatingBarMetrics();
+
   return (
-    <BlurTargetView ref={blurTargetRef} style={styles.container}>
+    <GlassBackground style={styles.container}>
       <ScrollView
-        style={[styles.container, { backgroundColor: colors.background }]}
+        style={styles.container}
         contentContainerStyle={{
           paddingHorizontal: spacing.md,
           paddingTop: Math.max(insets.top, spacing.md),
-          paddingBottom: 110 + insets.bottom,
+          paddingBottom: tabBarClearance,
         }}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
@@ -317,8 +319,8 @@ export const ExploreScreen: React.FC = () => {
           accessibilityRole="button"
           accessibilityLabel={t('Seguras para mascotas')}
         >
-          <View style={[styles.collectionIcon, { backgroundColor: '#E8F5E9' }]}>
-            <Ionicons name="paw" size={22} color="#2E7D32" />
+          <View style={[styles.collectionIcon, { backgroundColor: colors.successLight }]}>
+            <Ionicons name="paw" size={22} color={colors.success} />
           </View>
           <Text style={[typography.subheadline, { color: colors.textPrimary, fontWeight: '600', marginTop: 8 }]}>
             {t('Seguras para mascotas')}
@@ -371,8 +373,8 @@ export const ExploreScreen: React.FC = () => {
           accessibilityRole="button"
           accessibilityLabel={t('Resistentes a sequía')}
         >
-          <View style={[styles.collectionIcon, { backgroundColor: '#FFF3E0' }]}>
-            <Ionicons name="water-outline" size={22} color="#EF6C00" />
+          <View style={[styles.collectionIcon, { backgroundColor: colors.warningLight }]}>
+            <Ionicons name="water-outline" size={22} color={colors.warning} />
           </View>
           <Text style={[typography.subheadline, { color: colors.textPrimary, fontWeight: '600', marginTop: 8 }]}>
             {t('Resistentes a sequía')}
@@ -442,9 +444,9 @@ export const ExploreScreen: React.FC = () => {
           </Pressable>
         ))}
       </View>
-    </ScrollView>
-  </BlurTargetView>
-);
+      </ScrollView>
+    </GlassBackground>
+  );
 };
 
 const styles = StyleSheet.create({
