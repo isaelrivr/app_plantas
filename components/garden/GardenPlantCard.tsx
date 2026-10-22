@@ -6,7 +6,8 @@ import { GardenPlant } from '../../context/GardenContext';
 import { StatusPill } from '../StatusPill';
 import { Card } from '../Card';
 import { useTranslation } from '../../i18n';
-import { getPlantById, resolveSpeciesId } from '../../services/plantApi';
+import { resolveSpeciesId } from '../../services/plantApi';
+import { getPlantImageSource } from '../../services/plantAssets';
 
 export interface GardenPlantCardProps {
   plant: GardenPlant;
@@ -28,8 +29,7 @@ export const GardenPlantCard: React.FC<GardenPlantCardProps> = ({
   const [imageError, setImageError] = useState(false);
 
   const speciesId = resolveSpeciesId(plant.name, plant.scientificName) ?? 'monstera';
-  const catalogPlant = getPlantById(speciesId);
-  const photoUri = plant.imageUri || catalogPlant?.imageUri;
+  const imageSource = getPlantImageSource(plant.imageUri, speciesId);
 
   const isWatered = plant.isWateredToday;
 
@@ -58,9 +58,9 @@ export const GardenPlantCard: React.FC<GardenPlantCardProps> = ({
         ]}
       >
         <View style={styles.topRow}>
-          {photoUri && !imageError ? (
+          {imageSource && !imageError ? (
             <Image
-              source={{ uri: photoUri }}
+              source={imageSource}
               style={[styles.plantImage, { borderRadius: layout.borderRadius.md }]}
               accessible
               accessibilityLabel={t('Foto de {nombre}', { nombre: plant.name })}

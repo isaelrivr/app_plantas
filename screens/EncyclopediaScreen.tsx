@@ -39,16 +39,18 @@ import {
 } from '../services/encyclopediaService';
 import { isPetSafe } from '../services/toxicityService';
 import { resolveSpeciesId, CatalogPlant } from '../services/plantApi';
+import { getPlantImageSource } from '../services/plantAssets';
 import { useTranslation } from '../i18n';
 
-const PlantThumb: React.FC<{ uri?: string; emoji?: string; name: string }> = ({ uri, emoji, name }) => {
+const PlantThumb: React.FC<{ id?: string; uri?: string; emoji?: string; name: string }> = ({ id, uri, emoji, name }) => {
   const { colors, layout } = useAppTheme();
   const [error, setError] = useState(false);
+  const source = getPlantImageSource(uri, id);
 
-  if (uri && !error) {
+  if (source && !error) {
     return (
       <Image
-        source={{ uri }}
+        source={source}
         style={[styles.thumb, { borderRadius: layout.borderRadius.md }]}
         accessible
         accessibilityLabel={name}
@@ -153,7 +155,7 @@ export const EncyclopediaScreen: React.FC = () => {
           accessibilityLabel={`${item.name}, ${item.scientificName}. ${t('Dificultad')} ${item.difficulty}`}
           style={({ pressed }) => [styles.itemRow, pressed && { opacity: 0.85 }]}
         >
-          <PlantThumb uri={item.imageUri} emoji={item.avatarEmoji} name={item.name} />
+          <PlantThumb id={item.id} uri={item.imageUri} emoji={item.avatarEmoji} name={item.name} />
 
           <View style={styles.itemInfo}>
             <View style={styles.titleRow}>

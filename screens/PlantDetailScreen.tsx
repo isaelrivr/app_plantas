@@ -28,6 +28,7 @@ import { PlantTimeline } from '../components/plant/PlantTimeline';
 import { ShareCardModal } from '../components/ShareCardModal';
 import { LightMeterModal } from '../components/LightMeterModal';
 import { resolvePlantForDetail, CatalogPlant } from '../services/plantApi';
+import { getPlantImageSource } from '../services/plantAssets';
 import { useGarden, GardenPlant } from '../context/GardenContext';
 import { useFeedback } from '../context/FeedbackContext';
 import { usePlanLimits } from '../hooks/usePlanLimits';
@@ -179,19 +180,22 @@ export const PlantDetailScreen: React.FC = () => {
       >
         {/* HERO CONTAINER CON CONTROLES FLOTANTES DE VIDRIO SOBRE FOTO */}
         <View style={styles.heroContainer}>
-          {plant.imageUri && !imageError ? (
-            <Image
-              source={{ uri: plant.imageUri }}
-              style={styles.heroImage}
-              accessible
-              accessibilityLabel={plant.name}
-              onError={() => setImageError(true)}
-            />
-          ) : (
-            <View style={[styles.heroPlaceholder, { backgroundColor: colors.surfaceSecondary }]}>
-              <Text style={{ fontSize: 64 }}>{plant.avatarEmoji || '🌿'}</Text>
-            </View>
-          )}
+          {(() => {
+            const heroSource = plant ? getPlantImageSource(plant.imageUri, plant.id) : null;
+            return heroSource && !imageError ? (
+              <Image
+                source={heroSource}
+                style={styles.heroImage}
+                accessible
+                accessibilityLabel={plant.name}
+                onError={() => setImageError(true)}
+              />
+            ) : (
+              <View style={[styles.heroPlaceholder, { backgroundColor: colors.surfaceSecondary }]}>
+                <Text style={{ fontSize: 64 }}>{plant?.avatarEmoji || '🌿'}</Text>
+              </View>
+            );
+          })()}
 
           {/* CONTROLES FLOTANTES DE VIDRIO SOBRE LA FOTO */}
           <View

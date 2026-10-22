@@ -16,6 +16,7 @@ import { useTranslation } from '../i18n';
 import { Button } from './Button';
 import { Card } from './Card';
 import { getToxicity, toxicityLevelMeta } from '../services/toxicityService';
+import { getPlantImageSource } from '../services/plantAssets';
 
 export interface ShareCardProps {
   visible: boolean;
@@ -123,25 +124,28 @@ export const ShareCardModal: React.FC<ShareCardProps> = ({
                 },
               ]}
             >
-              {plant.imageUri ? (
-                <Image
-                  source={{ uri: plant.imageUri }}
-                  style={[
-                    styles.previewImage,
-                    { borderRadius: layout.borderRadius.md },
-                  ]}
-                  resizeMode="cover"
-                />
-              ) : (
-                <View
-                  style={[
-                    styles.previewImageFallback,
-                    { backgroundColor: colors.primaryLight },
-                  ]}
-                >
-                  <Ionicons name="leaf" size={48} color={colors.primary} />
-                </View>
-              )}
+              {(() => {
+                const source = getPlantImageSource(plant.imageUri, plant.id);
+                return source ? (
+                  <Image
+                    source={source}
+                    style={[
+                      styles.previewImage,
+                      { borderRadius: layout.borderRadius.md },
+                    ]}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <View
+                    style={[
+                      styles.previewImageFallback,
+                      { backgroundColor: colors.primaryLight },
+                    ]}
+                  >
+                    <Ionicons name="leaf" size={48} color={colors.primary} />
+                  </View>
+                );
+              })()}
 
               <View style={{ marginTop: spacing.md }}>
                 <Text

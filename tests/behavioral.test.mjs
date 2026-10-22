@@ -1,5 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
 import { colors } from '../theme/colors.ts';
 import {
   getContrastRatio,
@@ -393,3 +395,38 @@ test('Comportamiento real: Visibilidad de la FloatingGlassTabBar según cámara 
   });
   assert.equal(routeExplicitHidden, false, 'Si tabBarVisibleOption=false, la barra DEBE ocultarse');
 });
+
+// ============================================================================
+// 4. COMPORTAMIENTO REAL: IMÁGENES INTEGRADAS Y EMPAQUETADO OFFLINE EN EL APK
+// ============================================================================
+
+test('Comportamiento real: 52 imágenes de plantas integradas físicamente para el APK', () => {
+  const root = process.cwd();
+  const plantsDir = path.join(root, 'assets', 'plants');
+
+  // 1. Verificar existencia del directorio de assets
+  assert.ok(fs.existsSync(plantsDir), 'El directorio assets/plants debe existir');
+
+  // 2. Verificar que existan las 52 imágenes de las plantas
+  const files = fs.readdirSync(plantsDir).filter((f) => f.endsWith('.jpg'));
+  assert.equal(files.length, 52, 'Deben existir exactamente 52 archivos de imagen en assets/plants');
+
+  // 3. Verificar que ninguna imagen esté corrupta o vacía (mínimo 10 KB)
+  for (const f of files) {
+    const stat = fs.statSync(path.join(plantsDir, f));
+    assert.ok(stat.size > 10000, `La imagen ${f} debe tener contenido real (>10 KB, tiene ${stat.size} bytes)`);
+  }
+
+  // 4. Verificar que services/plantAssets.ts exporte el mapa estático completo
+  const assetsCode = fs.readFileSync(path.join(root, 'services', 'plantAssets.ts'), 'utf-8');
+  assert.ok(assetsCode.includes('PLANT_LOCAL_IMAGES'), 'plantAssets.ts debe exportar PLANT_LOCAL_IMAGES');
+  assert.ok(assetsCode.includes('getPlantImageSource'), 'plantAssets.ts debe exportar getPlantImageSource');
+  assert.ok(assetsCode.includes("'monstera': require"), 'plantAssets.ts debe mapear monstera');
+  assert.ok(assetsCode.includes("'pothos': require"), 'plantAssets.ts debe mapear pothos');
+
+  // 5. Verificar que app.json contenga assetBundlePatterns: ["**/*"] para inclusión en el APK
+  const appJson = JSON.parse(fs.readFileSync(path.join(root, 'app.json'), 'utf-8'));
+  assert.ok(Array.isArray(appJson.expo.assetBundlePatterns), 'app.json debe definir assetBundlePatterns');
+  assert.ok(appJson.expo.assetBundlePatterns.includes('**/*'), 'assetBundlePatterns debe incluir "**/*"');
+});
+

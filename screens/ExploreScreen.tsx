@@ -24,6 +24,7 @@ import {
   DEFAULT_FILTERS,
 } from '../services/encyclopediaService';
 import { isPetSafe } from '../services/toxicityService';
+import { getPlantImageSource } from '../services/plantAssets';
 import { useTranslation } from '../i18n';
 
 export const ExploreScreen: React.FC = () => {
@@ -163,13 +164,16 @@ export const ExploreScreen: React.FC = () => {
                       },
                     ]}
                   >
-                    {plant.imageUri ? (
-                      <Image source={{ uri: plant.imageUri }} style={styles.plantThumb} resizeMode="cover" />
-                    ) : (
-                      <View style={[styles.plantThumb, { alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surfaceSecondary }]}>
-                        <Text style={{ fontSize: 26 }}>{plant.avatarEmoji || '🌿'}</Text>
-                      </View>
-                    )}
+                    {(() => {
+                      const source = getPlantImageSource(plant.imageUri, plant.id);
+                      return source ? (
+                        <Image source={source} style={styles.plantThumb} resizeMode="cover" />
+                      ) : (
+                        <View style={[styles.plantThumb, { alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surfaceSecondary }]}>
+                          <Text style={{ fontSize: 26 }}>{plant.avatarEmoji || '🌿'}</Text>
+                        </View>
+                      );
+                    })()}
                     <View style={{ flex: 1, marginLeft: spacing.sm }}>
                       <Text style={[typography.headline, { color: colors.textPrimary }]} numberOfLines={1}>
                         {plant.name}
@@ -420,13 +424,16 @@ export const ExploreScreen: React.FC = () => {
                 },
               ]}
             >
-              {plant.imageUri ? (
-                <Image source={{ uri: plant.imageUri }} style={styles.plantThumb} resizeMode="cover" />
-              ) : (
-                <View style={[styles.plantThumb, { alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surfaceSecondary }]}>
-                  <Text style={{ fontSize: 26 }}>{plant.avatarEmoji || '🌿'}</Text>
-                </View>
-              )}
+              {(() => {
+                const source = getPlantImageSource(plant.imageUri, plant.id);
+                return source ? (
+                  <Image source={source} style={styles.plantThumb} resizeMode="cover" />
+                ) : (
+                  <View style={[styles.plantThumb, { alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surfaceSecondary }]}>
+                    <Text style={{ fontSize: 26 }}>{plant.avatarEmoji || '🌿'}</Text>
+                  </View>
+                );
+              })()}
               <View style={{ flex: 1, marginLeft: spacing.sm }}>
                 <Text style={[typography.headline, { color: colors.textPrimary }]} numberOfLines={1}>
                   {plant.name}
