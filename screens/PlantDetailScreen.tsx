@@ -55,6 +55,7 @@ export const PlantDetailScreen: React.FC = () => {
   const [isSaved, setIsSaved] = useState<boolean>(false);
   const [shareModalVisible, setShareModalVisible] = useState<boolean>(false);
   const [lightMeterVisible, setLightMeterVisible] = useState<boolean>(false);
+  const [imageError, setImageError] = useState<boolean>(false);
 
   useEffect(() => {
     let active = true;
@@ -178,12 +179,13 @@ export const PlantDetailScreen: React.FC = () => {
       >
         {/* HERO CONTAINER CON CONTROLES FLOTANTES DE VIDRIO SOBRE FOTO */}
         <View style={styles.heroContainer}>
-          {plant.imageUri ? (
+          {plant.imageUri && !imageError ? (
             <Image
               source={{ uri: plant.imageUri }}
               style={styles.heroImage}
               accessible
               accessibilityLabel={plant.name}
+              onError={() => setImageError(true)}
             />
           ) : (
             <View style={[styles.heroPlaceholder, { backgroundColor: colors.surfaceSecondary }]}>

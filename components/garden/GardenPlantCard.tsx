@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { StyleSheet, Text, Pressable, View, Image, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '../../theme';
@@ -25,6 +25,7 @@ export const GardenPlantCard: React.FC<GardenPlantCardProps> = ({
 }) => {
   const { colors, layout, typography } = useAppTheme();
   const { t } = useTranslation();
+  const [imageError, setImageError] = useState(false);
 
   const speciesId = resolveSpeciesId(plant.name, plant.scientificName) ?? 'monstera';
   const catalogPlant = getPlantById(speciesId);
@@ -57,12 +58,13 @@ export const GardenPlantCard: React.FC<GardenPlantCardProps> = ({
         ]}
       >
         <View style={styles.topRow}>
-          {photoUri ? (
+          {photoUri && !imageError ? (
             <Image
               source={{ uri: photoUri }}
               style={[styles.plantImage, { borderRadius: layout.borderRadius.md }]}
               accessible
               accessibilityLabel={t('Foto de {nombre}', { nombre: plant.name })}
+              onError={() => setImageError(true)}
             />
           ) : (
             <View
