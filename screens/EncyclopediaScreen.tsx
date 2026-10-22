@@ -41,6 +41,35 @@ import { isPetSafe } from '../services/toxicityService';
 import { resolveSpeciesId, CatalogPlant } from '../services/plantApi';
 import { useTranslation } from '../i18n';
 
+const PlantThumb: React.FC<{ uri?: string; emoji?: string; name: string }> = ({ uri, emoji, name }) => {
+  const { colors, layout } = useAppTheme();
+  const [error, setError] = useState(false);
+
+  if (uri && !error) {
+    return (
+      <Image
+        source={{ uri }}
+        style={[styles.thumb, { borderRadius: layout.borderRadius.md }]}
+        accessible
+        accessibilityLabel={name}
+        onError={() => setError(true)}
+      />
+    );
+  }
+
+  return (
+    <View
+      style={[
+        styles.thumb,
+        styles.avatarPlaceholder,
+        { backgroundColor: colors.primaryLight, borderRadius: layout.borderRadius.md },
+      ]}
+    >
+      <Text style={{ fontSize: 28 }}>{emoji || '🌿'}</Text>
+    </View>
+  );
+};
+
 export const EncyclopediaScreen: React.FC = () => {
   const { colors, layout, spacing, typography } = useAppTheme();
   const insets = useSafeAreaInsets();
@@ -124,24 +153,7 @@ export const EncyclopediaScreen: React.FC = () => {
           accessibilityLabel={`${item.name}, ${item.scientificName}. ${t('Dificultad')} ${item.difficulty}`}
           style={({ pressed }) => [styles.itemRow, pressed && { opacity: 0.85 }]}
         >
-          {item.imageUri ? (
-            <Image
-              source={{ uri: item.imageUri }}
-              style={[styles.thumb, { borderRadius: layout.borderRadius.md }]}
-              accessible
-              accessibilityLabel={item.name}
-            />
-          ) : (
-            <View
-              style={[
-                styles.thumb,
-                styles.avatarPlaceholder,
-                { backgroundColor: colors.primaryLight, borderRadius: layout.borderRadius.md },
-              ]}
-            >
-              <Text style={{ fontSize: 28 }}>{item.avatarEmoji || '🌿'}</Text>
-            </View>
-          )}
+          <PlantThumb uri={item.imageUri} emoji={item.avatarEmoji} name={item.name} />
 
           <View style={styles.itemInfo}>
             <View style={styles.titleRow}>
