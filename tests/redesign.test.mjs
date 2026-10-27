@@ -155,34 +155,31 @@ test('fase 1 design tokens satisfy glassmorphism and material 3 requirements', (
 });
 
 test('fase 2 glass components satisfy architecture and android constraints', () => {
+  const surfacePath = path.join(process.cwd(), 'components', 'Surface.tsx');
   const glassSurfacePath = path.join(process.cwd(), 'components', 'GlassSurface.tsx');
   const glassBackgroundPath = path.join(process.cwd(), 'components', 'GlassBackground.tsx');
   const cardPath = path.join(process.cwd(), 'components', 'Card.tsx');
 
+  assert.ok(fs.existsSync(surfacePath), 'Surface.tsx must exist');
   assert.ok(fs.existsSync(glassSurfacePath), 'GlassSurface.tsx must exist');
   assert.ok(fs.existsSync(glassBackgroundPath), 'GlassBackground.tsx must exist');
   assert.ok(fs.existsSync(cardPath), 'Card.tsx must exist');
 
   const surfaceCode = fs.readFileSync(glassSurfacePath, 'utf-8');
-  assert.ok(surfaceCode.includes('BlurView'), 'GlassSurface must include BlurView');
-  assert.ok(surfaceCode.includes('dimezisBlurViewSdk31Plus'), 'GlassSurface must use dimezisBlurViewSdk31Plus');
-  assert.ok(surfaceCode.includes('useGlass'), 'GlassSurface must use useGlass hook');
-  assert.ok(surfaceCode.includes('pointerEvents="none"'), 'GlassSurface must include tint layer with pointerEvents="none"');
-  assert.ok(surfaceCode.includes('fallbackColor'), 'GlassSurface must support fallbackColor');
+  assert.ok(!surfaceCode.includes('<BlurView'), 'GlassSurface must not mount <BlurView in M3 architecture');
+  assert.ok(surfaceCode.includes('colors.surfaceContainer'), 'GlassSurface must use M3 surfaceContainer');
 
   const bgCode = fs.readFileSync(glassBackgroundPath, 'utf-8');
-  assert.ok(bgCode.includes('BlurTargetView'), 'GlassBackground must include BlurTargetView');
   assert.ok(bgCode.includes('BlurTargetContext'), 'GlassBackground must export BlurTargetContext');
   assert.ok(bgCode.includes('useBlurTarget'), 'GlassBackground must export useBlurTarget');
-  assert.ok(bgCode.includes('LinearGradient'), 'GlassBackground must use LinearGradient');
-  assert.ok(bgCode.includes('backgroundGradient'), 'GlassBackground must use backgroundGradient token');
+  assert.ok(bgCode.includes('contentContainer'), 'GlassBackground must render contentContainer');
 
   const cardCode = fs.readFileSync(cardPath, 'utf-8');
-  assert.ok(cardCode.includes("CardVariant = 'flat' | 'glass'"), 'Card must export flat and glass variants');
+  assert.ok(cardCode.includes("CardVariant = 'elevated' | 'filled' | 'outlined' | 'flat' | 'glass'"), 'Card must export M3 and flat/glass variants');
   assert.ok(cardCode.includes("variant = 'flat'"), 'Card default variant must be flat');
-  assert.ok(cardCode.includes('GlassSurface'), 'Card must integrate GlassSurface for glass variant');
-  assert.ok(cardCode.includes('colors.surface'), 'Card flat variant must use colors.surface');
-  assert.ok(cardCode.includes('colors.border'), 'Card flat variant must use colors.border');
+  assert.ok(cardCode.includes('Surface'), 'Card must integrate Surface');
+  assert.ok(cardCode.includes('colors.surface'), 'Card variant must use colors.surface');
+  assert.ok(cardCode.includes('colors.outlineVariant'), 'Card outlined variant must use colors.outlineVariant');
 });
 
 test('fase 3 base components meet touch target, ripple, and minimalist criteria', () => {
@@ -251,14 +248,14 @@ test('fase 4 navigation satisfies floating glass pill, fine icons, and active la
 
   const navCode = fs.readFileSync(navPath, 'utf-8');
   assert.ok(!navCode.includes('TouchableOpacity'), 'AppNavigator must not use TouchableOpacity');
-  assert.ok(navCode.includes('GlassSurface'), 'AppNavigator must use GlassSurface for floating bar');
+  assert.ok(navCode.includes('M3NavigationBar') || navCode.includes('FloatingGlassTabBar'), 'AppNavigator must provide NavigationBar');
   assert.ok(navCode.includes('useSafeAreaInsets'), 'AppNavigator must use useSafeAreaInsets');
   assert.ok(navCode.includes('insets.bottom'), 'AppNavigator must respect insets.bottom');
 
-  // Pill and border separation
-  assert.ok(navCode.includes('left: 16'), 'AppNavigator must float with horizontal separation');
-  assert.ok(navCode.includes('right: 16'), 'AppNavigator must float with horizontal separation');
-  assert.ok(navCode.includes('borderRadius={layout.borderRadius.full}'), 'AppNavigator must be pill-shaped');
+  // M3 pill indicator and surface container
+  assert.ok(navCode.includes('iconPill'), 'AppNavigator must render M3 iconPill');
+  assert.ok(navCode.includes('colors.surfaceContainer'), 'AppNavigator must use M3 surfaceContainer');
+  assert.ok(navCode.includes('tabLabel'), 'AppNavigator must render M3 tabLabel');
 
   // Fine line outline icons
   assert.ok(navCode.includes('today-outline'));
@@ -266,11 +263,6 @@ test('fase 4 navigation satisfies floating glass pill, fine icons, and active la
   assert.ok(navCode.includes('scan-outline'));
   assert.ok(navCode.includes('compass-outline'));
   assert.ok(navCode.includes('person-outline'));
-
-  // Label only on active tab
-  assert.ok(navCode.includes('isFocused ?'), 'Label must appear conditionally only when focused');
-  assert.ok(navCode.includes('activeChip'), 'Active tab must render active chip');
-  assert.ok(navCode.includes('inactiveIconWrapper'), 'Inactive tab must render icon only');
 
   // Accessibility and touch target >= 48dp
   assert.ok(navCode.includes('minHeight: Math.max(layout.minTouchTarget, 48)'));
@@ -334,10 +326,10 @@ test('fase 6 polish: light/dark themes, contrast over glass, easy mode, and list
   assert.ok(layout.easyMinTouchTarget >= 56);
   assert.ok(layout.minTouchTarget >= 48);
 
-  // 3. Contrast over glass
+  // 3. Contrast over M3 surfaces
   const glassCode = fs.readFileSync(path.join(process.cwd(), 'components', 'GlassSurface.tsx'), 'utf-8');
-  assert.ok(glassCode.includes('defaultTintOverlay'), 'GlassSurface must include background tint layer');
-  assert.ok(glassCode.includes('pointerEvents="none"'), 'Tint overlay must not block interactions');
+  assert.ok(glassCode.includes('colors.surfaceContainer'), 'GlassSurface must use M3 surfaceContainer');
+  assert.ok(!glassCode.includes('<BlurView'), 'GlassSurface must eliminate BlurView in M3');
 
   // 4. List performance: no BlurView inside FlatList item cards
   const gardenCardCode = fs.readFileSync(path.join(process.cwd(), 'components', 'garden', 'GardenPlantCard.tsx'), 'utf-8');

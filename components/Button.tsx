@@ -8,14 +8,27 @@ import {
   TextStyle,
   StyleProp,
   Platform,
+  View,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useAppTheme, fontWeights, FONT_FAMILY } from '../theme';
 
-interface ButtonProps {
+export type ButtonVariant =
+  | 'filled'
+  | 'tonal'
+  | 'outlined'
+  | 'text'
+  | 'elevated'
+  | 'primary'
+  | 'secondary'
+  | 'outline'
+  | 'ghost'
+  | 'premium';
+
+export interface ButtonProps {
   title: string;
   onPress: () => void;
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'premium';
+  variant?: ButtonVariant;
   size?: 'sm' | 'md' | 'lg';
   loading?: boolean;
   disabled?: boolean;
@@ -26,10 +39,15 @@ interface ButtonProps {
   accessibilityHint?: string;
 }
 
+/**
+ * Botón oficial Material Design 3 (Material You)
+ * Cumple con áreas táctiles mínimas >= 48dp, feedback táctil con android_ripple
+ * y soporte completo para estados (default, pressed, disabled, loading).
+ */
 export const Button: React.FC<ButtonProps> = ({
   title,
   onPress,
-  variant = 'primary',
+  variant = 'filled',
   size = 'md',
   loading = false,
   disabled = false,
@@ -39,147 +57,125 @@ export const Button: React.FC<ButtonProps> = ({
   accessibilityLabel,
   accessibilityHint,
 }) => {
-  const { colors, layout, spacing, isDark } = useAppTheme();
+  const { colors, layout, spacing, easyMode } = useAppTheme();
+
+  const isFilled = variant === 'filled' || variant === 'primary';
+  const isTonal = variant === 'tonal' || variant === 'secondary';
+  const isOutlined = variant === 'outlined' || variant === 'outline';
+  const isText = variant === 'text' || variant === 'ghost';
+  const isElevated = variant === 'elevated';
+  const isPremium = variant === 'premium';
 
   const getBackgroundColor = () => {
-    if (disabled) return colors.border;
-    switch (variant) {
-      case 'primary':
-        return colors.primary;
-      case 'secondary':
-        return colors.surfaceSecondary;
-      case 'outline':
-        return 'transparent';
-      case 'ghost':
-        return 'transparent';
-      case 'premium':
-        return colors.premiumGold;
-      default:
-        return colors.primary;
-    }
+    if (disabled) return colors.surfaceContainerHighest;
+    if (isFilled) return colors.primary;
+    if (isTonal) return colors.secondaryContainer;
+    if (isOutlined || isText) return 'transparent';
+    if (isElevated) return colors.surfaceContainerLow;
+    if (isPremium) return colors.premiumGold;
+    return colors.primary;
   };
 
   const getBorderColor = () => {
-    if (variant === 'outline') return isDark ? colors.primary : colors.primary;
+    if (disabled) return 'transparent';
+    if (isOutlined) return colors.outline;
     return 'transparent';
   };
 
   const getTextColor = () => {
     if (disabled) return colors.textTertiary;
-    switch (variant) {
-      case 'primary':
-        return '#FFFFFF';
-      case 'secondary':
-        return colors.textPrimary;
-      case 'outline':
-        return colors.primary;
-      case 'ghost':
-        return colors.primary;
-      case 'premium':
-        return '#1C1C1E';
-      default:
-        return '#FFFFFF';
-    }
+    if (isFilled) return colors.onPrimary;
+    if (isTonal) return colors.onSecondaryContainer;
+    if (isOutlined || isText || isElevated) return colors.primary;
+    if (isPremium) return '#1C1C1E';
+    return colors.onPrimary;
   };
 
   const getRippleColor = () => {
-    switch (variant) {
-      case 'primary':
-        return 'rgba(255, 255, 255, 0.28)';
-      case 'premium':
-        return 'rgba(0, 0, 0, 0.16)';
-      case 'outline':
-      case 'ghost':
-        return colors.primary + '22';
-      case 'secondary':
-      default:
-        return isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.06)';
-    }
+    if (isFilled) return 'rgba(255, 255, 255, 0.24)';
+    return colors.primary + '18';
   };
 
   const getMinHeight = () => {
+    const baseTarget = easyMode ? layout.easyMinTouchTarget : Math.max(layout.minTouchTarget, 48);
     switch (size) {
       case 'sm':
-        return Math.max(layout.minTouchTarget, 48);
+        return Math.max(baseTarget, 48);
       case 'lg':
-        return Math.max(layout.minTouchTarget, 56);
+        return Math.max(baseTarget + 8, 56);
       case 'md':
       default:
-        return Math.max(layout.minTouchTarget, 48);
+        return Math.max(baseTarget, 48);
     }
+  };
+
+  const handlePress = () => {
+    if (disabled || loading) return;
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch {}
+    onPress();
   };
 
   return (
     <Pressable
-      onPress={() => {
-        try {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        } catch {}
-        onPress();
-      }}
+      onPress={handlePress}
       disabled={disabled || loading}
+      accessibilityRole="button"
+      accessibilityState={{ disabled: disabled || loading, busy: loading }}
+      accessibilityLabel={accessibilityLabel || title}
+      accessibilityHint={accessibilityHint}
       android_ripple={{
         color: getRippleColor(),
         borderless: false,
-        foreground: true,
       }}
-      accessibilityRole="button"
-      accessibilityLabel={accessibilityLabel || title}
-      accessibilityHint={accessibilityHint}
-      accessibilityState={{ disabled: disabled || loading }}
       style={({ pressed }) => [
-        styles.button,
+        styles.base,
         {
           minHeight: getMinHeight(),
-          minWidth: layout.minTouchTarget,
-          paddingVertical: size === 'lg' ? 14 : 12,
           backgroundColor: getBackgroundColor(),
           borderColor: getBorderColor(),
-          borderWidth: variant === 'outline' ? 1 : 0,
+          borderWidth: isOutlined ? 1 : 0,
           borderRadius: layout.borderRadius.full,
-          paddingHorizontal: spacing.xl,
-          opacity: pressed && Platform.OS === 'ios' ? 0.78 : disabled || loading ? 0.6 : 1,
+          paddingHorizontal: size === 'sm' ? spacing.md : spacing.xl,
+          opacity: disabled ? 0.6 : pressed && Platform.OS === 'ios' ? 0.8 : 1,
+          elevation: isElevated && !disabled ? 1 : 0,
         },
         style,
       ]}
     >
       {loading ? (
-        <ActivityIndicator
-          size="small"
-          color={variant === 'outline' || variant === 'ghost' ? colors.primary : '#FFFFFF'}
-        />
-      ) : (
-        <>
-          {icon ? <>{icon}</> : null}
-          <Text
-            style={[
-              styles.text,
-              {
-                color: getTextColor(),
-                fontFamily: FONT_FAMILY,
-                fontWeight: fontWeights.medium,
-                marginLeft: icon ? spacing.xs : 0,
-              },
-              textStyle,
-            ]}
-          >
-            {title}
-          </Text>
-        </>
-      )}
+        <ActivityIndicator color={getTextColor()} size="small" style={{ marginRight: icon || title ? 8 : 0 }} />
+      ) : icon ? (
+        <View style={{ marginRight: 8 }}>{icon}</View>
+      ) : null}
+
+      <Text
+        style={[
+          styles.text,
+          {
+            color: getTextColor(),
+            fontSize: size === 'sm' ? 14 : size === 'lg' ? 17 : 15,
+            fontWeight: isFilled || isPremium ? fontWeights.bold : fontWeights.medium,
+          },
+          textStyle,
+        ]}
+      >
+        {title}
+      </Text>
     </Pressable>
   );
 };
 
 const styles = StyleSheet.create({
-  button: {
+  base: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
   },
   text: {
-    fontSize: 16,
+    fontFamily: FONT_FAMILY,
     textAlign: 'center',
     letterSpacing: 0.1,
   },

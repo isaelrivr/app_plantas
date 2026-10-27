@@ -1,94 +1,105 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ViewStyle, StyleProp } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useAppTheme } from '../theme';
-import { useTranslation } from '../i18n';
+import { useAppTheme, fontWeights } from '../theme';
 
-interface ErrorBannerProps {
+export interface ErrorBannerProps {
   message: string;
   onRetry?: () => void;
-  style?: object;
+  retryLabel?: string;
+  style?: StyleProp<ViewStyle>;
 }
 
-export const ErrorBanner: React.FC<ErrorBannerProps> = ({ message, onRetry, style }) => {
-  const { colors, typography, spacing } = useAppTheme();
-  const { t } = useTranslation();
+/**
+ * ErrorBanner M3: Tarjeta tonal de error accesible (errorContainer / onErrorContainer)
+ * con icono vectorial y opción de reintento.
+ */
+export const ErrorBanner: React.FC<ErrorBannerProps> = ({
+  message,
+  onRetry,
+  retryLabel = 'Reintentar',
+  style,
+}) => {
+  const { colors, typography, layout, spacing } = useAppTheme();
 
   return (
     <View
       style={[
         styles.container,
         {
-          backgroundColor: colors.errorLight,
+          backgroundColor: colors.errorContainer,
+          borderRadius: layout.borderRadius.md,
           borderColor: colors.error,
           padding: spacing.md,
         },
         style,
       ]}
-      accessible={true}
       accessibilityRole="alert"
-      accessibilityLabel={`${t('Error')}: ${message}`}
     >
       <View style={styles.contentRow}>
-        <Ionicons name="alert-circle" size={24} color={colors.error} />
+        <Ionicons
+          name="alert-circle"
+          size={22}
+          color={colors.error}
+          style={{ marginRight: spacing.sm }}
+        />
         <Text
           style={[
-            typography.subheadline,
-            {
-              color: colors.textPrimary,
-              flex: 1,
-              marginLeft: spacing.sm,
-            },
+            typography.body,
+            styles.message,
+            { color: colors.onErrorContainer, fontWeight: fontWeights.medium },
           ]}
         >
           {message}
         </Text>
       </View>
 
-      {onRetry && (
+      {onRetry ? (
         <Pressable
           onPress={onRetry}
+          android_ripple={{ color: colors.error + '20', borderless: false }}
           style={({ pressed }) => [
             styles.retryButton,
             {
               backgroundColor: colors.error,
+              borderRadius: layout.borderRadius.full,
+              minHeight: Math.max(layout.minTouchTarget, 48),
               marginTop: spacing.sm,
-              minHeight: 48,
-              overflow: 'hidden',
-              opacity: pressed && Platform.OS === 'ios' ? 0.8 : 1,
             },
+            pressed && { opacity: 0.8 },
           ]}
-          android_ripple={{ color: 'rgba(255,255,255,0.3)' }}
           accessibilityRole="button"
-          accessibilityLabel={t('Reintentar operación')}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          accessibilityLabel={retryLabel}
         >
-          <Ionicons name="refresh" size={16} color="#FFFFFF" />
-          <Text style={[typography.subheadline, { color: '#FFFFFF', fontWeight: '600', marginLeft: 6 }]}>
-            {t('Reintentar')}
+          <Text
+            style={[
+              typography.subheadline,
+              { color: colors.onError, fontWeight: fontWeights.bold },
+            ]}
+          >
+            {retryLabel}
           </Text>
         </Pressable>
-      )}
+      ) : null}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    borderRadius: 24,
     borderWidth: 1,
-    marginVertical: 8,
+    overflow: 'hidden',
   },
   contentRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
+  message: {
+    flex: 1,
+  },
   retryButton: {
-    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 10,
-    borderRadius: 12,
-    minHeight: 48,
+    paddingHorizontal: 16,
   },
 });

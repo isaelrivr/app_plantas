@@ -4,8 +4,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { createBottomTabNavigator, BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
-import { GlassSurface } from '../components/GlassSurface';
-import { useActiveBlurTarget } from '../context/ActiveBlurTargetContext';
 import { TodayScreen } from '../screens/TodayScreen';
 import { GardenScreen } from '../screens/GardenScreen';
 import { ScannerScreen } from '../screens/ScannerScreen';
@@ -70,25 +68,24 @@ const Tab = createBottomTabNavigator<RootTabParamList>();
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 /**
- * Barra de navegación inferior flotante con estética de vidrio (pill).
- * Cumple con todas las directrices de la FASE 4:
- * - Forma de cápsula (pill) separada de los bordes laterales (16dp).
- * - Superficie de vidrio con blur por hardware y fallback suave.
- * - Iconos de línea fina en todas las pestañas.
- * - Etiqueta visible ÚNICAMENTE en la pestaña activa con chip acolchado.
- * - Respeta los insets inferiores de navegación de Android e iOS.
- * - Áreas táctiles mínimas >= 48dp con android_ripple en Android.
+ * Barra de navegación inferior oficial de Material Design 3 (M3 NavigationBar).
+ * - Anclada al borde inferior de la pantalla (edge-to-edge).
+ * - Superficie tonal pura M3 surfaceContainer (cero consumo de GPU por BlurView).
+ * - Indicador activo tipo píldora horizontal (64x32dp) con primaryContainer / onPrimaryContainer.
+ * - Icono y etiqueta siempre visibles con escala labelMedium.
+ * - Feedback táctil nativo con android_ripple.
+ * - Botón central de Escanear destacado como acción limpia.
  */
-function FloatingGlassTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
+export function M3NavigationBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const { colors, layout, isDark } = useAppTheme();
   const { isPremium } = usePremium();
   const { t } = useTranslation();
-  const { activeBlurTargetRef } = useActiveBlurTarget();
 
   const getRouteConfig = (routeName: keyof RootTabParamList): {
     label: string;
     iconName: keyof typeof Ionicons.glyphMap;
+    activeIconName: keyof typeof Ionicons.glyphMap;
     accessibilityLabel: string;
   } => {
     switch (routeName) {
@@ -96,36 +93,42 @@ function FloatingGlassTabBar({ state, descriptors, navigation }: BottomTabBarPro
         return {
           label: t('Hoy'),
           iconName: 'today-outline',
+          activeIconName: 'today',
           accessibilityLabel: t('Pestaña de Hoy'),
         };
       case 'Garden':
         return {
           label: t('Mi Jardín'),
           iconName: 'leaf-outline',
+          activeIconName: 'leaf',
           accessibilityLabel: t('Pestaña de Mi Jardín'),
         };
       case 'Scan':
         return {
           label: t('Escanear'),
           iconName: 'scan-outline',
+          activeIconName: 'scan',
           accessibilityLabel: t('Pestaña de Escanear'),
         };
       case 'Explore':
         return {
           label: t('Explorar'),
           iconName: 'compass-outline',
+          activeIconName: 'compass',
           accessibilityLabel: t('Pestaña de Explorar'),
         };
       case 'Profile':
         return {
           label: isPremium ? t('Yo (Pro)') : t('Yo'),
           iconName: isPremium ? 'sparkles-outline' : 'person-outline',
+          activeIconName: isPremium ? 'sparkles' : 'person',
           accessibilityLabel: t('Pestaña de Yo y Perfil'),
         };
       default:
         return {
           label: String(routeName),
           iconName: 'ellipse-outline',
+          activeIconName: 'ellipse',
           accessibilityLabel: String(routeName),
         };
     }
@@ -152,7 +155,7 @@ function FloatingGlassTabBar({ state, descriptors, navigation }: BottomTabBarPro
   const tabBarStyle = focusedOptions?.tabBarStyle as any;
   const hideOnKeyboard = (focusedOptions?.tabBarHideOnKeyboard as boolean | undefined) ?? true;
 
-  // Oculta la barra con teclado abierto (tabBarHideOnKeyboard), o si la ruta/contexto lo solicitan
+  // Oculta la barra con teclado abierto o si la ruta lo solicita
   const shouldShow = shouldRenderFloatingTabBar({
     hideOnKeyboard,
     isKeyboardVisible,
@@ -165,122 +168,141 @@ function FloatingGlassTabBar({ state, descriptors, navigation }: BottomTabBarPro
     return null;
   }
 
-  const { tabBarBottomMargin, tabBarHeight } = useFloatingBarMetrics();
-  // insets.bottom es respetado centralizadamente vía useFloatingBarMetrics
-  const _bottomInset = insets.bottom;
-  const bottomMargin = tabBarBottomMargin;
+  const barHeight = layout.tabBarHeight + insets.bottom;
 
   return (
-    <View style={[styles.floatingContainer, { bottom: bottomMargin }]} pointerEvents="box-none">
-      <GlassSurface
-        blurTarget={activeBlurTargetRef ?? undefined}
-        borderRadius={layout.borderRadius.full}
-        intensity={55}
-        elevated
-        style={[styles.pillSurface, { minHeight: tabBarHeight }]}
-      >
-        <View style={[styles.tabRow, { minHeight: tabBarHeight }]}>
-          {state.routes.map((route, index) => {
-            const isFocused = state.index === index;
-            const config = getRouteConfig(route.name as keyof RootTabParamList);
-            const { options } = descriptors[route.key];
+    <View
+      style={[
+        styles.navBarContainer,
+        {
+          height: barHeight,
+          paddingBottom: Math.max(insets.bottom, 8),
+          backgroundColor: colors.surfaceContainer,
+          borderTopColor: colors.outlineVariant,
+        },
+      ]}
+      pointerEvents="box-none"
+    >
+      <View style={styles.tabRow}>
+        {state.routes.map((route, index) => {
+          const isFocused = state.index === index;
+          const config = getRouteConfig(route.name as keyof RootTabParamList);
+          const { options } = descriptors[route.key];
 
-            const label =
-              typeof options.tabBarLabel === 'string'
-                ? options.tabBarLabel
-                : config.label;
+          const label =
+            typeof options.tabBarLabel === 'string'
+              ? options.tabBarLabel
+              : config.label;
 
-            const isGold = route.name === 'Profile' && isPremium;
-            const activeColor = isGold ? colors.premiumGold : colors.primary;
-            const iconColor = isFocused ? activeColor : colors.textTertiary;
+          const isGold = route.name === 'Profile' && isPremium;
+          const isScan = route.name === 'Scan';
+          const activeColor = isGold
+            ? colors.premiumGold
+            : isScan
+            ? colors.primary
+            : colors.onSurface;
 
-            const onPress = () => {
-              const event = navigation.emit({
-                type: 'tabPress',
-                target: route.key,
-                canPreventDefault: true,
-              });
+          const iconColor = isFocused
+            ? isScan
+              ? colors.onPrimary
+              : colors.onPrimaryContainer
+            : colors.onSurfaceVariant;
 
-              if (!isFocused && !event.defaultPrevented) {
-                navigation.navigate(route.name);
-              }
-            };
+          const pillBg = isFocused
+            ? isScan
+              ? colors.primary
+              : isGold
+              ? colors.premiumGoldLight
+              : colors.primaryContainer
+            : 'transparent';
 
-            const onLongPress = () => {
-              navigation.emit({
-                type: 'tabLongPress',
-                target: route.key,
-              });
-            };
+          const onPress = () => {
+            const event = navigation.emit({
+              type: 'tabPress',
+              target: route.key,
+              canPreventDefault: true,
+            });
 
-            return (
-              <Pressable
-                key={route.key}
-                onPress={onPress}
-                onLongPress={onLongPress}
-                accessibilityRole="tab"
-                accessibilityState={{ selected: isFocused }}
-                accessibilityLabel={options.tabBarAccessibilityLabel || config.accessibilityLabel}
-                testID={`tab-${route.name.toLowerCase()}`}
-                android_ripple={{
-                  color: colors.primary + '18',
-                  borderless: true,
-                  radius: 28,
-                }}
-                style={({ pressed }) => [
-                  styles.tabItem,
+            if (!isFocused && !event.defaultPrevented) {
+              navigation.navigate(route.name);
+            }
+          };
+
+          const onLongPress = () => {
+            navigation.emit({
+              type: 'tabLongPress',
+              target: route.key,
+            });
+          };
+
+          return (
+            <Pressable
+              key={route.key}
+              onPress={onPress}
+              onLongPress={onLongPress}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: isFocused }}
+              accessibilityLabel={options.tabBarAccessibilityLabel || config.accessibilityLabel}
+              testID={`tab-${route.name.toLowerCase()}`}
+              android_ripple={{
+                color: colors.primary + '18',
+                borderless: true,
+                radius: 32,
+              }}
+              style={({ pressed }) => [
+                styles.tabItem,
+                {
+                  minHeight: Math.max(layout.minTouchTarget, 48),
+                  opacity: pressed && Platform.OS === 'ios' ? 0.75 : 1,
+                },
+              ]}
+            >
+              {/* Indicador de píldora activa M3 */}
+              <View
+                style={[
+                  styles.iconPill,
                   {
-                    minHeight: Math.max(layout.minTouchTarget, 48),
-                    opacity: pressed && Platform.OS === 'ios' ? 0.75 : 1,
+                    backgroundColor: pillBg,
                   },
                 ]}
               >
-                {isFocused ? (
-                  <View
-                    style={[
-                      styles.activeChip,
-                      {
-                        backgroundColor: isDark
-                          ? 'rgba(255, 255, 255, 0.12)'
-                          : colors.primaryLight,
-                        borderRadius: layout.borderRadius.full,
-                      },
-                    ]}
-                  >
-                    <Ionicons name={config.iconName} size={20} color={activeColor} />
-                    <Text
-                      numberOfLines={1}
-                      style={[
-                        styles.activeLabel,
-                        {
-                          color: activeColor,
-                          fontFamily: FONT_FAMILY,
-                          fontWeight: fontWeights.medium,
-                        },
-                      ]}
-                    >
-                      {label}
-                    </Text>
-                  </View>
-                ) : (
-                  <View style={styles.inactiveIconWrapper}>
-                    <Ionicons name={config.iconName} size={22} color={iconColor} />
-                  </View>
-                )}
-              </Pressable>
-            );
-          })}
-        </View>
-      </GlassSurface>
+                <Ionicons
+                  name={isFocused ? config.activeIconName : config.iconName}
+                  size={22}
+                  color={iconColor}
+                />
+              </View>
+
+              {/* Etiqueta de texto siempre visible M3 */}
+              <Text
+                numberOfLines={1}
+                style={[
+                  styles.tabLabel,
+                  {
+                    color: isFocused ? activeColor : colors.onSurfaceVariant,
+                    fontFamily: FONT_FAMILY,
+                    fontWeight: isFocused ? fontWeights.bold : fontWeights.medium,
+                  },
+                ]}
+              >
+                {label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
     </View>
   );
 }
+
+// Alias de retrocompatibilidad
+export const FloatingGlassTabBar = M3NavigationBar;
 
 function BottomTabs() {
   return (
     <Tab.Navigator
       initialRouteName="Today"
-      tabBar={(props) => <FloatingGlassTabBar {...props} />}
+      tabBar={(props) => <M3NavigationBar {...props} />}
       screenOptions={{
         headerShown: false,
         tabBarHideOnKeyboard: true,
@@ -296,11 +318,16 @@ function BottomTabs() {
 }
 
 export const AppNavigator: React.FC = () => {
+  const { colors } = useAppTheme();
+
   return (
     <Stack.Navigator
       screenOptions={{
         headerShown: false,
         animation: 'slide_from_right',
+        contentStyle: {
+          backgroundColor: colors.surface,
+        },
       }}
     >
       <Stack.Screen name="MainTabs" component={BottomTabs} />
@@ -350,47 +377,37 @@ export const AppNavigator: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  floatingContainer: {
+  navBarContainer: {
     position: 'absolute',
-    left: 16,
-    right: 16,
-    alignItems: 'center',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    borderTopWidth: 1,
     zIndex: 100,
-  },
-  pillSurface: {
-    width: '100%',
-    overflow: 'hidden',
+    justifyContent: 'center',
   },
   tabRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 6,
-    paddingHorizontal: 6,
+    justifyContent: 'space-around',
+    paddingTop: 8,
   },
   tabItem: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 2,
+    gap: 4,
   },
-  activeChip: {
-    flexDirection: 'row',
+  iconPill: {
+    width: 64,
+    height: 32,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    minHeight: 48,
-    gap: 6,
   },
-  activeLabel: {
+  tabLabel: {
     fontSize: 12,
-    letterSpacing: 0.1,
-  },
-  inactiveIconWrapper: {
-    minWidth: 48,
-    minHeight: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
+    letterSpacing: 0.2,
+    textAlign: 'center',
   },
 });

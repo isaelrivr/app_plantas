@@ -206,7 +206,7 @@ test('Normal glass surfaces (tab bar, PrimaryActionBar, Snackbar, FAB) use theme
   // 1. GlassSurface.tsx contract
   const glassSurfaceCode = fs.readFileSync(path.join(process.cwd(), 'components', 'GlassSurface.tsx'), 'utf-8');
   assert.ok(glassSurfaceCode.includes("tone?: 'default' | 'overlay' | 'scrim'"), 'GlassSurface must declare tone prop');
-  assert.ok(glassSurfaceCode.includes('!isOverlay && glass.canUseBlur'), 'GlassSurface must not render BlurView on overlay');
+  assert.ok(!glassSurfaceCode.includes('<BlurView'), 'GlassSurface must not render BlurView in M3 architecture');
   assert.ok(glassSurfaceCode.includes('rgba(0, 0, 0, 0.55)'), 'GlassSurface must use dark background for overlay');
   assert.ok(glassSurfaceCode.includes('rgba(255, 255, 255, 0.20)'), 'GlassSurface must use 20% white border for overlay');
 

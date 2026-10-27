@@ -10,7 +10,6 @@ import { GardenProvider, useGarden } from './context/GardenContext';
 import { SettingsProvider, useSettings } from './context/SettingsContext';
 import { FeedbackProvider } from './context/FeedbackContext';
 import { TabBarVisibilityProvider } from './context/TabBarVisibilityContext';
-import { ActiveBlurTargetProvider } from './context/ActiveBlurTargetContext';
 import { OnboardingScreen } from './screens/OnboardingScreen';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { AppLoading } from './components/AppLoading';
@@ -120,13 +119,11 @@ export default function App() {
         <PremiumProvider>
           <GardenProvider>
             <TabBarVisibilityProvider>
-              <ActiveBlurTargetProvider>
-                <FeedbackProvider>
-                  <ErrorBoundary>
-                    <RootGate />
-                  </ErrorBoundary>
-                </FeedbackProvider>
-              </ActiveBlurTargetProvider>
+              <FeedbackProvider>
+                <ErrorBoundary>
+                  <RootGate />
+                </ErrorBoundary>
+              </FeedbackProvider>
             </TabBarVisibilityProvider>
           </GardenProvider>
         </PremiumProvider>

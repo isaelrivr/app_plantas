@@ -1,38 +1,36 @@
 import React, { RefObject } from 'react';
-import { View, StyleSheet, ViewStyle, StyleProp, ViewProps } from 'react-native';
+import { StyleSheet, ViewStyle, StyleProp, ViewProps, View } from 'react-native';
 import type { BlurTint } from 'expo-blur';
 import { useAppTheme } from '../theme';
-import { GlassSurface } from './GlassSurface';
+import { Surface, SurfaceVariant } from './Surface';
 
-export type CardVariant = 'flat' | 'glass';
+export type CardVariant = 'elevated' | 'filled' | 'outlined' | 'flat' | 'glass';
 
 export interface CardProps extends ViewProps {
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
   /**
-   * Variante visual de la tarjeta:
-   * - 'flat': Minimalista, plano, bordes sutiles y limpio fondo sólido (por defecto).
-   * - 'glass': Superficie flotante glassmórfica con desenfoque condicional por hardware.
+   * Variante visual M3 de la tarjeta:
+   * - 'flat' / 'elevated': Superficie tonal M3 con elevación limpia.
+   * - 'filled': Superficie tonal de alto contraste surfaceContainerHighest.
+   * - 'outlined': Superficie con borde sutil outlineVariant sin sombra.
+   * - 'glass': Redireccionado de forma transparente a superficie tonal M3 de alto rendimiento.
    */
   variant?: CardVariant;
-  /** Si tiene sombra de elevación (por defecto false en flat, true en glass) */
+  /** Nivel de elevación si variant="elevated" */
   elevated?: boolean;
-  /** Intensidad de blur si variant="glass" */
+  /** Props de compatibilidad retroactiva (ignoradas para cero impacto de GPU) */
   glassIntensity?: number;
-  /** Tinte de blur si variant="glass" */
   glassTint?: BlurTint;
-  /** Ref opcional al BlurTarget si variant="glass" */
   blurTarget?: RefObject<View | null>;
-  /** Variante de vidrio: 'standard' (70% opacidad) o 'strong' (88% opacidad) */
   glassVariant?: 'standard' | 'strong';
-  /** Forzar fallback sin desenfoque */
   forceFallback?: boolean;
 }
 
 /**
- * Componente de tarjeta unificado con soporte para variantes:
- * - `flat` (por defecto): Minimalismo botánico, plano, limpio y con amplio espacio en blanco.
- * - `glass`: Superficie flotante glassmórfica con desenfoque real por GPU en Android SDK 31+ e iOS.
+ * Componente Card oficial de Material Design 3.
+ * Elimina totalmente el uso de BlurView y GPU de glassmorphism en favor de
+ * superficies tonales Android de alto rendimiento a 60-120 FPS.
  */
 export const Card: React.FC<CardProps> = ({
   children,
@@ -42,72 +40,57 @@ export const Card: React.FC<CardProps> = ({
   glassIntensity,
   glassTint,
   blurTarget,
-  glassVariant = 'standard',
+  glassVariant,
   forceFallback,
   ...rest
 }) => {
   const { colors, layout } = useAppTheme();
 
-  if (variant === 'glass') {
-    const isElevated = elevated !== undefined ? elevated : true;
-    return (
-      <GlassSurface
-        {...rest}
-        variant={glassVariant}
-        intensity={glassIntensity}
-        tint={glassTint}
-        blurTarget={blurTarget}
-        forceFallback={forceFallback}
-        elevated={isElevated}
-        borderRadius={layout.borderRadius.lg}
-        style={[
-          styles.cardBase,
-          {
-            padding: layout.cardPadding,
-          },
-          style,
-        ]}
-      >
-        {children}
-      </GlassSurface>
-    );
+  // Mapear variante a SurfaceVariant M3
+  let surfaceVariant: SurfaceVariant = 'flat';
+  if (variant === 'outlined') {
+    surfaceVariant = 'outlined';
+  } else if (variant === 'filled') {
+    surfaceVariant = 'filled';
+  } else if (variant === 'elevated' || elevated) {
+    surfaceVariant = 'elevated';
+  } else if (variant === 'glass') {
+    surfaceVariant = 'tonal';
+  } else {
+    surfaceVariant = 'flat';
   }
 
-  // Variante 'flat' (minimalista plano por defecto)
-  const isElevated = elevated !== undefined ? elevated : false;
   return (
-    <View
+    <Surface
       {...rest}
+      variant={surfaceVariant}
+      elevation={elevated ? 1 : 0}
+      borderRadius={layout.borderRadius.lg}
       style={[
         styles.cardBase,
-        styles.flatCard,
         {
-          backgroundColor: isElevated ? colors.surfaceElevated : colors.surface,
-          borderColor: colors.border,
-          borderRadius: layout.borderRadius.lg,
           padding: layout.cardPadding,
+          backgroundColor:
+            surfaceVariant === 'outlined'
+              ? colors.surface
+              : surfaceVariant === 'filled'
+              ? colors.surfaceContainerHighest
+              : surfaceVariant === 'tonal'
+              ? colors.surfaceContainerHigh
+              : colors.surfaceContainerLow,
+          borderColor: surfaceVariant === 'outlined' ? colors.outlineVariant : 'transparent',
+          borderWidth: surfaceVariant === 'outlined' ? 1 : 0,
         },
-        isElevated && styles.shadow,
         style,
       ]}
     >
       {children}
-    </View>
+    </Surface>
   );
 };
 
 const styles = StyleSheet.create({
   cardBase: {
     overflow: 'hidden',
-  },
-  flatCard: {
-    borderWidth: 1,
-  },
-  shadow: {
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
   },
 });
