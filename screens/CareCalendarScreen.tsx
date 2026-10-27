@@ -16,7 +16,6 @@ import * as Haptics from 'expo-haptics';
 import { useAppTheme } from '../theme';
 import { useGarden, GardenPlant, CareTask, CareTaskType } from '../context/GardenContext';
 import { Card } from '../components/Card';
-import { GlassBackground } from '../components/GlassBackground';
 import { ConfidenceRing } from '../components/ConfidenceRing';
 import { EmptyState } from '../components/EmptyState';
 import { ErrorBanner } from '../components/ErrorBanner';
@@ -422,7 +421,7 @@ export const CareCalendarScreen: React.FC = () => {
   );
 
   return (
-    <GlassBackground style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         style={{ flex: 1 }}
@@ -651,13 +650,14 @@ export const CareCalendarScreen: React.FC = () => {
           >
             {(['todos', 'riego', 'fertilizante', 'poda', 'trasplante'] as FilterTaskType[]).map((type) => {
               const isActive = filterType === type;
-              const labels: Record<FilterTaskType, string> = {
-                todos: t('🌿 Todas'),
-                riego: t('💧 Riego'),
-                fertilizante: t('🌱 Fertilizante'),
-                poda: t('✂️ Poda'),
-                trasplante: t('🪴 Trasplante'),
+              const configs: Record<FilterTaskType, { label: string; icon: keyof typeof Ionicons.glyphMap }> = {
+                todos: { label: t('Todas'), icon: 'apps-outline' },
+                riego: { label: t('Riego'), icon: 'water-outline' },
+                fertilizante: { label: t('Fertilizante'), icon: 'leaf-outline' },
+                poda: { label: t('Poda'), icon: 'cut-outline' },
+                trasplante: { label: t('Trasplante'), icon: 'flower-outline' },
               };
+              const item = configs[type];
 
               return (
                 <Pressable
@@ -670,26 +670,36 @@ export const CareCalendarScreen: React.FC = () => {
                     styles.filterPill,
                     {
                       backgroundColor: isActive ? colors.primary : colors.surfaceSecondary,
+                      borderColor: isActive ? colors.primary : colors.outlineVariant,
+                      borderWidth: 1,
                       minHeight: 48,
+                      flexDirection: 'row',
+                      alignItems: 'center',
                       overflow: 'hidden',
                       opacity: pressed && Platform.OS === 'ios' ? 0.75 : 1,
                     },
                   ]}
-                  android_ripple={{ color: isActive ? 'rgba(255,255,255,0.3)' : colors.primary + '20' }}
+                  android_ripple={{ color: colors.primaryContainer }}
                   accessibilityRole="tab"
                   accessibilityState={{ selected: isActive }}
-                  accessibilityLabel={t('Filtrar por {filtro}', { filtro: labels[type] })}
+                  accessibilityLabel={t('Filtrar por {filtro}', { filtro: item.label })}
                 >
+                  <Ionicons
+                    name={item.icon}
+                    size={16}
+                    color={isActive ? colors.onPrimaryContainer : colors.textSecondary}
+                    style={{ marginRight: 6 }}
+                  />
                   <Text
                     style={[
                       typography.subheadline,
                       {
-                        color: isActive ? '#FFFFFF' : colors.textPrimary,
+                        color: isActive ? colors.onPrimaryContainer : colors.textPrimary,
                         fontWeight: isActive ? '700' : '500',
                       },
                     ]}
                   >
-                    {labels[type]}
+                    {item.label}
                   </Text>
                 </Pressable>
               );
@@ -794,7 +804,7 @@ export const CareCalendarScreen: React.FC = () => {
         onSave={handleUpdateTask}
         onDelete={handleDeleteTask}
       />
-    </GlassBackground>
+    </View>
   );
 };
 

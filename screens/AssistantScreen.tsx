@@ -16,7 +16,6 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useAppTheme } from '../theme';
-import { GlassBackground } from '../components/GlassBackground';
 import { ChatBubble } from '../components/ChatBubble';
 import { useGarden } from '../context/GardenContext';
 import {
@@ -121,13 +120,13 @@ export const AssistantScreen: React.FC = () => {
   };
 
   return (
-    <GlassBackground style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View
         style={[
           styles.header,
           {
-            backgroundColor: colors.surface,
-            borderBottomColor: colors.border,
+            backgroundColor: colors.surfaceContainer,
+            borderBottomColor: colors.outlineVariant,
             paddingTop: insets.top + (Platform.OS === 'ios' ? 8 : 12),
           },
         ]}
@@ -223,8 +222,8 @@ export const AssistantScreen: React.FC = () => {
           style={[
             styles.inputBar,
             {
-              backgroundColor: colors.surface,
-              borderTopColor: colors.border,
+              backgroundColor: colors.surfaceContainer,
+              borderTopColor: colors.outlineVariant,
               paddingHorizontal: spacing.md,
               paddingBottom: isKeyboardVisible ? 10 : Math.max(insets.bottom, 10),
             },
@@ -239,7 +238,9 @@ export const AssistantScreen: React.FC = () => {
               styles.input,
               {
                 color: colors.textPrimary,
-                backgroundColor: colors.surfaceSecondary,
+                backgroundColor: colors.surfaceContainerHigh,
+                borderColor: colors.outlineVariant,
+                borderWidth: 1,
                 borderRadius: layout.borderRadius.full,
               },
             ]}
@@ -256,18 +257,18 @@ export const AssistantScreen: React.FC = () => {
             style={({ pressed }) => [
               styles.sendButton,
               {
-                backgroundColor: input.trim() && !typing ? colors.primary : colors.border,
+                backgroundColor: input.trim() && !typing ? colors.primary : colors.surfaceContainerHighest,
                 borderRadius: layout.borderRadius.full,
                 overflow: 'hidden',
               },
               pressed && input.trim() && !typing && { opacity: 0.8 },
             ]}
           >
-            <Ionicons name="send" size={18} color="#FFFFFF" />
+            <Ionicons name="send" size={18} color={input.trim() && !typing ? colors.onPrimary : colors.textTertiary} />
           </Pressable>
         </View>
       </KeyboardAvoidingView>
-    </GlassBackground>
+    </View>
   );
 };
 

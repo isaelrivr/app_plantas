@@ -18,7 +18,6 @@ import * as Haptics from 'expo-haptics';
 import { useAppTheme } from '../theme';
 import { useFeedback } from '../context/FeedbackContext';
 import { Card } from '../components/Card';
-import { GlassBackground } from '../components/GlassBackground';
 import { Badge } from '../components/Badge';
 import { MaterialSwitch } from '../components/MaterialSwitch';
 import { useSettings, ThemePreference, AppLanguage, LANGUAGES } from '../context/SettingsContext';
@@ -194,13 +193,13 @@ export const SettingsScreen: React.FC = () => {
   );
 
   return (
-    <GlassBackground style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View
         style={[
           styles.header,
           {
-            backgroundColor: colors.surface,
-            borderBottomColor: colors.border,
+            backgroundColor: colors.surfaceContainer,
+            borderBottomColor: colors.outlineVariant,
             paddingTop: Math.max(insets.top, Platform.OS === 'ios' ? 12 : 16),
           },
         ]}
@@ -910,7 +909,7 @@ export const SettingsScreen: React.FC = () => {
         visible={isAuthModalVisible}
         onClose={() => setIsAuthModalVisible(false)}
       />
-    </GlassBackground>
+    </View>
   );
 };
 

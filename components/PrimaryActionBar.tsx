@@ -3,7 +3,7 @@ import { StyleSheet, Text, Pressable, View, ViewStyle, Platform } from 'react-na
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAppTheme, fontWeights } from '../theme';
 import { Button } from './Button';
-import { GlassSurface } from './GlassSurface';
+import { Surface } from './Surface';
 
 export interface PrimaryActionBarProps {
   primaryTitle: string;
@@ -42,11 +42,11 @@ export const PrimaryActionBar: React.FC<PrimaryActionBarProps> = ({
         style,
       ]}
     >
-      <GlassSurface
+      <Surface
         borderRadius={layout.borderRadius.lg}
-        intensity={60}
-        elevated
-        style={styles.glassContainer}
+        variant="elevated"
+        elevation={3}
+        style={[styles.glassContainer, { backgroundColor: colors.surfaceContainer, borderColor: colors.outlineVariant, borderWidth: 1 }]}
       >
         <View style={[styles.innerContent, { padding: spacing.md }]}>
           <Button
@@ -90,7 +90,7 @@ export const PrimaryActionBar: React.FC<PrimaryActionBarProps> = ({
             </Pressable>
           ) : null}
         </View>
-      </GlassSurface>
+      </Surface>
     </View>
   );
 };

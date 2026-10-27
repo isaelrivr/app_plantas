@@ -36,8 +36,8 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({ message, onQuickReply })
           style={[
             styles.bubble,
             {
-              backgroundColor: isUser ? colors.primary : colors.surface,
-              borderColor: colors.border,
+              backgroundColor: isUser ? colors.primaryContainer : colors.surfaceContainerHigh,
+              borderColor: colors.outlineVariant,
               borderRadius: layout.borderRadius.lg,
             },
             !isUser && styles.bubbleBorder,
@@ -47,7 +47,7 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({ message, onQuickReply })
           <Text
             style={[
               typography.callout,
-              { color: isUser ? '#FFFFFF' : colors.textPrimary },
+              { color: isUser ? colors.onPrimaryContainer : colors.textPrimary },
             ]}
           >
             {message.text}

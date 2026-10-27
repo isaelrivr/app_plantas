@@ -93,8 +93,8 @@ export const HabitatMapScreen: React.FC = () => {
       style={[
         styles.header,
         {
-          backgroundColor: colors.surface,
-          borderBottomColor: colors.border,
+          backgroundColor: colors.surfaceContainer,
+          borderBottomColor: colors.outlineVariant,
           paddingTop: insets.top + (Platform.OS === 'ios' ? 8 : 12),
         },
       ]}

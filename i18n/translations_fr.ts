@@ -56,4 +56,12 @@ export const FR: Record<string, string> = {
   'Acércate a la hoja con manchas, plagas o daño visible': 'Approchez-vous de la feuille présentant des taches, des parasites ou des dommages visibles',
   'Acércate a una hoja con buena luz': 'Approchez-vous d’une feuille bien éclairée',
   'Preguntar': 'Demander',
+  'Proteger mascotas': 'Protéger les animaux',
+  'Fuera de alcance infantil': 'Hors de portée des enfants',
+  'Usar guantes': 'Porter des gants',
+  'Todas': 'Toutes',
+  'Riego': 'Arrosage',
+  'Fertilizante': 'Fertilisant',
+  'Poda': 'Taille',
+  'Trasplante': 'Rempotage',
 };

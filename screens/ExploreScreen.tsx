@@ -18,7 +18,6 @@ import { useFloatingBarMetrics } from '../hooks/useFloatingBarMetrics';
 import { Card } from '../components/Card';
 import { Badge } from '../components/Badge';
 import { ScreenHeader } from '../components/ScreenHeader';
-import { GlassBackground } from '../components/GlassBackground';
 import {
   searchEncyclopedia,
   DEFAULT_FILTERS,
@@ -70,7 +69,7 @@ export const ExploreScreen: React.FC = () => {
   const { tabBarClearance } = useFloatingBarMetrics();
 
   return (
-    <GlassBackground style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView
         style={styles.container}
         contentContainerStyle={{
@@ -91,8 +90,8 @@ export const ExploreScreen: React.FC = () => {
           style={[
             styles.searchBar,
             {
-              backgroundColor: colors.surface,
-              borderColor: colors.border,
+              backgroundColor: colors.surfaceContainerHigh,
+              borderColor: colors.outlineVariant,
               borderRadius: layout.borderRadius.lg,
               minHeight: layout.minTouchTarget,
             },
@@ -452,7 +451,7 @@ export const ExploreScreen: React.FC = () => {
         ))}
       </View>
       </ScrollView>
-    </GlassBackground>
+    </View>
   );
 };
 

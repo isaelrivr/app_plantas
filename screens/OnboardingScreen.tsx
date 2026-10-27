@@ -127,16 +127,17 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
                     } catch {}
                     setLanguage(lang.code);
                   }}
-                  android_ripple={{ color: colors.primaryLight }}
+                  android_ripple={{ color: colors.primaryContainer }}
                   accessibilityRole="radio"
                   accessibilityState={{ selected }}
                   accessibilityLabel={lang.label}
                   style={({ pressed }) => [
                     styles.langCard,
                     {
-                      borderColor: selected ? colors.primary : colors.border,
-                      backgroundColor: selected ? colors.primaryLight : colors.surface,
+                      borderColor: selected ? colors.primary : colors.outlineVariant,
+                      backgroundColor: selected ? colors.primaryContainer : colors.surfaceContainerLow,
                       borderRadius: layout.borderRadius.lg,
+                      borderWidth: selected ? 2 : 1,
                       overflow: 'hidden',
                     },
                     pressed && { opacity: 0.85 },
@@ -145,7 +146,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
                   <Text
                     style={[
                       typography.headline,
-                      { color: selected ? colors.primaryDark : colors.textPrimary },
+                      { color: selected ? colors.onPrimaryContainer : colors.textPrimary },
                     ]}
                   >
                     {lang.label}
@@ -153,7 +154,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
                   {selected ? (
                     <Ionicons name="checkmark-circle" size={24} color={colors.primary} />
                   ) : (
-                    <View style={[styles.radioCircle, { borderColor: colors.border }]} />
+                    <View style={[styles.radioCircle, { borderColor: colors.outlineVariant }]} />
                   )}
                 </Pressable>
               );
@@ -182,16 +183,17 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
                     } catch {}
                     setUserGoal(goal.key);
                   }}
-                  android_ripple={{ color: colors.primaryLight }}
+                  android_ripple={{ color: colors.primaryContainer }}
                   accessibilityRole="radio"
                   accessibilityState={{ selected }}
                   accessibilityLabel={`${goal.title}. ${goal.subtitle}`}
                   style={({ pressed }) => [
                     styles.goalCard,
                     {
-                      borderColor: selected ? colors.primary : colors.border,
-                      backgroundColor: selected ? colors.primaryLight : colors.surface,
+                      borderColor: selected ? colors.primary : colors.outlineVariant,
+                      backgroundColor: selected ? colors.primaryContainer : colors.surfaceContainerLow,
                       borderRadius: layout.borderRadius.lg,
+                      borderWidth: selected ? 2 : 1,
                       overflow: 'hidden',
                     },
                     pressed && { opacity: 0.85 },
@@ -201,21 +203,21 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
                     style={[
                       styles.goalIconBox,
                       {
-                        backgroundColor: selected ? colors.primary : colors.surfaceSecondary,
+                        backgroundColor: selected ? colors.primary : colors.surfaceContainerHigh,
                       },
                     ]}
                   >
                     <Ionicons
                       name={goal.icon}
                       size={24}
-                      color={selected ? '#FFFFFF' : colors.textSecondary}
+                      color={selected ? colors.onPrimary : colors.textSecondary}
                     />
                   </View>
                   <View style={{ flex: 1, marginLeft: spacing.md, marginRight: spacing.xs }}>
                     <Text
                       style={[
                         typography.headline,
-                        { color: selected ? colors.primaryDark : colors.textPrimary },
+                        { color: selected ? colors.onPrimaryContainer : colors.textPrimary },
                       ]}
                     >
                       {goal.title}
@@ -223,7 +225,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
                     <Text
                       style={[
                         typography.caption1,
-                        { color: colors.textSecondary, marginTop: 2, lineHeight: 18 },
+                        { color: selected ? colors.onPrimaryContainer : colors.textSecondary, marginTop: 2, lineHeight: 18 },
                       ]}
                     >
                       {goal.subtitle}
@@ -267,7 +269,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
               style={[
                 styles.dot,
                 {
-                  backgroundColor: i === index ? colors.primary : colors.border,
+                  backgroundColor: i === index ? colors.primary : colors.outlineVariant,
                   width: i === index ? 24 : 8,
                 },
               ]}
@@ -278,10 +280,10 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
         <Button
           title={index < 2 ? t('Siguiente') : t('Empezar')}
           onPress={handleNext}
-          variant="primary"
+          variant="filled"
           size="lg"
           style={{ marginTop: spacing.lg, alignSelf: 'stretch' }}
-          icon={index < 2 ? undefined : <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />}
+          icon={index < 2 ? undefined : <Ionicons name="arrow-forward" size={20} color={colors.onPrimary} />}
         />
       </View>
     </View>

@@ -16,7 +16,7 @@ import { useAppTheme } from '../theme';
 import { useFloatingBarMetrics } from '../hooks/useFloatingBarMetrics';
 import { useTranslation } from '../i18n';
 import { Card } from '../components/Card';
-import { GlassSurface } from '../components/GlassSurface';
+import { Surface } from '../components/Surface';
 import { Button } from '../components/Button';
 import { SegmentedControl } from '../components/SegmentedControl';
 import { PrimaryActionBar } from '../components/PrimaryActionBar';
@@ -197,12 +197,12 @@ export const PlantDetailScreen: React.FC = () => {
             );
           })()}
 
-          {/* CONTROLES FLOTANTES DE VIDRIO SOBRE LA FOTO */}
+          {/* CONTROLES FLOTANTES SOBRE LA FOTO */}
           <View
             style={[styles.floatingControlsOverlay, { paddingTop: insets.top + (Platform.OS === 'ios' ? 8 : 12) }]}
             pointerEvents="box-none"
           >
-            <GlassSurface tone="overlay" variant="strong" borderRadius={24} style={styles.floatingGlassBtn}>
+            <View style={[styles.floatingGlassBtn, { backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: 24, overflow: 'hidden' }]}>
               <Pressable
                 onPress={() => navigation.goBack()}
                 style={({ pressed }) => [styles.glassBtnPressable, pressed && { opacity: 0.7 }]}
@@ -213,10 +213,10 @@ export const PlantDetailScreen: React.FC = () => {
               >
                 <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
               </Pressable>
-            </GlassSurface>
+            </View>
 
             <View style={styles.floatingRightActions}>
-              <GlassSurface tone="overlay" variant="strong" borderRadius={24} style={styles.floatingGlassBtn}>
+              <View style={[styles.floatingGlassBtn, { backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: 24, overflow: 'hidden' }]}>
                 <Pressable
                   onPress={() => setLightMeterVisible(true)}
                   style={({ pressed }) => [styles.glassBtnPressable, pressed && { opacity: 0.7 }]}
@@ -227,9 +227,9 @@ export const PlantDetailScreen: React.FC = () => {
                 >
                   <Ionicons name="sunny-outline" size={22} color="#FFFFFF" />
                 </Pressable>
-              </GlassSurface>
+              </View>
 
-              <GlassSurface tone="overlay" variant="strong" borderRadius={24} style={[styles.floatingGlassBtn, { marginLeft: 8 }]}>
+              <View style={[styles.floatingGlassBtn, { backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: 24, overflow: 'hidden', marginLeft: 8 }]}>
                 <Pressable
                   onPress={() => navigation.navigate('Assistant', { plantName: plant.name })}
                   style={({ pressed }) => [styles.glassBtnPressable, pressed && { opacity: 0.7 }]}
@@ -240,9 +240,9 @@ export const PlantDetailScreen: React.FC = () => {
                 >
                   <Ionicons name="chatbubble-ellipses-outline" size={22} color="#FFFFFF" />
                 </Pressable>
-              </GlassSurface>
+              </View>
 
-              <GlassSurface tone="overlay" variant="strong" borderRadius={24} style={[styles.floatingGlassBtn, { marginLeft: 8 }]}>
+              <View style={[styles.floatingGlassBtn, { backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: 24, overflow: 'hidden', marginLeft: 8 }]}>
                 <Pressable
                   onPress={() => setShareModalVisible(true)}
                   style={({ pressed }) => [styles.glassBtnPressable, pressed && { opacity: 0.7 }]}
@@ -253,7 +253,7 @@ export const PlantDetailScreen: React.FC = () => {
                 >
                   <Ionicons name="share-social-outline" size={22} color="#FFFFFF" />
                 </Pressable>
-              </GlassSurface>
+              </View>
             </View>
           </View>
         </View>
@@ -497,10 +497,11 @@ export const PlantDetailScreen: React.FC = () => {
         style={[styles.floatingAssistantContainer, { bottom: fabBottom }]}
         pointerEvents="box-none"
       >
-        <GlassSurface
-          variant="strong"
+        <Surface
+          variant="elevated"
+          elevation={3}
           borderRadius={layout.borderRadius.full}
-          style={styles.floatingAssistantGlass}
+          style={[styles.floatingAssistantGlass, { backgroundColor: colors.surfaceContainerHigh }]}
         >
           <Pressable
             onPress={() => navigation.navigate('Assistant', { plantName: plant.name })}
@@ -517,7 +518,7 @@ export const PlantDetailScreen: React.FC = () => {
               {t('Preguntar')}
             </Text>
           </Pressable>
-        </GlassSurface>
+        </Surface>
       </View>
 
       {/* BARRA INFERIOR DE ACCIÓN PRINCIPAL */}

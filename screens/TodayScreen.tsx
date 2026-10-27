@@ -20,7 +20,6 @@ import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { StatusPill } from '../components/StatusPill';
-import { GlassBackground } from '../components/GlassBackground';
 import { getLocalWeatherAndRecommendations, WeatherData } from '../services/weatherService';
 import { announce } from '../services/accessibilityService';
 import { useTranslation } from '../i18n';
@@ -109,7 +108,7 @@ export const TodayScreen: React.FC = () => {
   const { tabBarClearance } = useFloatingBarMetrics();
 
   return (
-    <GlassBackground style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView
         style={styles.container}
         contentContainerStyle={{
@@ -135,7 +134,7 @@ export const TodayScreen: React.FC = () => {
                   opacity: pressed && Platform.OS === 'ios' ? 0.7 : 1,
                 },
               ]}
-              android_ripple={{ color: 'rgba(27, 106, 59, 0.12)', borderless: true, radius: 22 }}
+              android_ripple={{ color: colors.primaryContainer, borderless: true, radius: 22 }}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
               <Ionicons name="calendar-outline" size={24} color={colors.primary} />
@@ -160,15 +159,15 @@ export const TodayScreen: React.FC = () => {
             style={({ pressed }) => [
               styles.weatherOneLine,
               {
-                backgroundColor: colors.surfaceSecondary,
+                backgroundColor: colors.surfaceContainer,
                 borderRadius: layout.borderRadius.full,
                 borderWidth: 1,
-                borderColor: colors.border,
+                borderColor: colors.outlineVariant,
                 overflow: 'hidden',
                 opacity: pressed && Platform.OS === 'ios' ? 0.75 : 1,
               },
             ]}
-            android_ripple={{ color: colors.border, borderless: false }}
+            android_ripple={{ color: colors.outlineVariant, borderless: false }}
             accessible
             accessibilityRole="button"
             accessibilityLabel={t('Ubicación: {ciudad}. Clima: {temp} grados, {desc}. Toca para ver ajustes de clima.', {
@@ -209,13 +208,13 @@ export const TodayScreen: React.FC = () => {
         <View
           style={[
             styles.streakBadge,
-            { backgroundColor: colors.primaryLight, borderRadius: layout.borderRadius.full },
+            { backgroundColor: colors.secondaryContainer, borderRadius: layout.borderRadius.full },
           ]}
           accessible
           accessibilityLabel={t('{dias} días cuidando tus plantas', { dias: Math.max(1, stats.currentStreak) })}
         >
           <Ionicons name="flame" size={16} color={colors.accent} style={{ marginRight: 6 }} />
-          <Text style={[typography.footnote, { color: colors.primaryDark, fontWeight: '700' }]}>
+          <Text style={[typography.footnote, { color: colors.onSecondaryContainer, fontWeight: '700' }]}>
             {t('{dias} días cuidando tus plantas', { dias: Math.max(1, stats.currentStreak) })}
           </Text>
         </View>
@@ -224,18 +223,18 @@ export const TodayScreen: React.FC = () => {
       {/* ESTADO CON PLANTAS VS. ESTADO VACÍO */}
       {plants.length === 0 ? (
         <Card
-          variant="flat"
+          variant="filled"
           style={[
             styles.emptyGardenCard,
             {
-              backgroundColor: colors.surface,
-              borderColor: colors.border,
+              backgroundColor: colors.surfaceContainerLow,
+              borderColor: colors.outlineVariant,
               borderWidth: 1,
               borderRadius: layout.borderRadius.lg,
             },
           ]}
         >
-          <View style={[styles.emptyGardenIcon, { backgroundColor: colors.primaryLight }]}>
+          <View style={[styles.emptyGardenIcon, { backgroundColor: colors.primaryContainer }]}>
             <Ionicons name="leaf" size={48} color={colors.primary} />
           </View>
           <Text style={[typography.title2, { color: colors.textPrimary, fontWeight: '800', textAlign: 'center' }]}>
@@ -253,9 +252,9 @@ export const TodayScreen: React.FC = () => {
           <Button
             title={t('Escanea tu primera planta')}
             onPress={() => navigation.navigate('Scan')}
-            variant="primary"
+            variant="filled"
             size="lg"
-            icon={<Ionicons name="camera" size={22} color="#FFFFFF" />}
+            icon={<Ionicons name="camera" size={22} color={colors.onPrimary} />}
             style={styles.hugeButton}
           />
 
@@ -265,7 +264,7 @@ export const TodayScreen: React.FC = () => {
               styles.searchByNameLink,
               { opacity: pressed && Platform.OS === 'ios' ? 0.7 : 1 },
             ]}
-            android_ripple={{ color: 'rgba(27, 106, 59, 0.12)', borderless: true }}
+            android_ripple={{ color: colors.primaryContainer, borderless: true }}
             accessibilityRole="button"
             accessibilityLabel={t('o búscala por nombre')}
             hitSlop={{ top: 12, bottom: 12, left: 16, right: 16 }}
@@ -290,7 +289,7 @@ export const TodayScreen: React.FC = () => {
                 styles.textButton,
                 { opacity: pressed && Platform.OS === 'ios' ? 0.7 : 1 },
               ]}
-              android_ripple={{ color: 'rgba(27, 106, 59, 0.12)', borderless: true }}
+              android_ripple={{ color: colors.primaryContainer, borderless: true }}
               hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
             >
               <Text style={[typography.subheadline, { color: colors.primary, fontWeight: '600' }]}>
@@ -307,19 +306,19 @@ export const TodayScreen: React.FC = () => {
                 return (
                   <Card
                     key={plant.id}
-                    variant="flat"
+                    variant="filled"
                     style={[
                       styles.bigTaskCard,
                       {
-                        backgroundColor: colors.surface,
-                        borderColor: colors.border,
+                        backgroundColor: colors.surfaceContainerLow,
+                        borderColor: colors.outlineVariant,
                         borderWidth: 1,
                         borderRadius: layout.borderRadius.lg,
                       },
                     ]}
                   >
                     <View style={styles.bigTaskHeader}>
-                      <View style={[styles.taskAvatarCircle, { backgroundColor: colors.primaryLight }]}>
+                      <View style={[styles.taskAvatarCircle, { backgroundColor: colors.primaryContainer }]}>
                         <Ionicons name="water" size={26} color={colors.info} />
                       </View>
                       <View style={{ flex: 1, marginLeft: spacing.md }}>
@@ -336,9 +335,9 @@ export const TodayScreen: React.FC = () => {
                     <Button
                       title={t('Ya la regué')}
                       onPress={() => handleWaterSingle(plant)}
-                      variant="primary"
+                      variant="filled"
                       size="lg"
-                      icon={<Ionicons name="checkmark-circle" size={20} color="#FFFFFF" />}
+                      icon={<Ionicons name="checkmark-circle" size={20} color={colors.onPrimary} />}
                       style={{ marginTop: spacing.md }}
                     />
                   </Card>
@@ -347,19 +346,19 @@ export const TodayScreen: React.FC = () => {
             </View>
           ) : (
             <Card
-              variant="flat"
+              variant="filled"
               style={[
                 styles.allDoneCard,
                 {
-                  backgroundColor: colors.surface,
-                  borderColor: colors.border,
+                  backgroundColor: colors.surfaceContainerLow,
+                  borderColor: colors.outlineVariant,
                   borderWidth: 1,
                   borderRadius: layout.borderRadius.lg,
                   marginBottom: spacing.lg,
                 },
               ]}
             >
-              <View style={[styles.allDoneIcon, { backgroundColor: colors.primaryLight }]}>
+              <View style={[styles.allDoneIcon, { backgroundColor: colors.primaryContainer }]}>
                 <Ionicons name="checkmark-circle" size={36} color={colors.primary} />
               </View>
               <Text style={[typography.title3, { color: colors.textPrimary, fontWeight: '700', marginTop: spacing.sm }]}>
@@ -387,7 +386,7 @@ export const TodayScreen: React.FC = () => {
             android_ripple={{ color: 'rgba(255, 255, 255, 0.25)', borderless: false }}
           >
             <Card
-              variant="flat"
+              variant="filled"
               style={[
                 styles.ctaCard,
                 {
@@ -397,18 +396,18 @@ export const TodayScreen: React.FC = () => {
               ]}
             >
               <View style={styles.ctaRow}>
-                <View style={styles.ctaIconCircle}>
+                <View style={[styles.ctaIconCircle, { backgroundColor: colors.primaryContainer }]}>
                   <Ionicons name="camera" size={26} color={colors.primary} />
                 </View>
                 <View style={{ flex: 1, marginLeft: spacing.md }}>
-                  <Text style={[typography.headline, { color: '#FFFFFF', fontWeight: '800' }]}>
+                  <Text style={[typography.headline, { color: colors.onPrimary, fontWeight: '800' }]}>
                     {t('Escanear nueva planta')}
                   </Text>
-                  <Text style={[typography.caption1, { color: 'rgba(255, 255, 255, 0.9)', marginTop: 2 }]}>
+                  <Text style={[typography.caption1, { color: colors.onPrimary, opacity: 0.9, marginTop: 2 }]}>
                     {t('Apunta a una hoja para saber cómo cuidarla')}
                   </Text>
                 </View>
-                <Ionicons name="chevron-forward" size={22} color="#FFFFFF" />
+                <Ionicons name="chevron-forward" size={22} color={colors.onPrimary} />
               </View>
             </Card>
           </Pressable>
@@ -425,20 +424,20 @@ export const TodayScreen: React.FC = () => {
                 opacity: pressed && Platform.OS === 'ios' ? 0.85 : 1,
               },
             ]}
-            android_ripple={{ color: 'rgba(0, 0, 0, 0.06)', borderless: false }}
+            android_ripple={{ color: colors.outlineVariant, borderless: false }}
           >
             <Card
-              variant="flat"
+              variant="filled"
               style={{
-                backgroundColor: colors.surface,
-                borderColor: colors.border,
+                backgroundColor: colors.surfaceContainerLow,
+                borderColor: colors.outlineVariant,
                 borderWidth: 1,
                 borderRadius: layout.borderRadius.lg,
               }}
             >
               <View style={styles.assistantRow}>
-                <View style={[styles.assistantIconCircle, { backgroundColor: colors.primaryLight }]}>
-                  <Ionicons name="chatbubbles" size={22} color={colors.accent} />
+                <View style={[styles.assistantIconCircle, { backgroundColor: colors.primaryContainer }]}>
+                  <Ionicons name="chatbubbles" size={22} color={colors.primary} />
                 </View>
                 <View style={{ flex: 1, marginLeft: spacing.sm }}>
                   <Text style={[typography.headline, { color: colors.textPrimary }]}>
@@ -455,7 +454,7 @@ export const TodayScreen: React.FC = () => {
         </>
       )}
       </ScrollView>
-    </GlassBackground>
+    </View>
   );
 };
 

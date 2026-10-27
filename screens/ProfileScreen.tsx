@@ -21,7 +21,6 @@ import { Badge } from '../components/Badge';
 import { Button } from '../components/Button';
 import { ErrorBanner } from '../components/ErrorBanner';
 import { SkeletonBox } from '../components/SkeletonLoader';
-import { GlassBackground } from '../components/GlassBackground';
 import { useTranslation } from '../i18n';
 
 export const ProfileScreen: React.FC = () => {
@@ -91,7 +90,7 @@ export const ProfileScreen: React.FC = () => {
   const { tabBarClearance } = useFloatingBarMetrics();
 
   return (
-    <GlassBackground style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView
         style={styles.container}
         contentContainerStyle={{
@@ -486,7 +485,7 @@ export const ProfileScreen: React.FC = () => {
         </View>
       </Card>
     </ScrollView>
-  </GlassBackground>
+  </View>
 );
 };
 

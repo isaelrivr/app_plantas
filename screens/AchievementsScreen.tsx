@@ -6,7 +6,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from '../i18n';
 import { useAppTheme } from '../theme';
 import { Card } from '../components/Card';
-import { GlassBackground } from '../components/GlassBackground';
 import { AchievementCard } from '../components/AchievementCard';
 import { SkeletonBox } from '../components/SkeletonLoader';
 import { useGarden } from '../context/GardenContext';
@@ -62,13 +61,13 @@ export const AchievementsScreen: React.FC = () => {
   };
 
   return (
-    <GlassBackground style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View
         style={[
           styles.header,
           {
-            backgroundColor: colors.surface,
-            borderBottomColor: colors.border,
+            backgroundColor: colors.surfaceContainer,
+            borderBottomColor: colors.outlineVariant,
             paddingTop: insets.top + (Platform.OS === 'ios' ? 8 : 12),
           },
         ]}
@@ -196,7 +195,7 @@ export const AchievementsScreen: React.FC = () => {
           </>
         )}
       </ScrollView>
-    </GlassBackground>
+    </View>
   );
 };
 

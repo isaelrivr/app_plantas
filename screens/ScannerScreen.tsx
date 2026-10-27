@@ -32,7 +32,6 @@ import { useTabBarVisibility } from '../context/TabBarVisibilityContext';
 import { isScannerCameraActive } from '../utils/tabBarVisibility';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
-import { GlassSurface } from '../components/GlassSurface';
 import { Badge } from '../components/Badge';
 import { EmptyState } from '../components/EmptyState';
 import { PhotoGuideModal } from '../components/scanner/PhotoGuideModal';
@@ -562,7 +561,7 @@ export const ScannerScreen: React.FC = () => {
       <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
         {/* BARRA SUPERIOR SOBRE LA CÁMARA */}
         <View style={[styles.cameraTopBar, { paddingTop: insets.top + (Platform.OS === 'ios' ? 8 : 12) }]}>
-          <GlassSurface tone="overlay" variant="strong" borderRadius={24} style={styles.topBarGlassBtn}>
+          <View style={[styles.topBarGlassBtn, { backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: 24, overflow: 'hidden' }]}>
             <Pressable
               onPress={() => navigation.goBack()}
               android_ripple={{ color: '#FFFFFF33', borderless: true, radius: 24 }}
@@ -573,7 +572,7 @@ export const ScannerScreen: React.FC = () => {
             >
               <Ionicons name="close" size={26} color="#FFFFFF" />
             </Pressable>
-          </GlassSurface>
+          </View>
 
           {!limits.isPremium ? (
             <Badge
@@ -585,7 +584,7 @@ export const ScannerScreen: React.FC = () => {
             <Badge label={t('PRO')} variant="premium" />
           )}
 
-          <GlassSurface tone="overlay" variant="strong" borderRadius={24} style={styles.topBarGlassBtn}>
+          <View style={[styles.topBarGlassBtn, { backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: 24, overflow: 'hidden' }]}>
             <Pressable
               onPress={toggleTorch}
               android_ripple={{ color: '#FFFFFF33', borderless: true, radius: 24 }}
@@ -600,15 +599,15 @@ export const ScannerScreen: React.FC = () => {
                 color={torchEnabled ? '#FFD54F' : '#FFFFFF'}
               />
             </Pressable>
-          </GlassSurface>
+          </View>
         </View>
 
         {/* SELECTOR DE MODO: IDENTIFICAR vs ENFERMEDADES */}
-        <GlassSurface
-          tone="overlay"
-          variant="strong"
-          borderRadius={28}
-          style={[styles.modeSelectorGlass, { marginTop: isShortScreen ? 6 : 12 }]}
+        <View
+          style={[
+            styles.modeSelectorGlass,
+            { backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: 28, overflow: 'hidden', marginTop: isShortScreen ? 6 : 12 },
+          ]}
         >
           <View style={styles.modeSelectorInner}>
             <Pressable
@@ -685,7 +684,7 @@ export const ScannerScreen: React.FC = () => {
               </Text>
             </Pressable>
           </View>
-        </GlassSurface>
+        </View>
 
         {/* ÁREA CENTRAL CON RETÍCULA Y AYUDA CONTEXTUAL */}
         <View style={styles.centerArea}>
@@ -701,11 +700,11 @@ export const ScannerScreen: React.FC = () => {
           </View>
 
           {/* Ayuda contextual de una sola línea */}
-          <GlassSurface
-            tone="overlay"
-            variant="strong"
-            borderRadius={24}
-            style={[styles.contextTipGlass, { marginTop: isShortScreen ? 12 : 20 }]}
+          <View
+            style={[
+              styles.contextTipGlass,
+              { backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: 24, overflow: 'hidden', marginTop: isShortScreen ? 12 : 20 },
+            ]}
           >
             <Pressable
               onPress={() => setGuideVisible(true)}
@@ -731,7 +730,7 @@ export const ScannerScreen: React.FC = () => {
               </Text>
               <Ionicons name="chevron-forward" size={14} color="#FFFFFF" style={{ marginLeft: 4 }} />
             </Pressable>
-          </GlassSurface>
+          </View>
         </View>
 
         {/* ESTADO DE ANÁLISIS EN CURSO */}
@@ -752,7 +751,7 @@ export const ScannerScreen: React.FC = () => {
           ]}
         >
           {/* LADO IZQUIERDO: GALERÍA */}
-          <GlassSurface tone="overlay" variant="strong" borderRadius={25} style={styles.glassSideBtn}>
+          <View style={[styles.glassSideBtn, { backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: 25, overflow: 'hidden' }]}>
             <Pressable
               onPress={handlePickGallery}
               android_ripple={{ color: '#FFFFFF33', borderless: true, radius: 25 }}
@@ -763,7 +762,7 @@ export const ScannerScreen: React.FC = () => {
             >
               <Ionicons name="images" size={24} color="#FFFFFF" />
             </Pressable>
-          </GlassSurface>
+          </View>
 
           {/* CENTRO: BOTÓN GIGANTE DE CAPTURA */}
           <Pressable
@@ -805,7 +804,7 @@ export const ScannerScreen: React.FC = () => {
           </Pressable>
 
           {/* LADO DERECHO: CAMBIAR CÁMARA */}
-          <GlassSurface tone="overlay" variant="strong" borderRadius={25} style={styles.glassSideBtn}>
+          <View style={[styles.glassSideBtn, { backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: 25, overflow: 'hidden' }]}>
             <Pressable
               onPress={toggleCameraFacing}
               android_ripple={{ color: '#FFFFFF33', borderless: true, radius: 25 }}
@@ -816,7 +815,7 @@ export const ScannerScreen: React.FC = () => {
             >
               <Ionicons name="camera-reverse" size={24} color="#FFFFFF" />
             </Pressable>
-          </GlassSurface>
+          </View>
         </View>
       </View>
 

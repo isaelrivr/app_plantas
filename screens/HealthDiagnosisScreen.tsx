@@ -763,22 +763,25 @@ export const HealthDiagnosisScreen: React.FC = () => {
                   <View style={styles.safetyChipsRow}>
                     {diagnosisResult.treatment.safetyAlert.hasPetsWarning && (
                       <View style={[styles.safetyChip, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : colors.warningLight }]}>
+                        <Ionicons name="paw-outline" size={14} color={colors.warning} style={{ marginRight: 4 }} />
                         <Text style={[typography.caption2, { color: colors.textPrimary, fontWeight: '600' }]}>
-                          {t('🐾 Proteger mascotas')}
+                          {t('Proteger mascotas')}
                         </Text>
                       </View>
                     )}
                     {diagnosisResult.treatment.safetyAlert.hasChildrenWarning && (
                       <View style={[styles.safetyChip, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : colors.warningLight }]}>
+                        <Ionicons name="happy-outline" size={14} color={colors.warning} style={{ marginRight: 4 }} />
                         <Text style={[typography.caption2, { color: colors.textPrimary, fontWeight: '600' }]}>
-                          {t('👶 Fuera de alcance infantil')}
+                          {t('Fuera de alcance infantil')}
                         </Text>
                       </View>
                     )}
                     {diagnosisResult.treatment.safetyAlert.requireGloves && (
                       <View style={[styles.safetyChip, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : colors.warningLight }]}>
+                        <Ionicons name="hand-left-outline" size={14} color={colors.warning} style={{ marginRight: 4 }} />
                         <Text style={[typography.caption2, { color: colors.textPrimary, fontWeight: '600' }]}>
-                          {t('🧤 Usar guantes')}
+                          {t('Usar guantes')}
                         </Text>
                       </View>
                     )}
@@ -995,6 +998,8 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   safetyChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 8,

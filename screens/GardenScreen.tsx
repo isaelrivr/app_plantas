@@ -25,8 +25,7 @@ import { SkeletonBox } from '../components/SkeletonLoader';
 import { ErrorBanner } from '../components/ErrorBanner';
 import { BottomSheet } from '../components/BottomSheet';
 import { ListRow } from '../components/ListRow';
-import { GlassSurface } from '../components/GlassSurface';
-import { GlassBackground } from '../components/GlassBackground';
+import { Surface } from '../components/Surface';
 import { GardenPlantCard } from '../components/garden/GardenPlantCard';
 import { AddPlantModal, ManualPlantData } from '../components/garden/AddPlantModal';
 import { PlantActionSheet } from '../components/garden/PlantActionSheet';
@@ -237,19 +236,19 @@ export const GardenScreen: React.FC = () => {
           style={({ pressed }) => [
             styles.shortcutItem,
             {
-              backgroundColor: colors.surface,
-              borderColor: colors.border,
+              backgroundColor: colors.surfaceContainerLow,
+              borderColor: colors.outlineVariant,
               borderWidth: 1,
               borderRadius: layout.borderRadius.lg,
               overflow: 'hidden',
               opacity: pressed && Platform.OS === 'ios' ? 0.75 : 1,
             },
           ]}
-          android_ripple={{ color: colors.border, borderless: false }}
+          android_ripple={{ color: colors.outlineVariant, borderless: false }}
           accessibilityRole="button"
           accessibilityLabel={t('Abrir {seccion}', { seccion: item.title })}
         >
-          <View style={[styles.shortcutIconCircle, { backgroundColor: colors.surfaceSecondary }]}>
+          <View style={[styles.shortcutIconCircle, { backgroundColor: colors.surfaceContainerHigh }]}>
             <Ionicons name={item.icon as any} size={20} color={item.color} />
           </View>
           <Text style={[typography.caption1, { color: colors.textPrimary, marginTop: 4, fontWeight: '600' }]}>
@@ -337,7 +336,7 @@ export const GardenScreen: React.FC = () => {
   const { fabBottom } = useFloatingBarMetrics();
 
   return (
-    <GlassBackground style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <SectionList
         sections={sections}
         keyExtractor={(item) => item.id}
@@ -433,15 +432,16 @@ export const GardenScreen: React.FC = () => {
         }
       />
 
-      {/* BOTÓN FLOTANTE: + AÑADIR PLANTA (Superficie flotante de vidrio) */}
+      {/* BOTÓN FLOTANTE: + AÑADIR PLANTA (Material 3 Extended FAB) */}
       <View
         style={[styles.fabContainer, { bottom: fabBottom }]}
         pointerEvents="box-none"
       >
-        <GlassSurface
-          variant="strong"
-          borderRadius={layout.borderRadius.full}
-          style={styles.fabGlass}
+        <Surface
+          variant="elevated"
+          elevation={3}
+          borderRadius={16}
+          style={[styles.fabSurface, { backgroundColor: colors.primaryContainer }]}
         >
           <Pressable
             onPress={() => {
@@ -454,16 +454,16 @@ export const GardenScreen: React.FC = () => {
               styles.fabInner,
               { opacity: pressed && Platform.OS === 'ios' ? 0.85 : 1 },
             ]}
-            android_ripple={{ color: colors.primary + '20', borderless: false }}
+            android_ripple={{ color: colors.onPrimaryContainer + '25', borderless: false }}
             accessibilityRole="button"
             accessibilityLabel={t('Añadir planta')}
           >
-            <Ionicons name="add" size={24} color={colors.primary} style={{ marginRight: 6 }} />
-            <Text style={[typography.headline, { color: colors.primary, fontWeight: '700' }]}>
+            <Ionicons name="add" size={24} color={colors.onPrimaryContainer} style={{ marginRight: 6 }} />
+            <Text style={[typography.headline, { color: colors.onPrimaryContainer, fontWeight: '700' }]}>
               {t('Añadir planta')}
             </Text>
           </Pressable>
-        </GlassSurface>
+        </Surface>
       </View>
 
       {/* MODAL: AÑADIR PLANTA (Escanear / Catálogo / Manual) */}
@@ -597,7 +597,7 @@ export const GardenScreen: React.FC = () => {
           )}
         </View>
       </BottomSheet>
-    </GlassBackground>
+    </View>
   );
 };
 
@@ -668,13 +668,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  fabGlass: {
+  fabSurface: {
     overflow: 'hidden',
-    elevation: 6,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 10,
+    elevation: 3,
   },
   fabInner: {
     flexDirection: 'row',

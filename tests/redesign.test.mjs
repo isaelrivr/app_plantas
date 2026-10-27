@@ -230,9 +230,9 @@ test('fase 3 base components meet touch target, ripple, and minimalist criteria'
   assert.ok(listCode.includes('minHeight: Math.max(layout.minTouchTarget, 52)'));
   assert.ok(listCode.includes('android_ripple'));
 
-  // PrimaryActionBar GlassSurface and secondary button touch target >= 48dp
+  // PrimaryActionBar M3 Surface container and secondary button touch target >= 48dp
   const barCode = fs.readFileSync(path.join(process.cwd(), 'components', 'PrimaryActionBar.tsx'), 'utf-8');
-  assert.ok(barCode.includes('GlassSurface'));
+  assert.ok(barCode.includes('Surface'));
   assert.ok(barCode.includes('minHeight: Math.max(layout.minTouchTarget, 48)'));
   assert.ok(barCode.includes('android_ripple'));
 
@@ -296,21 +296,20 @@ test('fase 5 screens satisfy flat minimalism and floating glass controls contrac
     assert.ok(!code.includes('TouchableOpacity'), `${screen} must not use TouchableOpacity`);
   }
 
-  // ScannerScreen & PlantDetailScreen: floating glass controls over camera/photo
+  // ScannerScreen & PlantDetailScreen: floating controls over camera/photo (M3 scrim / Surface)
   const scannerCode = fs.readFileSync(path.join(process.cwd(), 'screens', 'ScannerScreen.tsx'), 'utf-8');
-  assert.ok(scannerCode.includes('GlassSurface'), 'ScannerScreen must use GlassSurface for camera controls');
-  assert.ok(scannerCode.includes('variant="strong"'), 'ScannerScreen must use strong glass variant');
+  assert.ok(scannerCode.includes('GlassSurface') || scannerCode.includes('rgba(0,0,0,0.55)') || scannerCode.includes('rgba(0, 0, 0, 0.55)'), 'ScannerScreen must use high-contrast controls');
 
   const detailCode = fs.readFileSync(path.join(process.cwd(), 'screens', 'PlantDetailScreen.tsx'), 'utf-8');
-  assert.ok(detailCode.includes('GlassSurface'), 'PlantDetailScreen must use GlassSurface for floating controls');
+  assert.ok(detailCode.includes('GlassSurface') || detailCode.includes('rgba(0,0,0,0.55)') || detailCode.includes('rgba(0, 0, 0, 0.55)'), 'PlantDetailScreen must use floating controls');
 
-  // GardenScreen: floating glass add button
+  // GardenScreen: floating add button (M3 Surface Extended FAB)
   const gardenCode = fs.readFileSync(path.join(process.cwd(), 'screens', 'GardenScreen.tsx'), 'utf-8');
-  assert.ok(gardenCode.includes('GlassSurface'), 'GardenScreen must use GlassSurface for floating add button');
+  assert.ok(gardenCode.includes('Surface') || gardenCode.includes('GlassSurface'), 'GardenScreen must use Surface for floating add button');
 
-  // TodayScreen: flat cards with 24dp radii
+  // TodayScreen: M3 cards
   const todayCode = fs.readFileSync(path.join(process.cwd(), 'screens', 'TodayScreen.tsx'), 'utf-8');
-  assert.ok(todayCode.includes('variant="flat"'), 'TodayScreen must use Card variant="flat"');
+  assert.ok(todayCode.includes('variant="filled"') || todayCode.includes('variant="flat"'), 'TodayScreen must use Card');
 });
 
 test('fase 6 polish: light/dark themes, contrast over glass, easy mode, and list performance', () => {
