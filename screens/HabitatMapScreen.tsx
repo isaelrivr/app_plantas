@@ -4,7 +4,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import worldData from 'world-atlas/countries-110m.json';
 import { useTranslation } from '../i18n';
 import { useAppTheme } from '../theme';
 import { EmptyState } from '../components/EmptyState';
@@ -37,6 +36,19 @@ export const HabitatMapScreen: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [resetToken, setResetToken] = useState(0);
+  const [topologyData, setTopologyData] = useState<any>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    import('world-atlas/countries-110m.json')
+      .then((module) => {
+        if (isMounted) setTopologyData(module.default || module);
+      })
+      .catch(() => {});
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     const incoming = route.params?.plantId || (route.params as any)?.speciesId;
@@ -166,10 +178,10 @@ export const HabitatMapScreen: React.FC = () => {
         <View style={styles.legendItem}><View style={[styles.dot, { backgroundColor: isDark ? '#667176' : '#DCE3E6' }]} /><Text style={{ color: colors.textPrimary, fontSize: 14 }}>{t('Resto del mundo')}</Text></View>
       </View>
       <View style={[styles.mapPanel, { backgroundColor: mapColors.ocean }]}>
-        {loading ? <View style={styles.state}><SkeletonBox width="92%" height={240} borderRadius={18} /><Text style={[typography.subheadline, { color: colors.textSecondary, marginTop: spacing.md }]}>{t('Cargando mapa...')}</Text></View>
+        {loading || !topologyData ? <View style={styles.state}><SkeletonBox width="92%" height={240} borderRadius={18} /><Text style={[typography.subheadline, { color: colors.textSecondary, marginTop: spacing.md }]}>{t('Cargando mapa...')}</Text></View>
           : error ? <View style={styles.state}><ErrorBanner message={t('No pudimos cargar el mapa de esta planta.')} onRetry={loadHabitat} /></View>
             : !habitatData || !mappedCountries.length ? <View style={styles.state}><EmptyState iconName="leaf-outline" title={t('Sin registros de origen')} description={t('Aún no tenemos datos sobre el origen de esta especie.')} /></View>
-              : <WorldMap topology={worldData as never} highlightedIds={highlightedIds} focusIds={focusIds} onCountryPress={(country) => { const region = mappedCountries.find((item) => item.id === country.id)?.region; if (region) setSelectedRegion(region); }} colors={mapColors} accessibilitySummary={t('Mapa mundial de {especie}. Regiones nativas: {regiones}', { especie: plant?.name || t('esta planta'), regiones: nativeCountries.map((country) => country.name).join(', ') })} resetToken={resetToken} />}
+              : <WorldMap topology={topologyData as never} highlightedIds={highlightedIds} focusIds={focusIds} onCountryPress={(country) => { const region = mappedCountries.find((item) => item.id === country.id)?.region; if (region) setSelectedRegion(region); }} colors={mapColors} accessibilitySummary={t('Mapa mundial de {especie}. Regiones nativas: {regiones}', { especie: plant?.name || t('esta planta'), regiones: nativeCountries.map((country) => country.name).join(', ') })} resetToken={resetToken} />}
       </View>
       {selectedRegion ? <RegionCard plantName={plant?.name || t('Esta planta')} region={selectedRegion} onClose={() => setSelectedRegion(null)} colors={colors} labels={{ native: t('Zona nativa'), naturalized: t('Naturalizada'), cultivated: t('Cultivada'), close: t('Cerrar detalle de región') }} /> : null}
       <Text style={[styles.hint, { color: colors.textTertiary, marginBottom: Math.max(insets.bottom, 12) }]}>

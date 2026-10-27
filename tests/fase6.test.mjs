@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { calculateSmartWateringInterval } from '../services/wateringAdjustmentService.ts';
 import { PT } from '../i18n/translations_pt.ts';
 import { FR } from '../i18n/translations_fr.ts';
@@ -46,8 +46,10 @@ test('fase 6: smart watering interval adjusts dynamically for pot, season, and w
 });
 
 test('fase 6: botanical catalog is expanded to 32+ common species with full metadata', () => {
-  const plantApiSource = readFileSync('./services/plantApi.ts', 'utf8');
-  const matches = Array.from(plantApiSource.matchAll(/\bid:\s*['"]([a-z0-9-]+)['"]/g)).map((m) => m[1]);
+  const catalogSource = existsSync('./services/botanicalCatalogData.ts')
+    ? readFileSync('./services/botanicalCatalogData.ts', 'utf8')
+    : readFileSync('./services/plantApi.ts', 'utf8');
+  const matches = Array.from(catalogSource.matchAll(/\bid:\s*['"]([a-z0-9-]+)['"]/g)).map((m) => m[1]);
   const uniqueSpecies = Array.from(new Set(matches));
 
   assert.ok(

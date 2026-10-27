@@ -14,7 +14,6 @@
     "babel-preset-expo": "~57.0.0",
     "d3-geo": "^3.1.1",
     "expo": "~57.0.30",
-    "expo-blur": "~57.0.3",
     "expo-camera": "~57.0.6",
     "expo-crypto": "~57.0.4",
     "expo-dev-client": "~57.0.20",

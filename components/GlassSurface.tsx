@@ -1,6 +1,6 @@
 import React, { RefObject } from 'react';
 import { View, StyleSheet, ViewStyle, StyleProp, ViewProps } from 'react-native';
-import type { BlurTint } from 'expo-blur';
+import type { BlurTint } from '../theme/useGlass';
 import { useAppTheme } from '../theme';
 
 export interface GlassSurfaceProps extends ViewProps {

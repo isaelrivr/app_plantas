@@ -1,7 +1,15 @@
 import { Platform } from 'react-native';
-import type { BlurTint } from 'expo-blur';
 import { useAppTheme } from './useTheme';
 import { layout } from './spacing';
+
+export type BlurTint =
+  | 'light'
+  | 'dark'
+  | 'default'
+  | 'systemMaterial'
+  | 'systemThinMaterial'
+  | 'systemUltraThinMaterial'
+  | 'systemChromeMaterial';
 
 export interface UseGlassOptions {
   /** Intensidad personalizada del desenfoque */
