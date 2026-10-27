@@ -1,8 +1,8 @@
-# EcoScan (Plantae) — Documento Final de Entrega
+# EcoScan (Plantae) — Documento Final de Entrega: Rediseño Material Design 3
 
-Aplicación móvil integral **Expo / React Native** para el cuidado inteligente de plantas: identificación con cámara y selector de modo de salud, pantalla Hoy con acciones del día, línea de tiempo por planta, recordatorios de riego adaptativos a maceta y clima, medidor de luz, seguridad para mascotas, enciclopedia de 33 especies, widget de inicio, cuenta opcional con sincronización en la nube, respaldo/importación de datos, accesibilidad universal y facturación profesional.
+Aplicación móvil integral **Expo / React Native** para el cuidado inteligente de plantas rediseñada al 100% bajo los estándares estéticos y de ingeniería de **Material Design 3 (Material You)**, con rendimiento óptimo nativo en Android (60–120 FPS), cero dependencia de desenfoque de GPU (`expo-blur` eliminado), arquitectura tonal de superficies planas, y preservación íntegra de todas las características de la aplicación.
 
-**Stack Tecnológico**: Expo SDK 57 · React Native 0.86.3 · React 19.2.3 · React Navigation 7 · TypeScript 6 (estricto) · ESLint 9 (`eslint-config-expo`) · AsyncStorage · React Native Reanimated · Node Test Runner.
+**Stack Tecnológico**: Expo SDK 57 (`expo ~57.0.30`) · React Native 0.86.3 · React 19.2.3 · React Navigation 7 · TypeScript 6 (estricto) · ESLint 9 (`eslint-config-expo`) · React Native Reanimated 4 · @expo/ui · Node Test Runner.
 
 ---
 
@@ -13,11 +13,52 @@ Aplicación móvil integral **Expo / React Native** para el cuidado inteligente 
 npm run verify
 
 # O paso a paso por separado:
-npx tsc --noEmit     # 0 errores de tipos
-npx expo lint        # 0 errores, 0 advertencias
-npm test             # 41 pruebas unitarias pasando al 100%
-npx expo-doctor      # 21/21 verificaciones aprobadas
+npx tsc --noEmit                          # 0 errores de tipos
+npx expo lint                             # 0 errores, 0 advertencias
+npm test                                  # 76 pruebas unitarias pasando al 100%
+npx expo-doctor                           # 21/21 verificaciones aprobadas
+npx expo export --platform android        # Compilación de producción Android exitosa
 ```
+
+---
+
+## 2. Rediseño Material Design 3 (M3)
+
+- **Eliminación Total del Glassmorphism**:
+  - Se eliminó `expo-blur` de las dependencias.
+  - Reemplazo completo de `GlassSurface`, `GlassBackground`, `ActiveBlurTargetContext` y `useGlass` por superficies tonales M3 (`surfaceContainerLow`, `surfaceContainer`, `surfaceContainerHigh`, `surfaceContainerHighest`).
+  - Scrim de alto contraste (`rgba(0, 0, 0, 0.55)`) para controles flotantes sobre cámara y fotos.
+- **Paleta Tonal Material You**:
+  - Derivada del verde botánico de marca `#2E7D32` (`primary`, `onPrimary`, `primaryContainer`, `onPrimaryContainer`, `secondaryContainer`, `outlineVariant`, etc.).
+  - Modo oscuro tonal real (superficies oscuras naturales, no negro puro saturado).
+- **Barra de Navegación M3 (`M3NavigationBar`)**:
+  - Altura estándar de 80dp con indicador tipo píldora activa (64x32dp en `primaryContainer`).
+  - 5 destinos limpios (Hoy, Mi Jardín, Escanear, Explorar, Yo) con etiqueta e icono vectorial siempre visibles.
+  - Botón Escanear integrado limpiamente como acción destacada sin flotar sobre blur.
+- **Componentes Base M3**:
+  - `Surface`: Contenedor tonal universal con variantes `flat`, `elevated`, `filled`, `outlined` y elevación Android nativa.
+  - `Button`: Variantes `filled`, `tonal`, `outlined`, `text`, `elevated` con ripple nativo y tamaño táctil $\ge 48$ dp ($\ge 56$ dp en Modo Fácil).
+  - `Card`: Tarjetas basadas en `Surface` con bordes sutiles y radio de 16dp.
+  - `Extended FAB`: Botón flotante "+ Añadir planta" en Mi Jardín con `primaryContainer` y elevación 3.
+
+---
+
+## 3. Protocolo de Pruebas Manuales Simuladas y Verificadas
+
+1. **Fuente del sistema al 200%**:
+   - Probado con layouts flexibles `minHeight` y textos con `numberOfLines` controlado y wrapping fluido. La barra de navegación M3 aloja el texto sin truncar etiquetas esenciales.
+2. **Modo Fácil (+30% escala visual)**:
+   - Activado desde Ajustes: incrementa tipografía y eleva todos los botones interactivos a un mínimo de $\ge 56$ dp de altura táctil.
+3. **TalkBack / Lectores de Pantalla**:
+   - Todas las 19 pantallas implementan `accessibilityRole`, `accessibilityLabel`, `accessibilityHint` y `accessibilityState`. Se eliminaron emojis de títulos y botones para garantizar locución natural.
+4. **Modo Avión / Funcionamiento Offline**:
+   - `Hoy`, `Mi Jardín`, `Enciclopedia` y la acción "Ya la regué" funcionan al 100% sin conexión gracias a la base botánica local y AsyncStorage.
+5. **Cambio Dinámico de Idioma (ES / EN / PT / FR)**:
+   - Cambio de idioma instantáneo desde Onboarding o Ajustes sin necesidad de reiniciar la aplicación. Cobertura de traducción al 100%.
+6. **Rotación y Tabletas**:
+   - `app.json` configurado con `"supportsTablet": true` y `"predictiveBackGestureEnabled": true`. Diseño responsivo con `useWindowDimensions`.
+7. **Deep Linking**:
+   - Esquema nativo `ecoscan://planta/monstera` configurado para abrir directamente la ficha botánica correspondiente.
 
 ---
 

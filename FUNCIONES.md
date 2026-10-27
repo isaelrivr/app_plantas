@@ -1,10 +1,10 @@
-# Inventario Funcional y Tabla Comparativa de EcoScan (Plantae)
+# Inventario Funcional y Tabla Comparativa de EcoScan (Plantae) — Rediseño Material 3
 
-Documento maestro del producto tras la culminación de las **Fases 1 a 6**.
+Documento maestro del producto tras la culminación del rediseño **Material Design 3 (Material You)** y las Fases A a F.
 
 Leyenda de estado:
-- `Completa`: Flujo punta a punta implementado con interfaz accesible, estados vacíos/error, diseño responsivo y persistencia local/remota.
-- `Probada`: Verificada con 40 pruebas unitarias automatizadas (`npm test`), validación estática estricta de compilador (`npx tsc --noEmit`), linter oficial (`npx expo lint`) y diagnóstico de salud del SDK (`npx expo-doctor`).
+- `Completa`: Flujo punta a punta implementado con interfaz nativa M3, estados vacíos/carga/error, diseño responsivo y persistencia local/remota.
+- `Probada`: Verificada con 76 pruebas unitarias automatizadas (`npm test`), compilación limpia (`npx tsc --noEmit`), linter oficial (`npx expo lint`), diagnóstico de salud del SDK (`npx expo-doctor`) y exportación de producción Android (`npx expo export --platform android`).
 
 ---
 
