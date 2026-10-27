@@ -84,10 +84,10 @@ test('FASE D.5 & D.6: GlassSurface single tint layer, calibrated Android reducti
   assert.ok(surfaceCode.includes('blurReductionFactor={Platform.OS === \'android\' ? 4 : undefined}'), 'GlassSurface calibrates blurReductionFactor on Android');
   assert.ok(surfaceCode.includes('fallbackColor'), 'GlassSurface maintains fallbackColor for Android < 12 and Easy Mode');
 
-  // useGlass hook enforces fallback conditions
+  // useGlass hook enforces M3 zero-blur policy for maximum 60-120 FPS Android performance
   const useGlassPath = path.join(process.cwd(), 'theme', 'useGlass.ts');
   const useGlassCode = fs.readFileSync(useGlassPath, 'utf-8');
-  assert.ok(useGlassCode.includes('androidVersion >= 31'), 'useGlass requires Android 12+ (SDK 31+) for RenderEffect');
-  assert.ok(useGlassCode.includes('isMotionReduced'), 'useGlass disables blur when motion is reduced');
-  assert.ok(useGlassCode.includes('easyMode'), 'useGlass disables blur in Easy Mode');
+  assert.ok(useGlassCode.includes('canUseBlur = false'), 'useGlass disables blur globally for M3 tonal elevation');
+  assert.ok(useGlassCode.includes('intensity = 0'), 'useGlass sets intensity to 0');
+  assert.ok(useGlassCode.includes('fallbackColor:'), 'useGlass provides M3 tonal fallback');
 });

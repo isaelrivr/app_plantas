@@ -113,8 +113,24 @@ test('fase 1 design tokens satisfy glassmorphism and material 3 requirements', (
   assert.ok(colors.dark.glassFallback, 'colors.dark.glassFallback must exist');
   assert.equal(colors.dark.backgroundGradient.length, 2);
 
-  // Spacing: borderRadius.lg raised to 24 and layout.glass defined
-  assert.equal(layout.borderRadius.lg, 24, 'layout.borderRadius.lg must be 24');
+  // M3 Color Tokens: primaryContainer and surfaceContainer levels
+  assert.ok(colors.light.primaryContainer, 'colors.light.primaryContainer must exist');
+  assert.ok(colors.light.onPrimaryContainer, 'colors.light.onPrimaryContainer must exist');
+  assert.ok(colors.light.surfaceContainer, 'colors.light.surfaceContainer must exist');
+  assert.ok(colors.light.surfaceContainerHigh, 'colors.light.surfaceContainerHigh must exist');
+  assert.ok(colors.light.outlineVariant, 'colors.light.outlineVariant must exist');
+
+  assert.ok(colors.dark.primaryContainer, 'colors.dark.primaryContainer must exist');
+  assert.ok(colors.dark.onPrimaryContainer, 'colors.dark.onPrimaryContainer must exist');
+  assert.ok(colors.dark.surfaceContainer, 'colors.dark.surfaceContainer must exist');
+  assert.ok(colors.dark.surfaceContainerHigh, 'colors.dark.surfaceContainerHigh must exist');
+  assert.ok(colors.dark.outlineVariant, 'colors.dark.outlineVariant must exist');
+
+  // Spacing: M3 standard borderRadius tokens (8/12/16/28 dp)
+  assert.equal(layout.borderRadius.sm, 8, 'layout.borderRadius.sm must be 8');
+  assert.equal(layout.borderRadius.md, 12, 'layout.borderRadius.md must be 12');
+  assert.equal(layout.borderRadius.lg, 16, 'layout.borderRadius.lg must be 16 (M3 card)');
+  assert.equal(layout.borderRadius.xl, 28, 'layout.borderRadius.xl must be 28 (M3 bottom sheet / dialog)');
   assert.ok(layout.glass, 'layout.glass must exist');
   assert.equal(typeof layout.glass.intensity, 'number');
   assert.equal(layout.glass.borderWidth, 1);
