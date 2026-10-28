@@ -2,12 +2,12 @@ import React, { createContext, useContext, useRef, RefObject } from 'react';
 import { View, StyleSheet, StyleProp, ViewStyle, ViewProps } from 'react-native';
 import { useAppTheme } from '../theme';
 
-export const BlurTargetContext = createContext<RefObject<View | null> | null>(null);
+export const BlurTargetContext = createContext<RefObject<React.ElementRef<typeof View> | null> | null>(null);
 
 /**
  * Hook retrocompatible para obtener la referencia al BlurTarget.
  */
-export const useBlurTarget = (): RefObject<View | null> | undefined => {
+export const useBlurTarget = (): RefObject<React.ElementRef<typeof View> | null> | undefined => {
   const target = useContext(BlurTargetContext);
   return target ?? undefined;
 };
@@ -16,7 +16,7 @@ export interface GlassBackgroundProps extends ViewProps {
   children?: React.ReactNode;
   style?: StyleProp<ViewStyle>;
   gradientColors?: readonly [string, string] | [string, string];
-  targetRef?: RefObject<View | null>;
+  targetRef?: RefObject<React.ElementRef<typeof View> | null>;
   contentContainerStyle?: StyleProp<ViewStyle>;
   flat?: boolean;
 }
@@ -33,7 +33,7 @@ export const GlassBackground: React.FC<GlassBackgroundProps> = ({
   ...rest
 }) => {
   const { colors } = useAppTheme();
-  const internalRef = useRef<View | null>(null);
+  const internalRef = useRef<React.ElementRef<typeof View> | null>(null);
 
   return (
     <BlurTargetContext.Provider value={internalRef}>

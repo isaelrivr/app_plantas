@@ -29,7 +29,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
   const { width } = useWindowDimensions();
   const { t } = useTranslation();
   const { language, setLanguage, userGoal, setUserGoal } = useSettings();
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<React.ElementRef<typeof ScrollView>>(null);
   const [index, setIndex] = useState(0);
 
   const GOALS: { key: UserGoal; title: string; subtitle: string; icon: keyof typeof Ionicons.glyphMap }[] = [

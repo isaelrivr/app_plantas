@@ -39,7 +39,7 @@ export const AssistantScreen: React.FC = () => {
   const plantNameFromRoute = route.params?.plantName;
   const targetPlantName = plantNameFromRoute || plants[0]?.name;
 
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<React.ElementRef<typeof ScrollView>>(null);
   const [messages, setMessages] = useState<AssistantMessage[]>(() => {
     if (plantNameFromRoute) {
       return [

@@ -323,7 +323,7 @@ export const GrowthDiaryScreen: React.FC = () => {
                 {t('Añade tu primera foto para empezar a documentar el crecimiento.')}
               </Text>
             </Card>
-          ) : null
+          ) : undefined
         }
         ListFooterComponent={
           <Button

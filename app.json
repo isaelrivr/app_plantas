@@ -33,7 +33,8 @@
           "sounds": []
         }
       ],
-      "expo-font"
+      "expo-font",
+      "expo-status-bar"
     ],
     "ios": {
       "bundleIdentifier": "com.isaelrivr.ecoscan",
