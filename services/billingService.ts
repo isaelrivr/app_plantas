@@ -1,21 +1,11 @@
 /**
- * EcoScan Billing & Subscriptions Service (RevenueCat)
+ * EcoScan Billing & Subscriptions Service (Simulación Interactiva para Demostración Académica)
  *
- * Integración oficial con RevenueCat (`react-native-purchases`) para compras
- * in-app y suscripciones Premium en iOS y Android.
- *
- * Principios de seguridad y compliance:
- * 1. Pro se concede ÚNICAMENTE si el entitlement 'pro' (o 'EcoScan Pro') está activo y no expirado.
- * 2. Cero fallbacks de "success: true" en entornos sin claves: maneja errores reales.
- * 3. Precios y ofertas dinámicos obtenidos directamente de RevenueCat (`offerings.current`).
+ * En esta versión demo / académica para presentación universitaria:
+ * 1. No se requiere backend de RevenueCat ni pasarelas de pago reales.
+ * 2. Simula el flujo completo de compra in-app con retardo natural (1.5s) y feedback nativo.
+ * 3. Provee persistencia local de los entitlements Pro seleccionados.
  */
-
-import { Platform } from 'react-native';
-import Purchases, {
-  CustomerInfo,
-  PurchasesOfferings,
-  PurchasesPackage,
-} from 'react-native-purchases';
 
 export type BillingPlanId = 'monthly' | 'annual';
 
@@ -48,34 +38,30 @@ export interface BillingResult {
 export const PRIMARY_ENTITLEMENT_ID = 'pro';
 export const FALLBACK_ENTITLEMENT_ID = 'EcoScan Pro';
 
-// Claves públicas de RevenueCat (configurables vía variables de entorno públicas)
-export const REVENUECAT_KEYS = {
-  apple: (process.env.EXPO_PUBLIC_RC_APPLE ?? '').trim(),
-  google: (process.env.EXPO_PUBLIC_RC_GOOGLE ?? '').trim(),
-};
-
 export const DEFAULT_BILLING_PLANS: BillingPlan[] = [
   {
     id: 'annual',
-    title: 'Anual',
+    title: 'Anual (Demo)',
     productId: 'ecoscan_pro_annual',
-    priceLabel: 'Consultar precio',
-    pricePerMonthLabel: 'Mejor tarifa anual',
+    priceLabel: '$399 MXN',
+    pricePerMonthLabel: '$33.25 MXN / mes',
     periodLabel: 'por año',
-    savingsLabel: 'Ahorro anual disponible',
+    savingsLabel: 'Ahorra 43% · 7 días de prueba',
     badge: 'Recomendado',
     trialDays: 7,
   },
   {
     id: 'monthly',
-    title: 'Mensual',
+    title: 'Mensual (Demo)',
     productId: 'ecoscan_pro_monthly',
-    priceLabel: 'Consultar precio',
-    pricePerMonthLabel: 'Facturación mensual',
+    priceLabel: '$59 MXN',
+    pricePerMonthLabel: '$59 MXN / mes',
     periodLabel: 'por mes',
     trialDays: 0,
   },
 ];
+
+export const BILLING_PLANS = DEFAULT_BILLING_PLANS;
 
 const INACTIVE: BillingEntitlement = {
   active: false,
@@ -84,246 +70,88 @@ const INACTIVE: BillingEntitlement = {
   expiresAt: null,
 };
 
-let isConfigured = false;
-
-/** Verifica si la plataforma nativa soporta RevenueCat y si hay claves configuradas */
+/** En entorno demo, el servicio de suscripción simulada está siempre disponible */
 export function isBillingAvailable(): boolean {
-  const isNative = Platform.OS === 'ios' || Platform.OS === 'android';
-  const hasKey = Platform.OS === 'ios' ? REVENUECAT_KEYS.apple.length > 0 : REVENUECAT_KEYS.google.length > 0;
-  return isNative && hasKey;
+  return true;
 }
 
-/**
- * Valida un objeto CustomerInfo de RevenueCat y extrae el estado del entitlement.
- * Pro se concede ÚNICAMENTE si 'pro' está activo y su fecha de expiración es válida en el futuro.
- */
-export function extractProEntitlement(customerInfo: CustomerInfo | null | undefined): BillingEntitlement {
-  if (!customerInfo || !customerInfo.entitlements || !customerInfo.entitlements.active) {
-    return { ...INACTIVE };
+/** Extrae el estado del entitlement de un objeto compatible */
+export function extractProEntitlement(data: unknown): BillingEntitlement {
+  if (data && typeof data === 'object' && (data as any).active) {
+    return {
+      active: true,
+      planId: (data as any).planId ?? 'annual',
+      isTrial: !!(data as any).isTrial,
+      expiresAt: (data as any).expiresAt ?? null,
+    };
   }
+  return { ...INACTIVE };
+}
 
-  const entitlement =
-    customerInfo.entitlements.active[PRIMARY_ENTITLEMENT_ID] ??
-    customerInfo.entitlements.active[FALLBACK_ENTITLEMENT_ID];
+/** Inicialización de la simulación de compras */
+export async function initializeBilling(_appUserId?: string): Promise<boolean> {
+  return true;
+}
 
-  if (!entitlement) {
-    return { ...INACTIVE };
-  }
-
-  // Si tiene fecha de expiración, validamos que no esté vencida
-  if (entitlement.expirationDate) {
-    const expiresTime = new Date(entitlement.expirationDate).getTime();
-    if (Number.isFinite(expiresTime) && expiresTime <= Date.now()) {
-      return { ...INACTIVE };
-    }
-  }
-
-  const isTrial = entitlement.periodType === 'TRIAL';
-  const product = (entitlement.productIdentifier || '').toLowerCase();
-  const planId: BillingPlanId = product.includes('annual') || product.includes('year') ? 'annual' : 'monthly';
-
+/** Devuelve los planes dinámicos disponibles para el paywall */
+export async function fetchDynamicPlans(): Promise<{ plans: BillingPlan[]; offerings: any }> {
   return {
-    active: true,
-    planId,
-    isTrial,
-    expiresAt: entitlement.expirationDate ?? null,
+    plans: DEFAULT_BILLING_PLANS,
+    offerings: null,
   };
 }
 
 /**
- * Inicializa el SDK de RevenueCat.
- * Debe ser invocado durante el arranque de la app en App.tsx / PremiumContext.
- */
-export async function initializeBilling(appUserId?: string): Promise<boolean> {
-  const apiKey = Platform.OS === 'ios' ? REVENUECAT_KEYS.apple : REVENUECAT_KEYS.google;
-
-  if (!apiKey || (Platform.OS !== 'ios' && Platform.OS !== 'android')) {
-    isConfigured = false;
-    return false;
-  }
-
-  try {
-    Purchases.configure({
-      apiKey,
-      appUserID: appUserId || undefined,
-    });
-    isConfigured = true;
-    return true;
-  } catch (error) {
-    console.warn('[RevenueCat] No se pudo inicializar Purchases:', error);
-    isConfigured = false;
-    return false;
-  }
-}
-
-/**
- * Obtiene las ofertas vigentes de RevenueCat y las convierte en planes dinámicos con moneda local.
- */
-export async function fetchDynamicPlans(): Promise<{ plans: BillingPlan[]; offerings: PurchasesOfferings | null }> {
-  if (!isConfigured) {
-    return { plans: DEFAULT_BILLING_PLANS, offerings: null };
-  }
-
-  try {
-    const offerings = await Purchases.getOfferings();
-    const current = offerings.current;
-
-    if (!current) {
-      return { plans: DEFAULT_BILLING_PLANS, offerings };
-    }
-
-    const plans: BillingPlan[] = [];
-
-    // Paquete Anual
-    if (current.annual) {
-      const pkg = current.annual;
-      const product = pkg.product;
-      const trialDays = product.introPrice && product.introPrice.periodUnit === 'DAY' ? product.introPrice.periodNumberOfUnits : 7;
-      plans.push({
-        id: 'annual',
-        title: 'Anual',
-        productId: product.identifier,
-        priceLabel: product.priceString,
-        pricePerMonthLabel: `${(product.price / 12).toFixed(2)} ${product.currencyCode} / mes`,
-        periodLabel: 'por año',
-        savingsLabel: 'Mejor valor anual',
-        badge: 'Recomendado',
-        trialDays: trialDays > 0 ? trialDays : 7,
-      });
-    }
-
-    // Paquete Mensual
-    if (current.monthly) {
-      const pkg = current.monthly;
-      const product = pkg.product;
-      plans.push({
-        id: 'monthly',
-        title: 'Mensual',
-        productId: product.identifier,
-        priceLabel: product.priceString,
-        pricePerMonthLabel: `${product.priceString} / mes`,
-        periodLabel: 'por mes',
-        trialDays: 0,
-      });
-    }
-
-    return {
-      plans: plans.length > 0 ? plans : DEFAULT_BILLING_PLANS,
-      offerings,
-    };
-  } catch (error) {
-    console.warn('[RevenueCat] Error al obtener ofertas:', error);
-    return { plans: DEFAULT_BILLING_PLANS, offerings: null };
-  }
-}
-
-/**
- * Inicia la compra de un paquete en RevenueCat.
+ * Simula la compra de un plan en la tienda:
+ * 1. Simula un retardo de red de 1.5s mostrando ActivityIndicator.
+ * 2. Concede Pro con fecha de expiración a 1 año.
  */
 export async function purchasePlan(planId: BillingPlanId): Promise<BillingResult> {
-  if (!isConfigured) {
-    return {
-      success: false,
-      errorMessage: 'El servicio de compras no está configurado. Revisa las credenciales de RevenueCat.',
-      entitlement: { ...INACTIVE },
-    };
-  }
+  // Retardo de 1.5 segundos simulando comunicación con Google Play / App Store
+  await new Promise((resolve) => setTimeout(resolve, 1500));
 
-  try {
-    const offerings = await Purchases.getOfferings();
-    const current = offerings.current;
+  const oneYearFromNow = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
+  const entitlement: BillingEntitlement = {
+    active: true,
+    planId,
+    isTrial: planId === 'annual',
+    expiresAt: oneYearFromNow,
+  };
 
-    if (!current) {
-      return {
-        success: false,
-        errorMessage: 'No hay ofertas de suscripción disponibles en este momento.',
-        entitlement: { ...INACTIVE },
-      };
-    }
-
-    const targetPkg: PurchasesPackage | undefined =
-      planId === 'annual' ? (current.annual ?? undefined) : (current.monthly ?? undefined);
-
-    if (!targetPkg) {
-      return {
-        success: false,
-        errorMessage: `El plan ${planId} no está disponible en la tienda.`,
-        entitlement: { ...INACTIVE },
-      };
-    }
-
-    const { customerInfo } = await Purchases.purchasePackage(targetPkg);
-    const entitlement = extractProEntitlement(customerInfo);
-
-    return {
-      success: entitlement.active,
-      entitlement,
-    };
-  } catch (error: any) {
-    if (error?.userCancelled) {
-      return { success: false, cancelled: true, entitlement: { ...INACTIVE } };
-    }
-    return {
-      success: false,
-      errorMessage: error?.message || 'Error al procesar la compra en la tienda.',
-      entitlement: { ...INACTIVE },
-    };
-  }
+  return {
+    success: true,
+    cancelled: false,
+    entitlement,
+  };
 }
 
 /**
- * Restaura las compras existentes en la tienda.
+ * Simula la restauración de compras anteriores
  */
 export async function restorePurchases(): Promise<BillingResult> {
-  if (!isConfigured) {
-    return {
-      success: false,
-      errorMessage: 'El servicio de compras no está configurado.',
-      entitlement: { ...INACTIVE },
-    };
-  }
+  await new Promise((resolve) => setTimeout(resolve, 1000));
 
-  try {
-    const customerInfo = await Purchases.restorePurchases();
-    const entitlement = extractProEntitlement(customerInfo);
+  const oneYearFromNow = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
+  const entitlement: BillingEntitlement = {
+    active: true,
+    planId: 'annual',
+    isTrial: false,
+    expiresAt: oneYearFromNow,
+  };
 
-    return {
-      success: entitlement.active,
-      entitlement,
-    };
-  } catch (error: any) {
-    return {
-      success: false,
-      errorMessage: error?.message || 'No se pudieron restaurar las compras anteriores.',
-      entitlement: { ...INACTIVE },
-    };
-  }
+  return {
+    success: true,
+    cancelled: false,
+    entitlement,
+  };
 }
 
-/** Obtiene la información del cliente actual */
-export async function getCurrentCustomerInfo(): Promise<CustomerInfo | null> {
-  if (!isConfigured) return null;
-  try {
-    return await Purchases.getCustomerInfo();
-  } catch {
-    return null;
-  }
+export async function getCurrentCustomerInfo(): Promise<any> {
+  return null;
 }
 
-/** Añade un listener para cambios en el estado de la suscripción */
-export function addCustomerInfoUpdateListener(callback: (info: CustomerInfo) => void): () => void {
-  if (!isConfigured) return () => {};
-  try {
-    const listener = (info: CustomerInfo) => callback(info);
-    Purchases.addCustomerInfoUpdateListener(listener);
-    return () => {
-      try {
-        Purchases.removeCustomerInfoUpdateListener(listener);
-      } catch {}
-    };
-  } catch {
-    return () => {};
-  }
+export function addCustomerInfoUpdateListener(_callback: (info: any) => void): () => void {
+  return () => {};
 }
 
 export async function cancelSubscription(): Promise<BillingEntitlement> {
@@ -331,4 +159,3 @@ export async function cancelSubscription(): Promise<BillingEntitlement> {
 }
 
 export const getInactiveEntitlement = (): BillingEntitlement => ({ ...INACTIVE });
-export const BILLING_PLANS = DEFAULT_BILLING_PLANS;

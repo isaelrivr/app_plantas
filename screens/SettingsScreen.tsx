@@ -10,6 +10,7 @@ import {
   Modal,
   TextInput,
   Image,
+  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -60,7 +61,7 @@ export const SettingsScreen: React.FC = () => {
     resetOnboarding,
     resetSettings,
   } = useSettings();
-  const { isPremium, setPremium } = usePremium();
+  const { isPremium, setPremium, resetToFree } = usePremium();
   const { clearGarden, hydrateGarden } = useGarden();
   const { t } = useTranslation();
   const { showToast, confirm } = useFeedback();
@@ -557,6 +558,54 @@ export const SettingsScreen: React.FC = () => {
             </View>
             {isPremium ? <Badge label="PRO" variant="premium" /> : <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />}
           </Pressable>
+
+          {/* ACCIÓN RÁPIDA PARA DEMOSTRACIÓN ACADÉMICA */}
+          <View style={{ marginTop: spacing.sm, paddingTop: spacing.xs, borderTopWidth: 1, borderTopColor: colors.border }}>
+            <Pressable
+              onPress={() => {
+                try { Haptics.selectionAsync(); } catch {}
+                if (isPremium) {
+                  resetToFree();
+                } else {
+                  setPremium(true);
+                  Alert.alert(
+                    t('EcoScan Pro Demo'),
+                    t('¡Suscripción Pro activada de inmediato para la demostración académica!')
+                  );
+                }
+              }}
+              style={({ pressed }) => [
+                {
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  paddingVertical: spacing.xs + 2,
+                  paddingHorizontal: spacing.sm,
+                  borderRadius: layout.borderRadius.md,
+                  backgroundColor: isPremium ? colors.surfaceContainerLow : colors.primaryContainer,
+                  opacity: pressed ? 0.8 : 1,
+                },
+              ]}
+            >
+              <Ionicons
+                name={isPremium ? 'refresh-outline' : 'sparkles'}
+                size={16}
+                color={isPremium ? colors.textSecondary : colors.onPrimaryContainer}
+                style={{ marginRight: 6 }}
+              />
+              <Text
+                style={[
+                  typography.caption1,
+                  {
+                    color: isPremium ? colors.textSecondary : colors.onPrimaryContainer,
+                    fontWeight: '700',
+                  },
+                ]}
+              >
+                {isPremium ? t('Restablecer a versión Free (Demo)') : t('Activar EcoScan Pro para Demo')}
+              </Text>
+            </Pressable>
+          </View>
         </Card>
 
 

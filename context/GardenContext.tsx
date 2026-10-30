@@ -18,6 +18,7 @@ import {
   registerNotificationResponseListener,
   cancelNotificationsForPlant,
   cancelAllNotifications,
+  scheduleWateringReminder,
 } from '../services/notificationService';
 
 export type CareTaskType = 'riego' | 'fertilizante' | 'poda' | 'trasplante';
@@ -273,16 +274,40 @@ export function GardenProvider({ children }: { children: ReactNode }) {
   }, [isHydrated, plants, rooms, statsState]);
 
   const waterPlantToday = (id: string) => {
+    let targetPlantName = '';
+    let targetFrequency = 7;
+
     setPlants((prev) =>
       prev.map((plant) => {
         if (plant.id === id) {
+          targetPlantName = plant.name;
+          targetFrequency = plant.wateringFrequencyDays || 7;
           const now = new Date();
           const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-          return { ...plant, lastWatered: t('Hoy a las {hora}', { hora: timeStr }), isWateredToday: true };
+          const updatedTasks = plant.careTasks?.map((task) => {
+            if (task.type === 'riego') {
+              return {
+                ...task,
+                completed: true,
+                dueDate: t('En {dias} días', { dias: targetFrequency }),
+              };
+            }
+            return task;
+          });
+          return {
+            ...plant,
+            lastWatered: t('Hoy a las {hora}', { hora: timeStr }),
+            isWateredToday: true,
+            careTasks: updatedTasks ?? plant.careTasks,
+          };
         }
         return plant;
       })
     );
+
+    if (targetPlantName) {
+      void scheduleWateringReminder(targetPlantName, targetFrequency, id);
+    }
 
     setStatsState((prev) => {
       const today = dateKey();

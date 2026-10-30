@@ -1,18 +1,23 @@
 /**
- * Plantae Google Gemini AI Proxy Client
+ * EcoScan Google Gemini AI Client (Directo & Proxy para Demostración Académica)
  *
- * Cliente seguro para las capacidades botánicas de IA (Gemini y Plant.id).
+ * Soporta dos modos de operación:
+ * 1. MODO DIRECTO (Recomendado para Demo Universitaria):
+ *    Consume directamente Google AI Studio (API oficial de Gemini) con la clave
+ *    `EXPO_PUBLIC_GEMINI_API_KEY` usando modelos estables y vigentes (`gemini-1.5-flash`).
+ *    Soporta multimodalidad (visión foliar, identificación de especies y diagnóstico).
  *
- * ⚠️ SEGURIDAD CRÍTICA (P0):
- * Ninguna API Key de Gemini ni secretos residen en el cliente de la app.
- * Todas las peticiones se delegan al backend proxy seguro configurado
- * en `EXPO_PUBLIC_PLANT_AI_ENDPOINT`.
+ * 2. MODO PROXY (Backend):
+ *    Si no hay clave directa configurada, delega la petición al proxy de Cloud Functions
+ *    definido en `EXPO_PUBLIC_PLANT_AI_ENDPOINT`.
  */
 
 import type { IdentificationCandidate, PlantIdentificationResult } from './plantApi.ts';
 import type { BotanicalCareSheet, BotanicalCareLevels } from './plantCareCache.ts';
 import type { HealthDiagnosisResult, HealthCategory, HealthSeverity } from './healthService.ts';
 import { loadJSON, saveJSON, STORAGE_KEYS } from './storage.ts';
+import { ApiError, postJson, isApiConfigured } from './apiClient.ts';
+export { ApiError };
 
 const t = (text: string) => text;
 
@@ -28,26 +33,16 @@ export class HealthNoPlantError extends Error {
   }
 }
 
-export class ApiError extends Error {
-  readonly code: string;
-  readonly status: number;
-
-  constructor(code: string, message: string, status: number = 0) {
-    super(message);
-    this.name = 'ApiError';
-    this.code = code;
-    this.status = status;
-  }
-}
-
-const API_BASE_URL = (process.env.EXPO_PUBLIC_PLANT_AI_ENDPOINT ?? '').trim().replace(/\/+$/, '');
+// Configuración de Gemini desde variables de entorno
+const GEMINI_API_KEY = (process.env.EXPO_PUBLIC_GEMINI_API_KEY ?? '').trim();
+const GEMINI_MODEL = (process.env.EXPO_PUBLIC_GEMINI_MODEL ?? 'gemini-1.5-flash').trim();
+const GOOGLE_AI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 
 /**
- * En la arquitectura segura local-first, la IA remota está disponible
- * siempre que el backend proxy de Cloud Functions esté configurado.
+ * La IA está disponible si hay una clave de Gemini directa o un proxy configurado.
  */
 export function isGeminiDirectAvailable(): boolean {
-  return API_BASE_URL.length > 0;
+  return GEMINI_API_KEY.length > 0 || isApiConfigured();
 }
 
 /** Convierte una cadena de texto a un slug seguro y limpio. */
@@ -82,59 +77,85 @@ export function parseGeminiJson<T>(rawText: string): T {
 }
 
 async function postProxyJson<T>(path: string, body: unknown): Promise<T> {
-  if (!isGeminiDirectAvailable()) {
-    throw new ApiError(
-      'NOT_CONFIGURED',
-      t('No se ha configurado el servidor seguro de IA de EcoScan (EXPO_PUBLIC_PLANT_AI_ENDPOINT).'),
-      0
-    );
-  }
-
-  let deviceId = 'dev_anonymous';
-  try {
-    const stored = await loadJSON<string | null>(STORAGE_KEYS.deviceId, null);
-    if (typeof stored === 'string' && stored.length > 0) {
-      deviceId = stored;
-    } else if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-      deviceId = crypto.randomUUID();
-    }
-  } catch {
-    // fallback
-  }
-
-  const requestId =
-    typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
-      ? crypto.randomUUID()
-      : `req_${Date.now()}`;
-
-  const payload = {
-    ...(body && typeof body === 'object' ? body : {}),
-    requestId,
-  };
-
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Device-Id': deviceId,
-    },
-    body: JSON.stringify(payload),
-  });
-
-  if (!response.ok) {
-    const errText = await response.text().catch(() => '');
-    throw new ApiError(
-      `HTTP_${response.status}`,
-      `Error ${response.status} del servidor proxy: ${errText.slice(0, 200)}`,
-      response.status
-    );
-  }
-
-  return (await response.json()) as T;
+  return postJson<T>(path, body);
 }
 
 /**
- * Realiza una consulta al backend proxy de IA sin exponer claves en el cliente.
+ * Realiza una consulta directa a Google AI Studio (GenerateContent API).
+ */
+export async function callGeminiDirect(
+  parts: Array<{ text?: string; inline_data?: { mime_type: string; data: string } }>,
+  systemInstruction?: string,
+  responseSchema?: object
+): Promise<string> {
+  if (!GEMINI_API_KEY) {
+    throw new ApiError(
+      'NO_GEMINI_KEY',
+      'No se ha configurado la clave EXPO_PUBLIC_GEMINI_API_KEY en el archivo .env',
+      401
+    );
+  }
+
+  const url = `${GOOGLE_AI_BASE}/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(GEMINI_API_KEY)}`;
+
+  const body: Record<string, unknown> = {
+    contents: [
+      {
+        role: 'user',
+        parts,
+      },
+    ],
+    generationConfig: {
+      temperature: 0.2,
+      ...(responseSchema ? { responseMimeType: 'application/json', responseSchema } : {}),
+    },
+  };
+
+  if (systemInstruction) {
+    body.systemInstruction = {
+      parts: [{ text: systemInstruction }],
+    };
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 20000);
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+
+    const json = await response.json().catch(() => null);
+
+    if (!response.ok) {
+      const errorMsg = json?.error?.message || `HTTP ${response.status} de Google AI Studio`;
+      throw new ApiError(`GEMINI_${response.status}`, `Error de Gemini AI: ${errorMsg}`, response.status);
+    }
+
+    const text = json?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!text || typeof text !== 'string') {
+      throw new ApiError('GEMINI_EMPTY', 'Gemini AI no devolvió una respuesta válida.', 502);
+    }
+
+    return text;
+  } catch (err: any) {
+    clearTimeout(timeout);
+    if (err?.name === 'AbortError') {
+      throw new ApiError('TIMEOUT', 'La solicitud a Gemini tardó más de 20 segundos y expiró.', 504);
+    }
+    if (err instanceof ApiError) throw err;
+    throw new ApiError('NETWORK_ERROR', `Error al conectar con Google Gemini: ${err?.message || 'Error de red'}`, 0);
+  }
+}
+
+/**
+ * Consulta a Gemini (Directo si hay API key, o vía backend proxy si no).
  */
 export async function callGeminiApi(
   contents: unknown[],
@@ -161,6 +182,12 @@ export async function callGeminiApi(
     promptText = typeof contents === 'string' ? contents : JSON.stringify(contents);
   }
 
+  // 1. Si hay clave directa de Gemini en .env, usar Google AI Studio directamente
+  if (GEMINI_API_KEY.length > 0) {
+    return callGeminiDirect([{ text: promptText.trim() }], systemInstruction);
+  }
+
+  // 2. Si no, delegar al proxy de Cloud Functions
   const response = await postProxyJson<{ reply: string }>('/assistantChat', {
     message: promptText.trim(),
     systemInstruction,
@@ -259,6 +286,94 @@ interface IdentifyApiResponse {
 export async function identifyPlantWithGemini(
   base64Images: string[]
 ): Promise<PlantIdentificationResult & { careSheet?: BotanicalCareSheet }> {
+  // 1. MODO DIRECTO: Consulta multimodal a Gemini 1.5 Flash si hay clave configurada
+  if (GEMINI_API_KEY.length > 0) {
+    const cleanImages = base64Images.map((img) =>
+      img.replace(/^data:image\/[a-zA-Z]+;base64,/, '')
+    );
+
+    const promptText = `Actúa como botánico experto y taxónomo de EcoScan.
+Analiza detenidamente la(s) imagen(es) provista(s) e identifica la especie vegetal.
+Si la imagen NO contiene una planta, flor, fruto, tallo u hoja, responde: {"isPlant": false, "candidates": []}.
+Si es una planta, devuelve SIEMPRE un JSON válido con esta estructura exacta:
+{
+  "isPlant": true,
+  "confidence": 95,
+  "candidates": [
+    {
+      "id": "slug-de-la-planta",
+      "name": "Nombre Común Principal en español",
+      "scientificName": "Nombre científico en latín",
+      "family": "Familia botánica",
+      "confidence": 95,
+      "commonNames": ["Nombre común 1", "Nombre común 2"],
+      "wikiDescription": "Descripción botánica detallada de 2 a 3 oraciones sobre su origen, hojas y cuidados.",
+      "referenceImages": []
+    }
+  ],
+  "careSheet": {
+    "family": "Familia botánica",
+    "watering": "Frecuencia de riego clara (ej. Riego cada 5 a 7 días cuando el sustrato seque)",
+    "wateringFrequencyDays": 7,
+    "light": "Requerimiento de luz (ej. Luz indirecta brillante)",
+    "temperature": "18°C - 24°C",
+    "humidity": "Media a alta (50%-70%)",
+    "difficulty": "Fácil",
+    "toxicity": "Información sobre toxicidad para mascotas y niños.",
+    "climateTip": "Consejo climático práctico para su cuidado en casa.",
+    "habitatSummary": "Resumen de su hábitat nativo y origen.",
+    "nativeRegions": ["Región o país de origen"]
+  }
+}`;
+
+    const parts = [
+      { text: promptText },
+      ...cleanImages.slice(0, 3).map((data) => ({
+        inline_data: {
+          mime_type: 'image/jpeg',
+          data,
+        },
+      })),
+    ];
+
+    const raw = await callGeminiDirect(parts);
+    const parsed = parseGeminiJson<{
+      isPlant?: boolean;
+      confidence?: number;
+      candidates?: IdentificationCandidate[];
+      careSheet?: RawGeminiCareSheet;
+    }>(raw);
+
+    const isPlant = parsed.isPlant !== false && (parsed.candidates?.length ?? 0) > 0;
+    const candidates = (parsed.candidates ?? []).map((c) => ({
+      ...c,
+      id: slugify(c.scientificName || c.name),
+      source: 'ai-real' as const,
+      referenceImages: Array.isArray(c.referenceImages) ? c.referenceImages : [],
+    }));
+
+    const top = candidates[0];
+    let careSheet: BotanicalCareSheet | undefined;
+    if (top && parsed.careSheet) {
+      careSheet = normalizeGeminiCareSheet(
+        parsed.careSheet,
+        top.name,
+        top.scientificName,
+        top.family || 'Familia botánica'
+      );
+    }
+
+    return {
+      candidates,
+      isPlant,
+      confidence: top?.confidence ?? (isPlant ? 90 : 0),
+      imageQuality: {},
+      source: 'ai-real',
+      careSheet,
+    };
+  }
+
+  // 2. MODO PROXY: Llamada al endpoint de Cloud Functions
   const response = await postProxyJson<IdentifyApiResponse>('/identifyPlant', {
     images: base64Images,
   });
@@ -274,7 +389,7 @@ export async function identifyPlantWithGemini(
 
   if (top) {
     try {
-      careSheet = await generateCareSheetWithGemini(top.name, top.scientificName) ?? undefined;
+      careSheet = (await generateCareSheetWithGemini(top.name, top.scientificName)) ?? undefined;
     } catch {
       // Si la ficha remota falla, continuamos sin romper el resultado
     }
@@ -298,6 +413,28 @@ export async function generateCareSheetWithGemini(
   commonName: string,
   scientificName = ''
 ): Promise<BotanicalCareSheet | null> {
+  if (GEMINI_API_KEY.length > 0) {
+    const prompt = `Genera la ficha de cuidados de la planta "${commonName}" (${scientificName || 'especie botánica'}).
+Responde ÚNICAMENTE un JSON válido con:
+{
+  "family": "Familia botánica",
+  "watering": "Instrucciones de riego detalladas",
+  "wateringFrequencyDays": 7,
+  "light": "Requerimiento de iluminación",
+  "temperature": "18°C - 24°C",
+  "humidity": "Humedad recomendada",
+  "difficulty": "Fácil",
+  "toxicity": "Información preventiva sobre mascotas",
+  "climateTip": "Consejo ambiental",
+  "habitatSummary": "Breve origen y hábitat",
+  "nativeRegions": ["Región de origen"]
+}`;
+
+    const raw = await callGeminiDirect([{ text: prompt }]);
+    const parsed = parseGeminiJson<RawGeminiCareSheet>(raw);
+    return normalizeGeminiCareSheet(parsed, commonName, scientificName, parsed.family || 'Familia botánica');
+  }
+
   const response = await postProxyJson<BotanicalCareSheet>('/careSheet', {
     speciesName: commonName,
     scientificName,
@@ -306,13 +443,74 @@ export async function generateCareSheetWithGemini(
 }
 
 // ---------------------------------------------------------------------------
-// Diagnóstico de Salud
+// Diagnóstico de Salud y Plagas
 // ---------------------------------------------------------------------------
 
 export async function diagnoseHealthWithGemini(
   base64Images: string[],
   plantName?: string
 ): Promise<HealthDiagnosisResult> {
+  if (GEMINI_API_KEY.length > 0) {
+    const cleanImages = base64Images.map((img) =>
+      img.replace(/^data:image\/[a-zA-Z]+;base64,/, '')
+    );
+
+    const promptText = `Actúa como fitopatólogo experto de EcoScan.
+Examina la(s) foto(s) de las hojas o tallos de la planta ${plantName ? `("${plantName}")` : ''} para diagnosticar plagas, hongos, deficiencias nutricionales o problemas de riego.
+Si la imagen no contiene hojas ni partes de plantas analizables, responde: {"isPlant": false}.
+Si está enferma o saludable, responde un JSON válido con esta estructura exacta:
+{
+  "isPlant": true,
+  "issueKey": "clave_corta_en_minusculas",
+  "name": "Título del diagnóstico en español (ej. Hojas saludables o Mildiu polvoriento)",
+  "scientificName": "Nombre científico del patógeno o condición",
+  "category": "Plaga" | "Hongo" | "Riego" | "Luz" | "Nutrientes",
+  "severity": "leve" | "moderada" | "alta",
+  "confidence": 92,
+  "symptoms": ["Síntoma 1 observado en la foto", "Síntoma 2..."],
+  "description": "Explicación detallada de lo que presenta la planta en 2 párrafos claros.",
+  "treatment": {
+    "title": "Tratamiento recomendado",
+    "description": "Explicación general de la cura.",
+    "intervalDays": 7,
+    "actions": ["Paso 1: aislar la planta", "Paso 2: aplicar infusión o producto..."]
+  }
+}`;
+
+    const parts = [
+      { text: promptText },
+      ...cleanImages.slice(0, 3).map((data) => ({
+        inline_data: {
+          mime_type: 'image/jpeg',
+          data,
+        },
+      })),
+    ];
+
+    const raw = await callGeminiDirect(parts);
+    const parsed = parseGeminiJson<any>(raw);
+
+    if (parsed.isPlant === false) {
+      throw new HealthNoPlantError();
+    }
+
+    return {
+      id: `diag-${slugify(parsed.name || 'problema')}`,
+      issueKey: parsed.issueKey || slugify(parsed.name || 'problema'),
+      name: parsed.name || t('Diagnóstico botánico'),
+      scientificName: parsed.scientificName || t('Condición botánica'),
+      category: (parsed.category as HealthCategory) || 'Plaga',
+      severity: (parsed.severity as HealthSeverity) || 'moderada',
+      confidence: typeof parsed.confidence === 'number' ? parsed.confidence : 90,
+      symptoms: Array.isArray(parsed.symptoms) ? parsed.symptoms : [t('Signos detectados en el follaje')],
+      description: parsed.description || t('Evaluación fitosanitaria generada por IA.'),
+      referenceImages: [],
+      treatment: parsed.treatment,
+      disclaimer: HEALTH_DISCLAIMER,
+      source: 'ai-real',
+    };
+  }
+
   const response = await postProxyJson<any>('/healthAssessment', {
     images: base64Images,
     plantName,
@@ -407,64 +605,87 @@ export async function askGeminiAssistant(
 }
 
 // ---------------------------------------------------------------------------
-// Briefing Diario
+// Consejo Diario Inteligente
 // ---------------------------------------------------------------------------
 
-export interface DailyGardenBriefingInput {
-  plantsCount: number;
-  plantsNeedingWater: string[];
-  totalPlantsSummary: string[];
-  weather?: {
-    city?: string;
-    temperatureC: number;
-    weatherDescription: string;
-  } | null;
-}
-
 export async function generateDailyGardenAdviceWithGemini(
-  input: DailyGardenBriefingInput
+  input: {
+    city?: string;
+    temperatureC?: number;
+    humidity?: number;
+    weatherCondition?: string;
+    plantNames: string[];
+    pendingWaterCount: number;
+  }
 ): Promise<string> {
-  const prompt = `Eres el asesor agronómico de EcoScan.
-Datos de hoy:
-- Clima local: ${input.weather ? `${Math.round(input.weather.temperatureC)}°C, ${input.weather.weatherDescription}${input.weather.city ? ` en ${input.weather.city}` : ''}` : 'Clima estándar'}.
-- Total de plantas: ${input.plantsCount} ${input.totalPlantsSummary.length > 0 ? `(${input.totalPlantsSummary.join(', ')})` : ''}.
-- Necesitan riego hoy: ${input.plantsNeedingWater.length > 0 ? input.plantsNeedingWater.join(', ') : 'Ninguna (todas al día)'}.
+  const plantsText = input.plantNames.length > 0 ? input.plantNames.slice(0, 5).join(', ') : 'tus plantas';
+  const weatherText = input.weatherCondition
+    ? `Clima en ${input.city || 'tu zona'}: ${input.weatherCondition}, ${input.temperatureC ?? 22}°C, humedad ${input.humidity ?? 50}%.`
+    : 'Clima templado habitual.';
 
-Escribe un consejo agronómico breve de 1 o 2 oraciones cálidas con un emoji para cuidar el jardín hoy.`;
+  const prompt = `Genera un consejo botánico diario motivador, conciso y práctico de 2 oraciones para el cuidador.
+${weatherText}
+Plantas en el jardín: ${plantsText}.
+Plantas pendientes de riego hoy: ${input.pendingWaterCount}.
+Enfócate en la hidratación, luz o ventilación adecuada según el clima. Responde en español directo y sin encabezados.`;
 
   try {
-    const advice = await callGeminiApi([prompt]);
-    return advice.trim();
+    const raw = await callGeminiApi([prompt]);
+    return raw.trim() || 'Comprueba la humedad del sustrato de tus plantas antes de regar hoy.';
   } catch {
-    return 'Revisa la humedad del sustrato de tus plantas antes de regar y aprovecha la luz natural indirecta hoy. 🌿';
+    return 'Revisa la humedad del sustrato y rota tus plantas hacia la luz natural periódicamente.';
   }
 }
 
-interface CachedDailyAdvice {
-  dateKey: string;
-  advice: string;
-}
-
-export async function getOrFetchDailyGardenAdvice(
-  input: DailyGardenBriefingInput,
-  forceRefresh = false
+export async function getDailyGardenAdvice(
+  input: {
+    city?: string;
+    temperatureC?: number;
+    humidity?: number;
+    weatherCondition?: string;
+    plantNames?: string[];
+    pendingWaterCount?: number;
+    plantsCount?: number;
+    plantsNeedingWater?: string[];
+    totalPlantsSummary?: string[];
+    weather?: {
+      city?: string;
+      temperatureC?: number;
+      weatherDescription?: string;
+    } | null;
+  },
+  force = false
 ): Promise<string> {
   const today = new Date().toISOString().slice(0, 10);
-  if (!forceRefresh) {
-    try {
-      const cached = await loadJSON<CachedDailyAdvice | null>(STORAGE_KEYS.dailyAiAdvice, null);
-      if (cached && cached.dateKey === today && cached.advice) {
-        return cached.advice;
-      }
-    } catch {}
+  if (!force) {
+    const cached = await loadJSON<{ dateKey: string; advice: string } | null>(STORAGE_KEYS.dailyAiAdvice, null);
+    if (cached && cached.dateKey === today && cached.advice) {
+      return cached.advice;
+    }
   }
 
-  const advice = await generateDailyGardenAdviceWithGemini(input);
+  const plantNames = input.plantNames ?? input.totalPlantsSummary ?? [];
+  const pendingWaterCount = input.pendingWaterCount ?? input.plantsNeedingWater?.length ?? 0;
+  const city = input.city ?? input.weather?.city;
+  const temperatureC = input.temperatureC ?? input.weather?.temperatureC;
+  const weatherCondition = input.weatherCondition ?? input.weather?.weatherDescription;
+
+  const advice = await generateDailyGardenAdviceWithGemini({
+    city,
+    temperatureC,
+    humidity: input.humidity,
+    weatherCondition,
+    plantNames,
+    pendingWaterCount,
+  });
+
   try {
     await saveJSON(STORAGE_KEYS.dailyAiAdvice, { dateKey: today, advice });
   } catch {}
   return advice;
 }
+
+export const getOrFetchDailyGardenAdvice = getDailyGardenAdvice;
 
 // ---------------------------------------------------------------------------
 // Evaluación de Crecimiento

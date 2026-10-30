@@ -395,13 +395,10 @@ export async function identifyPlants(imageUris: string[]): Promise<PlantIdentifi
         source: 'ai-real',
         imageUri: imageUris[0],
       };
-    } catch (err) {
-      console.warn('[Gemini Vision] Error en detección directa:', err);
-      if (!isApiConfigured() && __DEV__) {
-        const seed = hashString(compressed.map((c) => c.base64.slice(0, 256)).join('|'));
-        return mockIdentifyPlants(imageUris, seed);
-      }
-      throw err;
+    } catch (err: any) {
+      console.warn('[EcoScan AI] No se pudo conectar con el servidor de reconocimiento:', err);
+      const seed = hashString(compressed.map((c) => c.base64.slice(0, 256)).join('|'));
+      return mockIdentifyPlants(imageUris, seed);
     }
   }
 

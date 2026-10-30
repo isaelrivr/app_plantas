@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { Alert } from 'react-native';
 import { loadSecureJSON, saveSecureJSON, STORAGE_KEYS } from '../services/storage';
 import {
   BillingPlan,
@@ -8,10 +9,6 @@ import {
   purchasePlan,
   restorePurchases,
   cancelSubscription,
-  initializeBilling,
-  getCurrentCustomerInfo,
-  addCustomerInfoUpdateListener,
-  extractProEntitlement,
   fetchDynamicPlans,
 } from '../services/billingService';
 import { t as tGlobal } from '../i18n';
@@ -30,6 +27,7 @@ interface PremiumContextType {
   plans: BillingPlan[];
   togglePremium: () => void;
   setPremium: (value: boolean) => void;
+  resetToFree: () => void;
   purchase: (planId: BillingPlanId) => Promise<BillingResult>;
   restore: () => Promise<BillingResult>;
   cancel: () => Promise<void>;
@@ -70,12 +68,11 @@ export function PremiumProvider({ children }: { children: ReactNode }) {
     (async () => {
       const stored = await loadSecureJSON<PersistedPremium>(STORAGE_KEYS.premium, DEFAULT_PREMIUM);
       if (!active) return;
-      // Verificar si la fecha persistida no ha expirado
       const isExpired = stored.expiresAt ? new Date(stored.expiresAt).getTime() <= Date.now() : false;
       if (!isExpired && stored.isPremium) {
         setIsPremium(true);
         setIsTrial(!!stored.isTrial);
-        setActivePlanId(stored.activePlanId ?? null);
+        setActivePlanId(stored.activePlanId ?? 'annual');
         setExpiresAt(stored.expiresAt ?? null);
       } else {
         setIsPremium(false);
@@ -90,46 +87,7 @@ export function PremiumProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  // 2. Inicialización de RevenueCat y sincronización de entitlement real
-  useEffect(() => {
-    let active = true;
-
-    const bootstrapBilling = async () => {
-      await initializeBilling();
-      const { plans: dynPlans } = await fetchDynamicPlans();
-      if (active && dynPlans.length > 0) {
-        setPlans(dynPlans);
-      }
-
-      // Validar suscripción en vivo con RevenueCat
-      const customerInfo = await getCurrentCustomerInfo();
-      if (customerInfo && active) {
-        const ent = extractProEntitlement(customerInfo);
-        setIsPremium(ent.active);
-        setIsTrial(ent.isTrial);
-        setActivePlanId(ent.planId);
-        setExpiresAt(ent.expiresAt);
-      }
-    };
-
-    void bootstrapBilling();
-
-    const unsubscribe = addCustomerInfoUpdateListener((customerInfo) => {
-      if (!active) return;
-      const ent = extractProEntitlement(customerInfo);
-      setIsPremium(ent.active);
-      setIsTrial(ent.isTrial);
-      setActivePlanId(ent.planId);
-      setExpiresAt(ent.expiresAt);
-    });
-
-    return () => {
-      active = false;
-      unsubscribe();
-    };
-  }, []);
-
-  // 3. Persistencia segura del último estado verificado
+  // 2. Persistencia segura del estado Pro cuando cambie
   useEffect(() => {
     if (!isHydrated) return;
     void saveSecureJSON<PersistedPremium>(STORAGE_KEYS.premium, {
@@ -147,32 +105,6 @@ export function PremiumProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  /**
-   * Concede Pro ÚNICAMENTE si la transacción fue exitosa, el entitlement está activo
-   * y la fecha de expiración no ha vencido.
-   */
-  const applyEntitlement = (result: BillingResult) => {
-    if (result.success && result.entitlement.active) {
-      const isNotExpired =
-        !result.entitlement.expiresAt ||
-        new Date(result.entitlement.expiresAt).getTime() > Date.now();
-
-      if (isNotExpired) {
-        setIsPremium(true);
-        setIsTrial(result.entitlement.isTrial);
-        setActivePlanId(result.entitlement.planId);
-        setExpiresAt(result.entitlement.expiresAt);
-        return;
-      }
-    }
-
-    // Revocar estado Pro si la compra falló o expiró
-    setIsPremium(false);
-    setIsTrial(false);
-    setActivePlanId(null);
-    setExpiresAt(null);
-  };
-
   const togglePremium = () => {
     if (isPremium) {
       setIsPremium(false);
@@ -181,9 +113,21 @@ export function PremiumProvider({ children }: { children: ReactNode }) {
       setExpiresAt(null);
     } else {
       setIsPremium(true);
-      setIsTrial(true);
+      setIsTrial(false);
       setActivePlanId('annual');
+      setExpiresAt(new Date(Date.now() + 365 * 86400 * 1000).toISOString());
     }
+  };
+
+  const resetToFree = () => {
+    setIsPremium(false);
+    setIsTrial(false);
+    setActivePlanId(null);
+    setExpiresAt(null);
+    Alert.alert(
+      tGlobal('EcoScan Demo Académica'),
+      tGlobal('Se ha restablecido la aplicación a la versión Gratuita (Free).')
+    );
   };
 
   const setPremium = (value: boolean) => {
@@ -192,6 +136,9 @@ export function PremiumProvider({ children }: { children: ReactNode }) {
       setIsTrial(false);
       setActivePlanId(null);
       setExpiresAt(null);
+    } else {
+      setActivePlanId('annual');
+      setExpiresAt(new Date(Date.now() + 365 * 86400 * 1000).toISOString());
     }
   };
 
@@ -199,7 +146,19 @@ export function PremiumProvider({ children }: { children: ReactNode }) {
     setPurchaseLoading(true);
     try {
       const result = await purchasePlan(planId);
-      applyEntitlement(result);
+      if (result.success && result.entitlement.active) {
+        setIsPremium(true);
+        setIsTrial(result.entitlement.isTrial);
+        setActivePlanId(result.entitlement.planId);
+        setExpiresAt(result.entitlement.expiresAt);
+
+        Alert.alert(
+          tGlobal('¡EcoScan Pro Activado! 🌿'),
+          tGlobal(
+            'Has adquirido la suscripción Pro (Modo Demo Académico). Todas las herramientas avanzadas están desbloqueadas.'
+          )
+        );
+      }
       return result;
     } finally {
       setPurchaseLoading(false);
@@ -210,7 +169,17 @@ export function PremiumProvider({ children }: { children: ReactNode }) {
     setPurchaseLoading(true);
     try {
       const result = await restorePurchases();
-      applyEntitlement(result);
+      if (result.success && result.entitlement.active) {
+        setIsPremium(true);
+        setIsTrial(false);
+        setActivePlanId(result.entitlement.planId);
+        setExpiresAt(result.entitlement.expiresAt);
+
+        Alert.alert(
+          tGlobal('Compras Restauradas'),
+          tGlobal('Se restauró con éxito el acceso a EcoScan Pro para la demostración.')
+        );
+      }
       return result;
     } finally {
       setPurchaseLoading(false);
@@ -243,6 +212,7 @@ export function PremiumProvider({ children }: { children: ReactNode }) {
         plans,
         togglePremium,
         setPremium,
+        resetToFree,
         purchase,
         restore,
         cancel,

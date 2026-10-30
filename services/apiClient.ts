@@ -12,9 +12,20 @@
  * simulados (`shouldUseMocks`). En producción NUNCA se usan mocks.
  */
 
-import * as Crypto from 'expo-crypto';
-import { getDeviceId } from './deviceId';
-import { t } from '../i18n';
+import { getDeviceId } from './deviceId.ts';
+// Mensajes de red sin acoplar contextos de UI
+const t = (text: string) => text;
+
+function generateUUID(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
 
 /** URL base de las Cloud Functions, sin barra final. */
 export const API_BASE_URL = (process.env.EXPO_PUBLIC_PLANT_AI_ENDPOINT ?? '').trim().replace(/\/+$/, '');
@@ -107,7 +118,7 @@ export async function postJson<T>(path: string, body: unknown, options: PostOpti
 
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const maxAttempts = (options.retries ?? MAX_RETRIES) + 1;
-  const requestId = options.requestId ?? Crypto.randomUUID();
+  const requestId = options.requestId ?? generateUUID();
   const payload = {
     ...(body && typeof body === 'object' ? body : {}),
     requestId,

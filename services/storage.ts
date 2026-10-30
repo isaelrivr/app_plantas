@@ -146,6 +146,14 @@ export async function saveJSON<T>(key: StorageKey, value: T): Promise<boolean> {
 }
 
 /**
+ * Normaliza claves para Expo SecureStore.
+ * SecureStore requiere que las claves solo contengan caracteres alfanuméricos, '.', '-' y '_'.
+ */
+export function toSecureKey(key: string): string {
+  return key.replace(/[^a-zA-Z0-9._-]/g, '_');
+}
+
+/**
  * Guarda valores sensibles (entitlements Pro, credenciales) cifrados vía SecureStore.
  */
 export async function saveSecureJSON<T>(key: string, value: T): Promise<boolean> {
@@ -154,7 +162,7 @@ export async function saveSecureJSON<T>(key: string, value: T): Promise<boolean>
     memoryFallbackMap.set(key, serialized);
     const SecureStore = await getSecureStore();
     if (SecureStore && (await SecureStore.isAvailableAsync())) {
-      await SecureStore.setItemAsync(key, serialized);
+      await SecureStore.setItemAsync(toSecureKey(key), serialized);
       return true;
     }
     if (typeof AsyncStorage?.setItem === 'function') {
@@ -174,7 +182,7 @@ export async function loadSecureJSON<T>(key: string, fallback: T): Promise<T> {
   try {
     const SecureStore = await getSecureStore();
     if (SecureStore && (await SecureStore.isAvailableAsync())) {
-      const raw = await SecureStore.getItemAsync(key);
+      const raw = await SecureStore.getItemAsync(toSecureKey(key));
       if (raw != null) {
         return JSON.parse(raw) as T;
       }
@@ -194,7 +202,7 @@ export async function removeSecureKey(key: string): Promise<boolean> {
     memoryFallbackMap.delete(key);
     const SecureStore = await getSecureStore();
     if (SecureStore && (await SecureStore.isAvailableAsync())) {
-      await SecureStore.deleteItemAsync(key);
+      await SecureStore.deleteItemAsync(toSecureKey(key));
     }
     if (typeof AsyncStorage?.removeItem === 'function') {
       await AsyncStorage.removeItem(key);

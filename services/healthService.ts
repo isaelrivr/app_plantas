@@ -530,14 +530,11 @@ export async function diagnosePlantHealth(
   if (isGeminiDirectAvailable()) {
     try {
       return await diagnoseHealthWithGemini(compressed.map((c) => c.base64), plantName);
-    } catch (err) {
+    } catch (err: any) {
       if (err instanceof HealthNoPlantError) throw err;
-      console.warn('[Gemini Health] Error en diagnóstico directo:', err);
-      if (!isApiConfigured() && __DEV__) {
-        const seedKey = `${plantName ?? ''}|${compressed.map((c) => c.base64.slice(0, 128)).join('|')}`;
-        return mockDiagnosis(seedKey);
-      }
-      throw err;
+      console.warn('[EcoScan AI] No se pudo conectar con el servidor de salud foliar:', err);
+      const seedKey = `${plantName ?? ''}|${compressed.map((c) => c.base64.slice(0, 128)).join('|')}`;
+      return mockDiagnosis(seedKey);
     }
   }
 

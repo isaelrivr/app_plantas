@@ -14,7 +14,15 @@ import {
   loadSecureJSON,
   clearAllAppData,
   STORAGE_KEYS,
+  toSecureKey,
 } from '../services/storage.ts';
+
+import {
+  purchasePlan,
+  restorePurchases,
+  cancelSubscription,
+  isBillingAvailable,
+} from '../services/billingService.ts';
 
 test('widget: calculateWidgetSnapshot handles empty garden gracefully', () => {
   const snapshot = calculateWidgetSnapshot([]);
@@ -133,4 +141,28 @@ test('storage: saveSecureJSON and loadSecureJSON protect sensitive Pro entitleme
 test('storage: clearAllAppData purges all local app data cleanly', async () => {
   const cleared = await clearAllAppData();
   assert.equal(cleared, true);
+});
+
+test('storage: toSecureKey sanitizes keys for Expo SecureStore compliance', () => {
+  assert.equal(toSecureKey('ecoscan:premium'), 'ecoscan_premium');
+  assert.equal(toSecureKey('plantae:premium'), 'plantae_premium');
+  assert.equal(toSecureKey('ecoscan:device-id'), 'ecoscan_device-id');
+  assert.match(toSecureKey('ecoscan:premium'), /^[a-zA-Z0-9._-]+$/);
+});
+
+test('billing: simulated demo purchase flow behaves smoothly without broken external SDK', async () => {
+  assert.equal(isBillingAvailable(), true);
+
+  const purchaseResult = await purchasePlan('annual');
+  assert.equal(purchaseResult.success, true);
+  assert.equal(purchaseResult.entitlement.active, true);
+  assert.equal(purchaseResult.entitlement.planId, 'annual');
+  assert.ok(purchaseResult.entitlement.expiresAt != null);
+
+  const restoreResult = await restorePurchases();
+  assert.equal(restoreResult.success, true);
+  assert.equal(restoreResult.entitlement.active, true);
+
+  const cancelResult = await cancelSubscription();
+  assert.equal(cancelResult.active, false);
 });

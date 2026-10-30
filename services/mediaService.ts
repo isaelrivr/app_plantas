@@ -1,5 +1,5 @@
 /**
- * Plantae Media Service
+ * EcoScan Media Service
  *
  * Las fotos que devuelve la cámara o el selector de galería viven en un
  * directorio temporal (cache) que el sistema puede vaciar. Para que una foto
@@ -34,7 +34,7 @@ function extensionOf(uri: string): string {
 }
 
 /**
- * Copia una imagen local (`file://`) al almacenamiento permanente y devuelve la
+ * Copia una imagen local (`file://` o `content://`) al almacenamiento permanente y devuelve la
  * nueva ruta. Si la URI ya es remota (http) o no se puede copiar, devuelve la
  * original para no romper la UI.
  */
@@ -42,21 +42,19 @@ export async function persistImage(uri: string | undefined | null, folder = 'pla
   if (!uri) return undefined;
 
   // Solo copiamos archivos locales; las URLs remotas se dejan tal cual.
-  if (!uri.startsWith('file://')) return uri;
+  if (!uri.startsWith('file://') && !uri.startsWith('content://')) return uri;
 
   const dir = ensureDirectory(folder);
   if (!dir) return uri;
 
   try {
     const source = new File(uri);
-    if (!source.exists) return uri;
-
     const name = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${extensionOf(uri)}`;
     const destination = new File(dir, name);
     await source.copy(destination, { overwrite: true });
     return destination.uri;
   } catch (error) {
-    console.warn('[media] No se pudo persistir la imagen; se usará la ruta temporal.', error);
+    console.warn('[media] No se pudo persistir la imagen; se usará la ruta original.', error);
     return uri;
   }
 }
@@ -90,24 +88,31 @@ export async function clearPersistedImages(): Promise<void> {
  * por el jardín y el diario. Devuelve el número de archivos eliminados.
  */
 export async function reconcileOrphanImages(activeUris: string[]): Promise<number> {
-  const activeSet = new Set(activeUris.filter((u) => u && u.startsWith('file://')));
+  const activeSet = new Set(
+    activeUris.filter((u) => u && (u.startsWith('file://') || u.startsWith('content://')))
+  );
   let deletedCount = 0;
 
   try {
     const root = new Directory(Paths.document, MEDIA_ROOT);
     if (!root.exists) return 0;
 
-    const subDirs = ['plants', 'growth'];
+    const subDirs = ['plants', 'growth', 'garden', 'diary'];
     for (const sub of subDirs) {
       const folder = new Directory(root, sub);
       if (folder.exists) {
         const entries = folder.list();
         for (const entry of entries) {
-          if (entry instanceof File && !activeSet.has(entry.uri)) {
-            try {
-              entry.delete();
-              deletedCount++;
-            } catch {}
+          if (entry instanceof File) {
+            const isReferenced =
+              activeSet.has(entry.uri) ||
+              Array.from(activeSet).some((uri) => uri.endsWith(entry.name));
+            if (!isReferenced) {
+              try {
+                entry.delete();
+                deletedCount++;
+              } catch {}
+            }
           }
         }
       }
@@ -118,4 +123,3 @@ export async function reconcileOrphanImages(activeUris: string[]): Promise<numbe
 
   return deletedCount;
 }
-

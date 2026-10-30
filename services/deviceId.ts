@@ -6,8 +6,18 @@
  * clave de cuota diaria. No es sensible: no contiene datos personales.
  */
 
-import * as Crypto from 'expo-crypto';
-import { loadJSON, saveJSON, STORAGE_KEYS } from './storage';
+import { loadJSON, saveJSON, STORAGE_KEYS } from './storage.ts';
+
+function generateUUID(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
 
 let cached: string | null = null;
 let pending: Promise<string> | null = null;
@@ -33,7 +43,7 @@ export function getDeviceId(): Promise<string> {
       // si falla la lectura, generamos uno nuevo
     }
 
-    const generated = Crypto.randomUUID();
+    const generated = generateUUID();
     cached = generated;
     await saveJSON(STORAGE_KEYS.deviceId, generated);
     return generated;
