@@ -203,6 +203,21 @@ export const HealthDiagnosisScreen: React.FC = () => {
   };
 
   const processImage = async (uri: string) => {
+    if (limits.isFeatureLocked('pestDiagnosis')) {
+      const seePro = await confirm({
+        title: t('Diagnóstico fitosanitario Pro'),
+        message: t(
+          'El análisis fitosanitario de hojas, plagas y hongos con IA es exclusivo de EcoScan Pro. Desbloquea diagnósticos ilimitados y planes de tratamiento.'
+        ),
+        confirmText: t('Desbloquear Pro'),
+        cancelText: t('Ahora no'),
+      });
+      if (seePro) {
+        navigation.navigate('Paywall');
+      }
+      return;
+    }
+
     setPhotoUri(uri);
     setLastAnalyzed(uri);
     setDiagnosisResult(null);
@@ -281,7 +296,7 @@ export const HealthDiagnosisScreen: React.FC = () => {
         ? diagnosisResult.treatment.organicOption.title
         : diagnosisResult.treatment.chemicalOption.title;
 
-    const identifier = await scheduleTreatmentReminder(reminderPlantName, activeOption, 4);
+    const identifier = await scheduleTreatmentReminder(reminderPlantName, activeOption, 4, plantId);
     if (!identifier) {
       setErrorMessage(t('No se pudo programar el recordatorio. Revisa los permisos de notificación.'));
       return;

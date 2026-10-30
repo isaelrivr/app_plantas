@@ -200,7 +200,7 @@ export const AddPlantModal: React.FC<AddPlantModalProps> = ({
                   {t('Precaución para mascotas')}
                 </Text>
                 <Text style={[typography.caption2, { color: '#BF360C', marginTop: 2, lineHeight: 16 }]}>
-                  {t('Esta planta suele ser tóxica para perros o gatos. Te recomendamos ubicarla en alto.')}
+                  {t('Esta planta suele ser tóxica para perros o gatos. Te recomendamos ubicarla en alto. (Información orientativa; consulta a tu veterinario).')}
                 </Text>
               </View>
             </View>

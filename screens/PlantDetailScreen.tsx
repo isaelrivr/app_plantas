@@ -44,6 +44,7 @@ export const PlantDetailScreen: React.FC = () => {
   const { addPlant, plants, removePlant, restorePlant } = useGarden();
   const { confirm, showToast } = useFeedback();
   const limits = usePlanLimits();
+  const { fabBottom } = useFloatingBarMetrics({ hasTabBar: false });
 
   const plantId = route.params?.plantId || 'monstera';
   const plantNameParam = route.params?.plantName as string | undefined;
@@ -169,8 +170,6 @@ export const PlantDetailScreen: React.FC = () => {
       </View>
     );
   }
-
-  const { fabBottom } = useFloatingBarMetrics({ hasTabBar: false });
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -462,6 +461,49 @@ export const PlantDetailScreen: React.FC = () => {
                   onPress={() => navigation.navigate('HealthDiagnosis', { plantId: plant.id, plantName: plant.name })}
                   variant="secondary"
                   size="md"
+                  style={{ marginTop: spacing.md }}
+                />
+              </Card>
+
+              {/* CONSULTA AL ASISTENTE IA */}
+              <Card
+                variant="flat"
+                style={{
+                  backgroundColor: colors.surface,
+                  borderColor: colors.border,
+                  borderWidth: 1,
+                  borderRadius: layout.borderRadius.lg,
+                  padding: spacing.md,
+                }}
+              >
+                <View style={styles.actionCardRow}>
+                  <View style={[styles.actionIconBox, { backgroundColor: colors.primaryLight }]}>
+                    <Ionicons name="sparkles" size={24} color={colors.primary} />
+                  </View>
+                  <View style={{ flex: 1, marginLeft: spacing.md }}>
+                    <Text style={[typography.headline, { color: colors.textPrimary }]}>
+                      {t('Asistente Botánico IA')}
+                    </Text>
+                    <Text style={[typography.body, { color: colors.textSecondary, marginTop: 4, lineHeight: 22 }]}>
+                      {t('¿Tienes dudas sobre poda, sustrato o ubicación de tu {nombre}? Pregúntale a Gemini.', {
+                        nombre: plant.name,
+                      })}
+                    </Text>
+                  </View>
+                </View>
+                <Button
+                  title={t('Preguntar al Asistente IA')}
+                  onPress={() =>
+                    navigation.navigate('Assistant', {
+                      plantName: plant.name,
+                      initialQuestion: t('¿Qué consejos clave tienes para el cuidado de mi {nombre}?', {
+                        nombre: plant.name,
+                      }),
+                    })
+                  }
+                  variant="primary"
+                  size="md"
+                  icon={<Ionicons name="chatbubble-ellipses-outline" size={18} color="#FFFFFF" />}
                   style={{ marginTop: spacing.md }}
                 />
               </Card>

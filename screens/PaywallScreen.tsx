@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Platform, Linking, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Platform, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -87,11 +87,11 @@ const COMPARISON: ComparisonRow[] = [
     pro: 'Ilimitadas',
   },
   {
-    icon: 'cloud-done-outline',
-    label: 'Sincronización en la nube',
-    detail: 'Respaldo seguro y acceso multidispositivo',
-    free: 'Solo local',
-    pro: 'Nube Pro',
+    icon: 'document-text-outline',
+    label: 'Copia de seguridad local',
+    detail: 'Exportación e importación completa de tu jardín en JSON',
+    free: true,
+    pro: true,
   },
   {
     icon: 'wifi-outline',
@@ -128,7 +128,7 @@ const PRO_BULLETS = [
   { icon: 'medkit-outline', text: 'Diagnóstico de hojas enfermas, plagas y remedios prácticos' },
   { icon: 'partly-sunny-outline', text: 'Alertas de clima local y riego dinámico adaptativo' },
   { icon: 'chatbubbles-outline', text: 'Asistente botánico inteligente 24/7 para tus consultas' },
-  { icon: 'cloud-done-outline', text: 'Copia de seguridad en la nube y sincronización' },
+  { icon: 'images-outline', text: 'Diario de crecimiento avanzado con comparador Antes/Después' },
   { icon: 'shield-checkmark-outline', text: 'Experiencia 100% libre de anuncios y sin límites' },
 ] as const;
 
@@ -136,12 +136,16 @@ export const PaywallScreen: React.FC = () => {
   const { colors, layout, spacing, typography } = useAppTheme();
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
-  const { isPremium, purchase, restore, purchaseLoading } = usePremium();
+  const { isPremium, purchase, restore, purchaseLoading, plans } = usePremium();
   const { t } = useTranslation();
   const { showToast, confirm } = useFeedback();
 
   const [selectedPlan, setSelectedPlan] = useState<BillingPlanId>('annual');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const availablePlans = plans && plans.length > 0 ? plans : BILLING_PLANS;
+  const selectedBillingPlan = availablePlans.find((p) => p.id === selectedPlan) ?? availablePlans[0];
+  const hasTrial = (selectedBillingPlan?.trialDays ?? 0) > 0;
 
   const handlePurchase = async () => {
     try {
@@ -254,7 +258,6 @@ export const PaywallScreen: React.FC = () => {
     );
   };
 
-  const selectedBillingPlan = BILLING_PLANS.find((p) => p.id === selectedPlan);
 
   useEffect(() => {
     if (isPremium) {
@@ -295,7 +298,7 @@ export const PaywallScreen: React.FC = () => {
             <Ionicons name="close" size={26} color={colors.textSecondary} />
           </Pressable>
           <Badge
-            label={t('PRUEBA 7 DÍAS GRATIS')}
+            label={hasTrial ? t('PRUEBA {dias} DÍAS GRATIS', { dias: selectedBillingPlan.trialDays }) : t('ACCESO COMPLETO PRO')}
             variant="premium"
             icon={<Ionicons name="sparkles" size={13} color={colors.premiumGold} />}
           />
@@ -354,7 +357,7 @@ export const PaywallScreen: React.FC = () => {
 
         {/* SELECCIÓN DE PLANES */}
         <View style={styles.plansRow}>
-          {BILLING_PLANS.map((plan) => {
+          {availablePlans.map((plan) => {
             const selected = selectedPlan === plan.id;
             return (
               <Pressable
@@ -400,20 +403,25 @@ export const PaywallScreen: React.FC = () => {
 
         {/* BOTÓN PRINCIPAL */}
         <Button
-          title={selectedPlan === 'annual' ? t('Probar 7 días gratis') : t('Comenzar con Pro')}
+          title={hasTrial ? t('Probar {dias} días gratis', { dias: selectedBillingPlan?.trialDays ?? 7 }) : t('Comenzar con Pro')}
           onPress={handlePurchase}
           loading={purchaseLoading}
           variant="premium"
           size="lg"
           style={{ marginTop: spacing.lg }}
           icon={!purchaseLoading ? <Ionicons name="sparkles" size={18} color="#1C1C1E" /> : undefined}
-          accessibilityLabel={selectedPlan === 'annual' ? t('Probar 7 días gratis') : t('Comenzar con Pro')}
+          accessibilityLabel={hasTrial ? t('Probar {dias} días gratis', { dias: selectedBillingPlan?.trialDays ?? 7 }) : t('Comenzar con Pro')}
         />
 
         <Text style={[typography.caption1, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.sm, fontWeight: '600' }]}>
-          {selectedPlan === 'annual'
-            ? t('7 días gratis. Luego {precio}/año. Cancela cuando quieras.', { precio: selectedBillingPlan?.priceLabel ?? '' })
-            : t('{precio}/mes. Cancela cuando quieras.', { precio: selectedBillingPlan?.priceLabel ?? '' })}
+          {hasTrial
+            ? t('{dias} días gratis. Luego {precio}. Cancela cuando quieras.', {
+                dias: selectedBillingPlan?.trialDays ?? 7,
+                precio: selectedBillingPlan?.priceLabel ?? '',
+              })
+            : t('{precio}. Cancela cuando quieras.', {
+                precio: selectedBillingPlan?.priceLabel ?? '',
+              })}
         </Text>
         <Text style={[typography.caption2, { color: colors.textTertiary, textAlign: 'center', marginTop: 2 }]}>
           {t('Cancela fácilmente en cualquier momento desde Google Play o App Store.')}

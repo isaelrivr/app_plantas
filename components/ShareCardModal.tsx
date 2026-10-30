@@ -55,7 +55,7 @@ export const ShareCardModal: React.FC<ShareCardProps> = ({
         `🐾 Seguridad mascotas: ${toxMeta.label}`,
         plant.healthScore ? `✨ Puntuación de salud: ${plant.healthScore}/100` : '',
         '',
-        'Cuidada con EcoScan (Plantae) 🌱',
+        'Cuidada con EcoScan 🌱',
       ]
         .filter(Boolean)
         .join('\n');

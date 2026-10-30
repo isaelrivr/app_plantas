@@ -21,7 +21,6 @@ import { BottomSheet } from '../components/BottomSheet';
 import { FilterChip } from '../components/FilterChip';
 import { EmptyState } from '../components/EmptyState';
 import { useGarden } from '../context/GardenContext';
-import { useSettings } from '../context/SettingsContext';
 import {
   DEFAULT_FILTERS,
   EncyclopediaFilters,
@@ -37,9 +36,11 @@ import {
   normalizeDiacritics,
 } from '../services/encyclopediaService';
 import { isPetSafe } from '../services/toxicityService';
-import { resolveSpeciesId, CatalogPlant } from '../services/plantApi';
+import { resolveSpeciesId, CatalogPlant, searchOrGeneratePlantWithGemini } from '../services/plantApi';
+import { isGeminiDirectAvailable } from '../services/geminiService';
 import { getPlantImageSource } from '../services/plantAssets';
 import { useTranslation } from '../i18n';
+import { useFeedback } from '../context/FeedbackContext';
 
 const PlantThumb: React.FC<{ id?: string; uri?: string; emoji?: string; name: string }> = ({ id, uri, emoji, name }) => {
   const { colors, layout } = useAppTheme();
@@ -76,13 +77,48 @@ export const EncyclopediaScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const { plants } = useGarden();
-  const { hasPets } = useSettings();
   const { t } = useTranslation();
+  const { showToast } = useFeedback();
 
   const [filters, setFilters] = useState<EncyclopediaFilters>(DEFAULT_FILTERS);
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const [offlineOnly, setOfflineOnly] = useState(false);
   const [petSafeOnly, setPetSafeOnly] = useState(false);
+  const [generatingWithAi, setGeneratingWithAi] = useState(false);
+
+  const handleGenerateWithAi = async () => {
+    const q = filters.query.trim();
+    if (!q || generatingWithAi) return;
+    try {
+      Haptics.selectionAsync();
+    } catch {}
+    setGeneratingWithAi(true);
+    try {
+      const generated = await searchOrGeneratePlantWithGemini(q);
+      if (generated) {
+        try {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        } catch {}
+        navigation.navigate('PlantDetail', {
+          plantId: generated.id,
+          plantName: generated.name,
+          scientificName: generated.scientificName,
+        });
+      } else {
+        showToast({
+          message: t('No pudimos generar la información. Intenta con otro nombre.'),
+          type: 'error',
+        });
+      }
+    } catch {
+      showToast({
+        message: t('Error al conectar con Gemini. Revisa tu conexión.'),
+        type: 'error',
+      });
+    } finally {
+      setGeneratingWithAi(false);
+    }
+  };
 
   const savedSpeciesIds = useMemo(
     () =>
@@ -398,18 +434,86 @@ export const EncyclopediaScreen: React.FC = () => {
             ) : null}
           </View>
         }
+        ListFooterComponent={
+          results.length > 0 && filters.query.trim().length > 0 && isGeminiDirectAvailable() ? (
+            <Pressable
+              onPress={handleGenerateWithAi}
+              disabled={generatingWithAi}
+              style={({ pressed }) => [
+                {
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  paddingVertical: spacing.md,
+                  marginHorizontal: spacing.md,
+                  marginBottom: spacing.md,
+                  opacity: pressed || generatingWithAi ? 0.6 : 1,
+                },
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel={t('Buscar con Gemini AI')}
+            >
+              <Ionicons name="sparkles" size={16} color={colors.primary} style={{ marginRight: 6 }} />
+              <Text style={[typography.footnote, { color: colors.primary, fontWeight: '700' }]}>
+                {generatingWithAi
+                  ? t('Consultando a Gemini...')
+                  : t('¿Buscas otra especie? Generar ficha de "{nombre}" con Gemini AI', {
+                      nombre: filters.query.trim(),
+                    })}
+              </Text>
+            </Pressable>
+          ) : undefined
+        }
         ListEmptyComponent={
-          <EmptyState
-            iconName="leaf-outline"
-            title={t('Sin resultados')}
-            description={
-              offlineOnly
-                ? t('Aún no has guardado plantas en Mi Jardín.')
-                : t('Prueba con otros términos o ajusta los filtros.')
-            }
-            actionTitle={activeFilters > 0 ? t('Limpiar filtros') : undefined}
-            onActionPress={activeFilters > 0 ? () => setFilters(DEFAULT_FILTERS) : undefined}
-          />
+          filters.query.trim().length > 0 && isGeminiDirectAvailable() ? (
+            <View style={{ padding: spacing.xl, alignItems: 'center' }}>
+              <Ionicons name="sparkles" size={40} color={colors.primary} />
+              <Text
+                style={[
+                  typography.title3,
+                  { color: colors.textPrimary, fontWeight: '700', marginTop: spacing.sm, textAlign: 'center' },
+                ]}
+              >
+                {t('¿No encuentras "{nombre}"?', { nombre: filters.query.trim() })}
+              </Text>
+              <Text
+                style={[
+                  typography.body,
+                  {
+                    color: colors.textSecondary,
+                    textAlign: 'center',
+                    marginTop: 6,
+                    marginBottom: spacing.lg,
+                    lineHeight: 22,
+                  },
+                ]}
+              >
+                {t(
+                  'Gemini AI puede buscar y generar la ficha botánica completa, cuidados y mapa biogeográfico al instante.'
+                )}
+              </Text>
+              <Button
+                title={generatingWithAi ? t('Generando con IA...') : t('Generar especie con Gemini AI')}
+                onPress={handleGenerateWithAi}
+                disabled={generatingWithAi}
+                variant="primary"
+                size="md"
+                icon={<Ionicons name="sparkles" size={18} color="#FFFFFF" />}
+              />
+            </View>
+          ) : (
+            <EmptyState
+              iconName="leaf-outline"
+              title={t('Sin resultados')}
+              description={
+                offlineOnly
+                  ? t('Aún no has guardado plantas en Mi Jardín.')
+                  : t('Prueba con otros términos o ajusta los filtros.')
+              }
+              actionTitle={activeFilters > 0 ? t('Limpiar filtros') : undefined}
+              onActionPress={activeFilters > 0 ? () => setFilters(DEFAULT_FILTERS) : undefined}
+            />
+          )
         }
       />
 

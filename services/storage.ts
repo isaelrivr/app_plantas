@@ -1,19 +1,29 @@
 /**
  * EcoScan Storage Service
  *
- * Capa fina y tipada sobre AsyncStorage. Es el único punto por el que la app
+ * Capa fina y tipada sobre AsyncStorage y SecureStore. Es el único punto por el que la app
  * lee/escribe datos locales, de modo que:
  *  - Todas las claves comparten prefijo (`plantae:`) y se pueden borrar en bloque.
- *  - Los fallos de lectura/escritura nunca tumban la UI (se degrada a memoria).
+ *  - Los fallos de lectura/escritura manejan errores de I/O de forma transparente.
+ *  - El estado sensible (flags Pro / tokens) se resguarda en SecureStore (`expo-secure-store`).
  *  - Existe una versión de esquema con migraciones y validación en tiempo de ejecución.
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+async function getSecureStore(): Promise<typeof import('expo-secure-store') | null> {
+  try {
+    const mod = await import('expo-secure-store');
+    return mod;
+  } catch {
+    return null;
+  }
+}
+
 /** Versión actual del formato persistido. */
 export const STORAGE_SCHEMA_VERSION = 3;
 
-const KEY_PREFIX = 'plantae:';
+const KEY_PREFIX = 'ecoscan:';
 
 export const STORAGE_KEYS = {
   schemaVersion: `${KEY_PREFIX}schema-version`,
@@ -29,9 +39,9 @@ export const STORAGE_KEYS = {
   /** Caché local de fichas de cuidados generadas por el backend. */
   careCache: `${KEY_PREFIX}care-cache`,
   weatherCache: `${KEY_PREFIX}weather-cache`,
-  authSession: `${KEY_PREFIX}auth-session`,
-  cloudSyncMeta: `${KEY_PREFIX}cloud-sync-meta`,
   widgetSnapshot: `${KEY_PREFIX}widget-snapshot`,
+  dailyAiAdvice: `${KEY_PREFIX}daily-ai-advice`,
+  assistantQueries: `${KEY_PREFIX}assistant-queries`,
 } as const;
 
 export type StorageKey = (typeof STORAGE_KEYS)[keyof typeof STORAGE_KEYS];
@@ -98,7 +108,9 @@ export async function loadJSON<T>(
     if (typeof AsyncStorage?.getItem === 'function') {
       try {
         raw = await AsyncStorage.getItem(key);
-      } catch {}
+      } catch (err) {
+        console.warn(`[storage] Error al leer AsyncStorage para "${key}":`, err);
+      }
     }
     if (raw == null) {
       raw = memoryFallbackMap.get(key) ?? null;
@@ -115,15 +127,77 @@ export async function loadJSON<T>(
   }
 }
 
-/** Serializa y guarda un valor. Devuelve true si la escritura tuvo éxito. */
+/**
+ * Serializa y guarda un valor en almacenamiento local.
+ * Maneja errores de I/O de AsyncStorage sin ocultarlos: retorna false en caso de fallo real.
+ */
 export async function saveJSON<T>(key: StorageKey, value: T): Promise<boolean> {
   try {
     const serialized = JSON.stringify(value);
     memoryFallbackMap.set(key, serialized);
     if (typeof AsyncStorage?.setItem === 'function') {
-      try {
-        await AsyncStorage.setItem(key, serialized);
-      } catch {}
+      await AsyncStorage.setItem(key, serialized);
+    }
+    return true;
+  } catch (error) {
+    console.warn(`[storage] Error de I/O al guardar "${key}":`, error);
+    return false;
+  }
+}
+
+/**
+ * Guarda valores sensibles (entitlements Pro, credenciales) cifrados vía SecureStore.
+ */
+export async function saveSecureJSON<T>(key: string, value: T): Promise<boolean> {
+  try {
+    const serialized = JSON.stringify(value);
+    memoryFallbackMap.set(key, serialized);
+    const SecureStore = await getSecureStore();
+    if (SecureStore && (await SecureStore.isAvailableAsync())) {
+      await SecureStore.setItemAsync(key, serialized);
+      return true;
+    }
+    if (typeof AsyncStorage?.setItem === 'function') {
+      await AsyncStorage.setItem(key, serialized);
+    }
+    return true;
+  } catch (err) {
+    console.warn(`[storage] Error al guardar en almacenamiento seguro ("${key}"):`, err);
+    return false;
+  }
+}
+
+/**
+ * Recupera valores sensibles cifrados desde SecureStore.
+ */
+export async function loadSecureJSON<T>(key: string, fallback: T): Promise<T> {
+  try {
+    const SecureStore = await getSecureStore();
+    if (SecureStore && (await SecureStore.isAvailableAsync())) {
+      const raw = await SecureStore.getItemAsync(key);
+      if (raw != null) {
+        return JSON.parse(raw) as T;
+      }
+    }
+    return await loadJSON<T>(key as StorageKey, fallback);
+  } catch (err) {
+    console.warn(`[storage] Error al cargar de almacenamiento seguro ("${key}"):`, err);
+    return fallback;
+  }
+}
+
+/**
+ * Elimina una clave de almacenamiento seguro.
+ */
+export async function removeSecureKey(key: string): Promise<boolean> {
+  try {
+    memoryFallbackMap.delete(key);
+    const SecureStore = await getSecureStore();
+    if (SecureStore && (await SecureStore.isAvailableAsync())) {
+      await SecureStore.deleteItemAsync(key);
+    }
+    if (typeof AsyncStorage?.removeItem === 'function') {
+      await AsyncStorage.removeItem(key);
     }
     return true;
   } catch {
@@ -136,9 +210,7 @@ export async function removeKey(key: StorageKey): Promise<boolean> {
   try {
     memoryFallbackMap.delete(key);
     if (typeof AsyncStorage?.removeItem === 'function') {
-      try {
-        await AsyncStorage.removeItem(key);
-      } catch {}
+      await AsyncStorage.removeItem(key);
     }
     return true;
   } catch {
@@ -151,11 +223,20 @@ export async function removeKey(key: StorageKey): Promise<boolean> {
  */
 export async function clearAllAppData(): Promise<boolean> {
   try {
-    const allKeys = await AsyncStorage.getAllKeys();
-    const appKeys = allKeys.filter((key) => key.startsWith(KEY_PREFIX));
-    if (appKeys.length > 0) {
-      await AsyncStorage.multiRemove(appKeys);
+    memoryFallbackMap.clear();
+    if (typeof AsyncStorage?.getAllKeys === 'function') {
+      const allKeys = await AsyncStorage.getAllKeys();
+      const appKeys = allKeys.filter((key) => key.startsWith(KEY_PREFIX) || key.startsWith('plantae:'));
+      if (appKeys.length > 0 && typeof AsyncStorage?.multiRemove === 'function') {
+        await AsyncStorage.multiRemove(appKeys);
+      }
     }
+    // Purgar también claves seguras y cancelar notificaciones programadas
+    await removeSecureKey(STORAGE_KEYS.premium);
+    try {
+      const { cancelAllNotifications } = await import('./notificationService');
+      await cancelAllNotifications();
+    } catch {}
     return true;
   } catch (error) {
     console.warn('[storage] No se pudieron borrar los datos locales.', error);

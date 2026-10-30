@@ -21,6 +21,7 @@ import { Button } from '../components/Button';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { StatusPill } from '../components/StatusPill';
 import { getLocalWeatherAndRecommendations, WeatherData } from '../services/weatherService';
+import { isGeminiDirectAvailable, getOrFetchDailyGardenAdvice } from '../services/geminiService';
 import { announce } from '../services/accessibilityService';
 import { useTranslation } from '../i18n';
 
@@ -74,6 +75,41 @@ export const TodayScreen: React.FC = () => {
   const plantsNeedingWater = useMemo(() => {
     return plants.filter((p) => !p.isWateredToday);
   }, [plants]);
+
+  // Consejo diario agronómico con IA (Gemini)
+  const [aiAdvice, setAiAdvice] = useState<string | null>(null);
+  const [loadingAiAdvice, setLoadingAiAdvice] = useState<boolean>(false);
+
+  const loadAiAdvice = async (force = false) => {
+    if (!isGeminiDirectAvailable()) return;
+    setLoadingAiAdvice(true);
+    try {
+      const advice = await getOrFetchDailyGardenAdvice(
+        {
+          plantsCount: plants.length,
+          plantsNeedingWater: plantsNeedingWater.map((p) => p.name),
+          totalPlantsSummary: plants.slice(0, 4).map((p) => p.name),
+          weather: weather
+            ? {
+                city: weather.city,
+                temperatureC: weather.temperatureC,
+                weatherDescription: weather.weatherDescription,
+              }
+            : null,
+        },
+        force
+      );
+      setAiAdvice(advice);
+    } catch {
+      // Fallback
+    } finally {
+      setLoadingAiAdvice(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadAiAdvice();
+  }, [plants.length, weather?.city]);
 
   const handleWaterSingle = (plant: GardenPlant) => {
     try {
@@ -219,6 +255,66 @@ export const TodayScreen: React.FC = () => {
           </Text>
         </View>
       </View>
+
+      {/* ASESOR BOTÁNICO INTELIGENTE IA (GEMINI) */}
+      {aiAdvice ? (
+        <Card
+          variant="flat"
+          style={{
+            backgroundColor: colors.surfaceContainer,
+            borderColor: colors.outlineVariant,
+            borderWidth: 1,
+            borderRadius: layout.borderRadius.lg,
+            padding: spacing.md,
+            marginBottom: spacing.md,
+          }}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Ionicons name="sparkles" size={16} color={colors.primary} style={{ marginRight: 6 }} />
+              <Text style={[typography.caption1, { color: colors.primary, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 }]}>
+                {t('Asesor Botánico IA')}
+              </Text>
+            </View>
+            <Pressable
+              onPress={() => loadAiAdvice(true)}
+              disabled={loadingAiAdvice}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}
+              accessibilityRole="button"
+              accessibilityLabel={t('Actualizar consejo de IA')}
+            >
+              <Ionicons
+                name="refresh-outline"
+                size={16}
+                color={loadingAiAdvice ? colors.primary : colors.textTertiary}
+              />
+            </Pressable>
+          </View>
+          <Text style={[typography.body, { color: colors.textPrimary, lineHeight: 22 }]}>
+            {aiAdvice}
+          </Text>
+          <Pressable
+            onPress={() => navigation.navigate('Assistant')}
+            style={({ pressed }) => [
+              {
+                flexDirection: 'row',
+                alignItems: 'center',
+                marginTop: spacing.sm,
+                alignSelf: 'flex-start',
+                opacity: pressed ? 0.7 : 1,
+              },
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel={t('Preguntar al asistente IA')}
+          >
+            <Text style={[typography.caption1, { color: colors.primary, fontWeight: '700', marginRight: 4 }]}>
+              {t('Consultar a la IA')}
+            </Text>
+            <Ionicons name="arrow-forward" size={14} color={colors.primary} />
+          </Pressable>
+        </Card>
+      ) : null}
 
       {/* ESTADO CON PLANTAS VS. ESTADO VACÍO */}
       {plants.length === 0 ? (

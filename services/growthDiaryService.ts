@@ -1,5 +1,5 @@
 /**
- * Plantae Growth Diary Service
+ * EcoScan Growth Diary Service
  *
  * Línea de tiempo de crecimiento por planta con fotos, medidas y comparador
  * antes/después. Persiste en AsyncStorage (caché local, offline-first).
@@ -211,4 +211,11 @@ export function getGrowthComparison(plantId: string): GrowthComparison {
 export function formatEntryDate(iso: string): string {
   const date = new Date(iso);
   return date.toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+/** Obtiene todas las rutas de fotos activas guardadas en el diario de crecimiento */
+export function getAllGrowthPhotoUris(): string[] {
+  return flatten()
+    .map((e) => e.photoUri)
+    .filter((uri): uri is string => typeof uri === 'string' && uri.length > 0);
 }

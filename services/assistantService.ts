@@ -1,5 +1,5 @@
 /**
- * Plantae Assistant Service (MOCK)
+ * EcoScan Assistant Service (MOCK)
  *
  * Asistente conversacional de jardinería. En este entorno responde con una
  * heurística local sobre el catálogo botánico.
@@ -21,6 +21,7 @@
 import { CatalogPlant, searchPlants } from './plantApi';
 import { getToxicity } from './toxicityService';
 import { t } from '../i18n';
+import { isGeminiDirectAvailable, askGeminiAssistant } from './geminiService';
 
 export interface AssistantMessage {
   id: string;
@@ -65,9 +66,21 @@ export function getWelcomeMessage(): AssistantMessage {
   );
 }
 
-interface AssistantContext {
+export interface AssistantContext {
   plantName?: string;
   isPremium?: boolean;
+  gardenPlants?: {
+    name: string;
+    scientificName?: string;
+    isWateredToday?: boolean;
+    wateringFrequencyDays?: number;
+    healthScore?: number;
+    room?: string;
+  }[];
+  history?: {
+    role: 'user' | 'assistant';
+    text: string;
+  }[];
 }
 
 const findPlantByText = (text: string): CatalogPlant | null => {
@@ -204,6 +217,21 @@ export async function sendAssistantMessage(
   prompt: string,
   context: AssistantContext = {}
 ): Promise<AssistantMessage> {
+  // Asistente directo gratuito con Google Gemini si está configurado
+  if (isGeminiDirectAvailable()) {
+    try {
+      const result = await askGeminiAssistant(prompt, context);
+      return createMessage('assistant', result.reply, {
+        source: 'cloud-function',
+        quickReplies: result.quickReplies && result.quickReplies.length > 0
+          ? result.quickReplies
+          : SUGGESTED_QUESTIONS.slice(0, 3).map((q) => t(q)),
+      });
+    } catch (err) {
+      console.warn('[Gemini Assistant] Error en respuesta directa:', err);
+    }
+  }
+
   if (USE_REMOTE_ASSISTANT && ASSISTANT_CHAT_ENDPOINT) {
     try {
       const res = await fetch(ASSISTANT_CHAT_ENDPOINT, {

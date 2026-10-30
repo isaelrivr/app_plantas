@@ -6,7 +6,6 @@ import {
   ScrollView,
   Pressable,
   useWindowDimensions,
-  Animated,
   NativeSyntheticEvent,
   NativeScrollEvent,
   Image,

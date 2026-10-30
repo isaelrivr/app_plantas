@@ -7,7 +7,7 @@
 
 import type { AppConfig } from './config';
 import type { Identity } from './guard';
-import { consumeQuota } from './rateLimit';
+import { consumeQuota, refundQuota } from './rateLimit';
 import { identifyWithPlantId, type PlantIdSuggestion } from './providers/plantId';
 import type { IdentificationCandidate, IdentifyRequest, IdentifyResponse, ImageQualityFlags } from './types';
 import { badRequest } from './errors';
@@ -76,23 +76,27 @@ export async function runIdentify(config: AppConfig, identity: Identity, req: Id
 
   await consumeQuota(identity, 'identify', config.quotas.identify);
 
-  const upstream = await identifyWithPlantId(config, images);
-  const candidates = upstream.suggestions.map(toCandidate).filter((candidate) => candidate.id.length > 0);
-  const topConfidence = candidates[0]?.confidence ?? 0;
+  try {
+    const upstream = await identifyWithPlantId(config, images);
+    const candidates = upstream.suggestions.map(toCandidate).filter((candidate) => candidate.id.length > 0);
 
-  const imageQuality: ImageQualityFlags = {};
-  // Heurística honesta: una imagen útil a 1024px/0.7 suele superar ~60KB.
-  if (totalBytes / images.length < 60_000) {
-    imageQuality.lowResolution = true;
-    imageQuality.note = 'La imagen parece tener poca resolución o nitidez. Acércate más y mejora la iluminación.';
-  }
-  if (!upstream.isPlant && candidates.length === 0) {
-    imageQuality.lowConfidence = true;
-  }
+    const imageQuality: ImageQualityFlags = {};
+    // Heurística honesta: una imagen útil a 1024px/0.7 suele superar ~60KB.
+    if (totalBytes / images.length < 60_000) {
+      imageQuality.lowResolution = true;
+      imageQuality.note = 'La imagen parece tener poca resolución o nitidez. Acércate más y mejora la iluminación.';
+    }
+    if (!upstream.isPlant && candidates.length === 0) {
+      imageQuality.lowConfidence = true;
+    }
 
-  return {
-    candidates,
-    isPlant: upstream.isPlant,
-    imageQuality,
-  };
+    return {
+      candidates,
+      isPlant: upstream.isPlant,
+      imageQuality,
+    };
+  } catch (err) {
+    await refundQuota(identity, 'identify');
+    throw err;
+  }
 }

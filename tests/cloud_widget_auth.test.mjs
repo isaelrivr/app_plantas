@@ -5,27 +5,16 @@ import {
   calculateWidgetSnapshot,
   updateWidgetData,
   getSavedWidgetData,
-  DEFAULT_WIDGET_SNAPSHOT,
 } from '../services/widgetService.ts';
 
 import {
-  getCurrentUser,
-  isAuthenticated,
-  signInWithEmail,
-  signUpWithEmail,
-  signInAnonymously,
-  signOut,
-  deleteUserAccount,
-  onAuthStateChanged,
-} from '../services/authService.ts';
-
-import {
-  uploadGardenToCloud,
-  downloadGardenFromCloud,
-  syncGardenWithCloud,
-  deleteRemoteUserData,
-  getSyncMetadata,
-} from '../services/syncService.ts';
+  saveJSON,
+  loadJSON,
+  saveSecureJSON,
+  loadSecureJSON,
+  clearAllAppData,
+  STORAGE_KEYS,
+} from '../services/storage.ts';
 
 test('widget: calculateWidgetSnapshot handles empty garden gracefully', () => {
   const snapshot = calculateWidgetSnapshot([]);
@@ -117,119 +106,31 @@ test('widget: updateWidgetData and getSavedWidgetData persist snapshot', async (
   assert.equal(loaded.nextPlantId, 'plant-calathea');
 });
 
-test('auth: signInWithEmail and signUpWithEmail create valid session and update state', async () => {
-  let observedUser = null;
-  const unsubscribe = onAuthStateChanged((user) => {
-    observedUser = user;
-  });
+test('storage: saveJSON and loadJSON handle persistence and schema fallback correctly', async () => {
+  const testData = { plantsCount: 3, lastUpdated: '2026-10-29' };
+  const saved = await saveJSON(STORAGE_KEYS.settings, testData);
+  assert.equal(saved, true);
 
-  const newUser = await signUpWithEmail('jardinera@ecoscan.app', 'secreto123', 'Lucía');
-  assert.equal(newUser.email, 'jardinera@ecoscan.app');
-  assert.equal(newUser.displayName, 'Lucía');
-  assert.equal(newUser.isAnonymous, false);
-  assert.equal(isAuthenticated(), true);
-  assert.equal(getCurrentUser()?.email, 'jardinera@ecoscan.app');
-  assert.equal(observedUser?.email, 'jardinera@ecoscan.app');
-
-  // Sign out
-  await signOut();
-  assert.equal(isAuthenticated(), false);
-  assert.equal(getCurrentUser(), null);
-
-  // Sign in
-  const loggedIn = await signInWithEmail('jardinera@ecoscan.app', 'secreto123');
-  assert.equal(loggedIn.email, 'jardinera@ecoscan.app');
-  assert.equal(isAuthenticated(), true);
-
-  // Account deletion
-  const deleted = await deleteUserAccount();
-  assert.equal(deleted, true);
-  assert.equal(isAuthenticated(), false);
-
-  unsubscribe();
+  const loaded = await loadJSON(STORAGE_KEYS.settings, null);
+  assert.deepEqual(loaded, testData);
 });
 
-test('auth: signInAnonymously establishes temporary guest session', async () => {
-  const anonUser = await signInAnonymously();
-  assert.equal(anonUser.isAnonymous, true);
-  assert.match(anonUser.uid, /^anon_/);
-  assert.equal(isAuthenticated(), true);
+test('storage: saveSecureJSON and loadSecureJSON protect sensitive Pro entitlement state', async () => {
+  const sensitiveProState = {
+    isPremium: true,
+    isTrial: false,
+    activePlanId: 'annual',
+    expiresAt: '2027-10-29T00:00:00.000Z',
+  };
 
-  await signOut();
-  assert.equal(isAuthenticated(), false);
+  const saved = await saveSecureJSON(STORAGE_KEYS.premium, sensitiveProState);
+  assert.equal(saved, true);
+
+  const loaded = await loadSecureJSON(STORAGE_KEYS.premium, null);
+  assert.deepEqual(loaded, sensitiveProState);
 });
 
-test('sync: uploadGardenToCloud and downloadGardenFromCloud persist remote state', async () => {
-  const userId = 'usr_test_12345';
-  const mockPlants = [
-    {
-      id: 'p1',
-      name: 'Sansevieria',
-      scientificName: 'Dracaena trifasciata',
-      lastWatered: 'Hace 5 días',
-      isWateredToday: false,
-      wateringFrequencyDays: 14,
-      light: 'Cualquiera',
-      avatarEmoji: '🪴',
-      healthScore: 99,
-    },
-  ];
-  const mockRooms = [{ id: 'r1', name: 'Sala', icon: 'home-outline' }];
-
-  const uploadRes = await uploadGardenToCloud(userId, mockPlants, mockRooms);
-  assert.equal(uploadRes.success, true);
-  assert.ok(uploadRes.updatedAt);
-
-  const downloaded = await downloadGardenFromCloud(userId);
-  assert.ok(downloaded);
-  assert.equal(downloaded.userId, userId);
-  assert.equal(downloaded.plants.length, 1);
-  assert.equal(downloaded.plants[0].name, 'Sansevieria');
-
-  const meta = await getSyncMetadata();
-  assert.equal(meta.status, 'synced');
-  assert.equal(meta.syncedPlantsCount, 1);
-});
-
-test('sync: syncGardenWithCloud merges remote and local plants without duplicates', async () => {
-  const userId = 'usr_merge_67890';
-  const remotePlants = [
-    {
-      id: 'p1',
-      name: 'Monstera',
-      scientificName: 'Monstera deliciosa',
-      lastWatered: 'Ayer',
-      isWateredToday: false,
-      wateringFrequencyDays: 7,
-      light: 'Media',
-      avatarEmoji: '🌿',
-      healthScore: 90,
-    },
-  ];
-  await uploadGardenToCloud(userId, remotePlants);
-
-  const localPlants = [
-    {
-      id: 'p2',
-      name: 'Suculenta',
-      scientificName: 'Echeveria elegans',
-      lastWatered: 'Hace 8 días',
-      isWateredToday: false,
-      wateringFrequencyDays: 12,
-      light: 'Sol directo',
-      avatarEmoji: '🌵',
-      healthScore: 92,
-    },
-  ];
-
-  const merged = await syncGardenWithCloud(userId, localPlants);
-  assert.equal(merged.plants.length, 2);
-  const ids = merged.plants.map((p) => p.id).sort();
-  assert.deepEqual(ids, ['p1', 'p2']);
-
-  // Remote cleanup
-  const deleted = await deleteRemoteUserData(userId);
-  assert.equal(deleted, true);
-  const afterDelete = await downloadGardenFromCloud(userId);
-  assert.equal(afterDelete, null);
+test('storage: clearAllAppData purges all local app data cleanly', async () => {
+  const cleared = await clearAllAppData();
+  assert.equal(cleared, true);
 });

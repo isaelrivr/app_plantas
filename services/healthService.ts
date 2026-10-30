@@ -1,5 +1,5 @@
 /**
- * Plantae Health & Pest Diagnosis Service
+ * EcoScan Health & Pest Diagnosis Service
  *
  * Diagnóstico real de patologías foliares, plagas y deficiencias. Las imágenes
  * se comprimen y se envían al backend (`/healthAssessment`), que orquesta
@@ -9,9 +9,10 @@
  * determinista (sin `Math.random`) marcado como `source: 'mock'`.
  */
 
-import { ApiError, postJson, shouldUseMocks } from './apiClient';
+import { ApiError, postJson, shouldUseMocks, isApiConfigured } from './apiClient';
 import { compressImages } from './imageCompression';
 import { t } from '../i18n';
+import { isGeminiDirectAvailable, diagnoseHealthWithGemini } from './geminiService';
 
 export type HealthSeverity = 'leve' | 'moderada' | 'grave';
 export type HealthCategory = 'Plaga' | 'Hongo' | 'Bacteriosis' | 'Estrés Hídrico' | 'Saludable';
@@ -523,6 +524,21 @@ export async function diagnosePlantHealth(
       t('No se pudo procesar la imagen. Vuelve a tomar la foto con buena iluminación.'),
       0
     );
+  }
+
+  // Diagnóstico directo gratuito con Google Gemini Vision si está configurado
+  if (isGeminiDirectAvailable()) {
+    try {
+      return await diagnoseHealthWithGemini(compressed.map((c) => c.base64), plantName);
+    } catch (err) {
+      if (err instanceof HealthNoPlantError) throw err;
+      console.warn('[Gemini Health] Error en diagnóstico directo:', err);
+      if (!isApiConfigured() && __DEV__) {
+        const seedKey = `${plantName ?? ''}|${compressed.map((c) => c.base64.slice(0, 128)).join('|')}`;
+        return mockDiagnosis(seedKey);
+      }
+      throw err;
+    }
   }
 
   if (shouldUseMocks()) {

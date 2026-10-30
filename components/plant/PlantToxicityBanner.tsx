@@ -58,6 +58,9 @@ export const PlantToxicityBanner: React.FC<PlantToxicityBannerProps> = ({ specie
         <Text style={[typography.caption1, { color: textColor, fontWeight: '700' }]}>
           {label}
         </Text>
+        <Text style={[typography.caption2, { color: textColor, opacity: 0.85, marginTop: 2, fontSize: 11 }]}>
+          {t('Aviso orientativo: no sustituye la valoración de un profesional veterinario o botánico.')}
+        </Text>
       </View>
     </View>
   );

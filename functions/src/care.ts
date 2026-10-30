@@ -1,18 +1,22 @@
 /**
- * Ficha de cuidados: caché en Firestore + generación con Gemini (JSON validado).
- * Las fichas se cachean por especie para no repetir generaciones costosas.
+ * Ficha de cuidados: caché en memoria + generación con Gemini (JSON validado).
+ * Sin dependencia de Firestore.
  */
 
 import * as crypto from 'node:crypto';
-import { getFirestore } from 'firebase-admin/firestore';
 import type { AppConfig } from './config';
 import type { Identity } from './guard';
-import { consumeQuota } from './rateLimit';
+import { consumeQuota, refundQuota } from './rateLimit';
 import { generateCareSheetJson } from './providers/gemini';
 import type { CareRequest, CareSheet } from './types';
 import { badRequest } from './errors';
 
-const CARE_CACHE_COLLECTION = 'care_cache';
+interface CacheEntry {
+  sheet: CareSheet;
+  savedAt: number;
+}
+
+const careMemoryCache = new Map<string, CacheEntry>();
 
 const clamp = (value: number, min: number, max: number): number => Math.min(max, Math.max(min, value));
 
@@ -91,30 +95,27 @@ export function validateCareSheet(raw: unknown, commonName: string, scientificNa
 }
 
 async function readCache(config: AppConfig, key: string): Promise<CareSheet | null> {
-  try {
-    const snap = await getFirestore().collection(CARE_CACHE_COLLECTION).doc(key).get();
-    if (!snap.exists) return null;
-    const data = snap.data() as { sheet?: CareSheet; savedAt?: number } | undefined;
-    if (!data?.sheet || !data.savedAt) return null;
-    const ageDays = (Date.now() - Number(data.savedAt)) / (1000 * 60 * 60 * 24);
-    if (ageDays > config.careCacheDays) return null;
-    return data.sheet;
-  } catch {
-    return null; // sin Firestore se genera de nuevo
+  const entry = careMemoryCache.get(key);
+  if (!entry) return null;
+  const ageDays = (Date.now() - entry.savedAt) / (1000 * 60 * 60 * 24);
+  if (ageDays > config.careCacheDays) {
+    careMemoryCache.delete(key);
+    return null;
   }
+  return entry.sheet;
 }
 
 async function writeCache(key: string, sheet: CareSheet): Promise<void> {
-  try {
-    await getFirestore().collection(CARE_CACHE_COLLECTION).doc(key).set({ sheet, savedAt: Date.now() });
-  } catch {
-    /* caché best-effort */
+  careMemoryCache.set(key, { sheet, savedAt: Date.now() });
+  if (careMemoryCache.size > 2000) {
+    const oldestKey = careMemoryCache.keys().next().value;
+    if (oldestKey) careMemoryCache.delete(oldestKey);
   }
 }
 
 export async function resolveCareSheet(config: AppConfig, identity: Identity, req: CareRequest): Promise<CareSheet> {
-  const speciesName = typeof req?.speciesName === 'string' ? req.speciesName.trim().slice(0, 120) : '';
-  const scientificName = typeof req?.scientificName === 'string' ? req.scientificName.trim().slice(0, 160) : '';
+  const speciesName = typeof req?.speciesName === 'string' ? req.speciesName.trim().slice(0, 100) : '';
+  const scientificName = typeof req?.scientificName === 'string' ? req.scientificName.trim().slice(0, 120) : '';
   if (!speciesName && !scientificName) {
     throw badRequest('Envía speciesName (o scientificName) para generar la ficha de cuidados.');
   }
@@ -126,13 +127,17 @@ export async function resolveCareSheet(config: AppConfig, identity: Identity, re
 
   await consumeQuota(identity, 'care', config.quotas.care);
 
-  const raw = await generateCareSheetJson(config, speciesName || scientificName, scientificName);
-  const sheet = validateCareSheet(raw, speciesName || scientificName, scientificName);
-  if (!sheet) {
-    // Sin LLM (mock/parse fallido) o claves ausentes: plantilla genérica honesta.
-    return validateCareSheet({}, speciesName || scientificName, scientificName) as CareSheet;
-  }
+  try {
+    const raw = await generateCareSheetJson(config, speciesName || scientificName, scientificName);
+    const sheet = validateCareSheet(raw, speciesName || scientificName, scientificName);
+    if (!sheet) {
+      return validateCareSheet({}, speciesName || scientificName, scientificName) as CareSheet;
+    }
 
-  await writeCache(key, sheet);
-  return sheet;
+    await writeCache(key, sheet);
+    return sheet;
+  } catch (err) {
+    await refundQuota(identity, 'care');
+    throw err;
+  }
 }

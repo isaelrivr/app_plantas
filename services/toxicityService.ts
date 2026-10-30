@@ -1,5 +1,5 @@
 /**
- * Plantae Pet & Child Toxicity Service
+ * EcoScan Pet & Child Toxicity Service
  *
  * Base de datos botánica de seguridad doméstica. Indica si una especie es
  * tóxica para mascotas (perros/gatos) y para niños, con nivel y notas.

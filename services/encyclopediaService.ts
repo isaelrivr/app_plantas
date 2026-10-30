@@ -1,5 +1,5 @@
 /**
- * Plantae Encyclopedia Service
+ * EcoScan Encyclopedia Service
  *
  * Búsqueda y filtrado del catálogo botánico con criterios de luz, dificultad,
  * seguridad para mascotas e interior/exterior. El catálogo es 100% local
@@ -15,6 +15,7 @@ import {
 } from './plantApi';
 import { t } from '../i18n';
 import { isPetSafe } from './toxicityService';
+import { normalizeDiacritics } from '../utils/textUtils';
 
 export type LightFilter = 'all' | 'low' | 'medium' | 'bright';
 export type DifficultyFilter = 'all' | 'Fácil' | 'Moderado' | 'Avanzado';
@@ -137,7 +138,6 @@ const matchesEnvironment = (
   return value === env || value === 'both';
 };
 
-import { normalizeDiacritics } from '../utils/textUtils';
 export { normalizeDiacritics };
 
 /** Aplica el idioma activo a los textos de UI de una especie (sin tocar nombres). */

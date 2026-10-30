@@ -1,7 +1,7 @@
 /**
- * Plantae API Client
+ * EcoScan API Client
  *
- * Cliente HTTP único contra las Cloud Functions de Plantae. Reglas:
+ * Cliente HTTP único contra las Cloud Functions de EcoScan. Reglas:
  *  - Ninguna clave de API vive aquí: el móvil solo conoce la URL base.
  *  - Timeout de 15 s con un reintento para fallos transitorios.
  *  - Idempotencia: cada petición lleva un `requestId` estable, de modo que un
@@ -34,14 +34,21 @@ export interface ApiErrorBody {
 }
 
 export class ApiError extends Error {
+  readonly code: string;
+  readonly status: number;
+  readonly retryAfterSeconds?: number;
+
   constructor(
-    public readonly code: string,
+    code: string,
     message: string,
-    public readonly status: number = 0,
-    public readonly retryAfterSeconds?: number
+    status: number = 0,
+    retryAfterSeconds?: number
   ) {
     super(message);
     this.name = 'ApiError';
+    this.code = code;
+    this.status = status;
+    this.retryAfterSeconds = retryAfterSeconds;
   }
 }
 
@@ -86,7 +93,7 @@ async function parseError(response: Response): Promise<ApiError> {
 }
 
 /**
- * Envía una petición POST JSON a una función de Plantae.
+ * Envía una petición POST JSON a una función de EcoScan.
  * @param path Ruta relativa, p. ej. `/identifyPlant`.
  */
 export async function postJson<T>(path: string, body: unknown, options: PostOptions = {}): Promise<T> {

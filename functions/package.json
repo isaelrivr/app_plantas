@@ -1,8 +1,8 @@
 {
-  "name": "plantae-functions",
+  "name": "ecoscan-functions",
   "version": "1.0.0",
   "private": true,
-  "description": "Cloud Functions de Plantae: identificación de plantas (Plant.id), ficha de cuidados y diagnóstico de salud (Gemini). Sin claves de API en el cliente.",
+  "description": "Cloud Functions de EcoScan: identificación de plantas (Plant.id), ficha de cuidados y diagnóstico de salud (Gemini). Sin claves de API en el cliente.",
   "main": "lib/index.js",
   "engines": {
     "node": "22"

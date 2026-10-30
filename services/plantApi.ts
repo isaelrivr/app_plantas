@@ -1,12 +1,12 @@
 /**
- * Plantae Botanical Service
+ * EcoScan Botanical Service
  *
  * Catálogo botánico local (funciona sin conexión) + fachada de identificación
  * y de fichas de cuidados.
  *
  * NOTA DE SEGURIDAD:
  * Las llamadas a los proveedores reales (Plant.id / Gemini) se hacen SIEMPRE
- * desde las Cloud Functions de Plantae (`functions/`). El cliente solo conoce
+ * desde las Cloud Functions de EcoScan (`functions/`). El cliente solo conoce
  * la URL base del backend y nunca maneja claves de API.
  *
  * La identificación real devuelve candidatos con su confianza y sus imágenes de
@@ -14,9 +14,16 @@
  * simulados deterministas (nunca `Math.random`).
  */
 
-import { ApiError, postJson, shouldUseMocks } from './apiClient';
+import { ApiError, postJson, shouldUseMocks, isApiConfigured } from './apiClient';
+import {
+  isGeminiDirectAvailable,
+  identifyPlantWithGemini,
+  generateCareSheetWithGemini,
+  slugify,
+} from './geminiService';
 import { t } from '../i18n';
 import { compressImages } from './imageCompression';
+import { BOTANICAL_KNOWLEDGE_BASE } from './botanicalCatalogData';
 import type { BotanicalCareSheet, BotanicalCareLevels } from './plantCareCache';
 import {
   buildFallbackCareSheet,
@@ -103,7 +110,6 @@ export interface CatalogPlant {
   source?: 'catalog' | 'ai-real' | 'mock';
 }
 
-import { BOTANICAL_KNOWLEDGE_BASE } from './botanicalCatalogData';
 export { BOTANICAL_KNOWLEDGE_BASE };
 
 // ---------------------------------------------------------------------------
@@ -373,6 +379,32 @@ export async function identifyPlants(imageUris: string[]): Promise<PlantIdentifi
     );
   }
 
+  if (isGeminiDirectAvailable()) {
+    try {
+      const geminiResult = await identifyPlantWithGemini(compressed.map((c) => c.base64));
+      if (geminiResult.careSheet && geminiResult.candidates.length > 0) {
+        const top = geminiResult.candidates[0];
+        const key = careSheetKey(top.name, top.scientificName);
+        void saveCareSheet(key, geminiResult.careSheet);
+      }
+      return {
+        candidates: geminiResult.candidates,
+        isPlant: geminiResult.isPlant,
+        imageQuality: geminiResult.imageQuality,
+        confidence: geminiResult.confidence,
+        source: 'ai-real',
+        imageUri: imageUris[0],
+      };
+    } catch (err) {
+      console.warn('[Gemini Vision] Error en detección directa:', err);
+      if (!isApiConfigured() && __DEV__) {
+        const seed = hashString(compressed.map((c) => c.base64.slice(0, 256)).join('|'));
+        return mockIdentifyPlants(imageUris, seed);
+      }
+      throw err;
+    }
+  }
+
   if (shouldUseMocks()) {
     const seed = hashString(compressed.map((c) => c.base64.slice(0, 256)).join('|'));
     return mockIdentifyPlants(imageUris, seed);
@@ -422,6 +454,19 @@ export async function fetchCareSheet(commonName: string, scientificName = ''): P
   // 2. Caché local.
   const cached = await getCachedCareSheet(key);
   if (cached) return cached;
+
+  // 2.5 Gemini LLM directo (100% gratuito)
+  if (isGeminiDirectAvailable()) {
+    try {
+      const geminiSheet = await generateCareSheetWithGemini(name, scientificName);
+      if (geminiSheet) {
+        void saveCareSheet(key, geminiSheet);
+        return geminiSheet;
+      }
+    } catch (err) {
+      console.warn('[Gemini CareSheet] Error generando ficha directa:', err);
+    }
+  }
 
   // 3. Respaldo en desarrollo (sin backend configurado).
   if (shouldUseMocks()) {
@@ -483,5 +528,40 @@ export async function resolvePlantForDetail(
 
   const sheet = await fetchCareSheet(speciesName, scientificName);
   return localizeCatalogPlant(careSheetToCatalogPlant(sheet, plantId, confidence));
+}
+
+/**
+ * Busca una planta en el catálogo local y, si no existe, la genera
+ * en tiempo real usando Google Gemini con ficha de cuidados completa,
+ * requerimientos de luz y agua, toxicidad y origen geográfico.
+ */
+export async function searchOrGeneratePlantWithGemini(
+  query: string
+): Promise<CatalogPlant | null> {
+  const clean = query.trim();
+  if (!clean) return null;
+
+  // 1. Catálogo local
+  const local = findCatalogByName(clean);
+  if (local) {
+    return localizeCatalogPlant(local);
+  }
+
+  // 2. Generación dinámica con Gemini
+  if (isGeminiDirectAvailable()) {
+    try {
+      const sheet = await generateCareSheetWithGemini(clean, '');
+      if (sheet) {
+        const id = slugify(sheet.scientificName || sheet.commonName);
+        const key = careSheetKey(sheet.commonName, sheet.scientificName);
+        void saveCareSheet(key, sheet);
+        return localizeCatalogPlant(careSheetToCatalogPlant(sheet, id, 95));
+      }
+    } catch (err) {
+      console.warn('[Gemini Search] Error generando especie:', err);
+    }
+  }
+
+  return null;
 }
 

@@ -5,7 +5,6 @@ import {
   StyleSheet,
   ScrollView,
   Pressable,
-  Alert,
   Platform,
   FlatList,
 } from 'react-native';
@@ -81,7 +80,7 @@ const mondayIndex = (date: Date): number => (date.getDay() + 6) % 7;
 
 export const CareCalendarScreen: React.FC = () => {
   const { colors, isDark, spacing, typography, layout } = useAppTheme();
-  const { plants, waterPlantToday, toggleTaskCompleted, removeCareTask, updateCareTask } = useGarden();
+  const { plants, toggleTaskCompleted, removeCareTask, updateCareTask } = useGarden();
   const { showToast } = useFeedback();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
@@ -137,9 +136,9 @@ export const CareCalendarScreen: React.FC = () => {
   );
   const completedTasks = filteredTasks.filter((t) => t.completed);
 
-  const handleScheduleWatering = async (plantName: string, daysInterval: number) => {
+  const handleScheduleWatering = async (plantName: string, daysInterval: number, plantId?: string) => {
     try { Haptics.selectionAsync(); } catch {}
-    const id = await scheduleWateringReminder(plantName, daysInterval);
+    const id = await scheduleWateringReminder(plantName, daysInterval, plantId);
     if (id) {
       setErrorMessage(null);
       showToast({
@@ -158,7 +157,7 @@ export const CareCalendarScreen: React.FC = () => {
   ) => {
     try { Haptics.selectionAsync(); } catch {}
     const daysFromNow = Math.max(0, Math.round((task.dueDateObj.getTime() - Date.now()) / (24 * 60 * 60 * 1000)));
-    const id = await scheduleCareTaskReminder(task.plantName, task.type, task.title, daysFromNow);
+    const id = await scheduleCareTaskReminder(task.plantName, task.type, task.title, daysFromNow, task.repeatIntervalDays, task.plantId);
     if (id) {
       setErrorMessage(null);
       showToast({
@@ -785,7 +784,7 @@ export const CareCalendarScreen: React.FC = () => {
                     },
                   ]}
                   android_ripple={{ color: colors.primary + '25', borderless: true, radius: 24 }}
-                  onPress={() => handleScheduleWatering(plant.name, plant.wateringFrequencyDays)}
+                  onPress={() => handleScheduleWatering(plant.name, plant.wateringFrequencyDays, plant.id)}
                   accessibilityRole="button"
                   accessibilityLabel={t('Programar recordatorio de riego para {nombre}', { nombre: plant.name })}
                 >

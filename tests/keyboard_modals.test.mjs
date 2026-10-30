@@ -59,8 +59,12 @@ test('FASE E.2: BottomSheet Android edge-to-edge KeyboardAvoidingView & scrollab
   );
 });
 
-test('FASE E.2: AuthModal Android edge-to-edge KeyboardAvoidingView and scroll behavior', () => {
+test('FASE E.2: AuthModal Android edge-to-edge KeyboardAvoidingView and scroll behavior', (t) => {
   const authPath = path.join(process.cwd(), 'components', 'AuthModal.tsx');
+  if (!fs.existsSync(authPath)) {
+    t.skip('AuthModal removido en arquitectura 100% Local-First');
+    return;
+  }
   const authCode = fs.readFileSync(authPath, 'utf-8');
 
   // 1. KeyboardAvoidingView behavior

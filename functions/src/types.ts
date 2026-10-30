@@ -112,6 +112,7 @@ export interface HealthRequest {
 
 export interface AssistantRequest {
   message: string;
+  systemInstruction?: string;
   context?: { plantName?: string; isPremium?: boolean };
   requestId?: string;
 }

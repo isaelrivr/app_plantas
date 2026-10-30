@@ -1,12 +1,10 @@
 /**
- * Cliente de Plant.id API v2 (síncrona).
+ * Adaptador oficial de Plant.id API v3 (Kindwise).
  *
- * - Identificación:  POST {base}/identify
- * - Salud/enfermedad: POST {base}/health_assessment
+ * - Identificación:  POST {base}/identification?details=common_names,url,description,taxonomy
+ * - Salud/enfermedad: POST {base}/health_assessment?details=treatment,cause,description,common_names
  *
- * La API v2 es síncrona: devuelve el resultado en la misma respuesta, por lo
- * que cabe dentro del presupuesto de tiempo de la app (~15s). La clave viaja
- * solo en este servidor (header `Api-Key`), nunca al cliente.
+ * La clave viaja únicamente en el servidor (header `Api-Key`), jamás al cliente.
  */
 
 import type { AppConfig } from '../config';
@@ -50,13 +48,16 @@ async function postJson(url: string, apiKey: string, body: unknown, timeoutMs: n
   try {
     response = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Api-Key': apiKey },
+      headers: {
+        'Content-Type': 'application/json',
+        'Api-Key': apiKey,
+      },
       body: JSON.stringify(body),
       signal: controller.signal,
     });
   } catch (err) {
     const aborted = (err as Error)?.name === 'AbortError';
-    if (aborted) throw upstreamError('UPSTREAM_TIMEOUT', 'El proveedor de visión tardó demasiado en responder.', 504);
+    if (aborted) throw upstreamError('UPSTREAM_TIMEOUT', 'El proveedor de visión botánica tardó demasiado en responder.', 504);
     throw upstreamError('UPSTREAM_NETWORK', 'No se pudo contactar con el proveedor de visión botánica.');
   } finally {
     clearTimeout(timer);
@@ -98,7 +99,10 @@ const asSimilarImages = (value: unknown): { url: string; urlSmall: string }[] =>
   Array.isArray(value)
     ? value
         .slice(0, 3)
-        .map((item: any) => ({ url: String(item?.url ?? ''), urlSmall: String(item?.url_small ?? item?.url ?? '') }))
+        .map((item: any) => ({
+          url: String(item?.url ?? ''),
+          urlSmall: String(item?.url_small ?? item?.url ?? ''),
+        }))
         .filter((image) => image.url.length > 0 || image.urlSmall.length > 0)
     : [];
 
@@ -109,42 +113,63 @@ export async function identifyWithPlantId(config: AppConfig, images: string[]): 
     throw upstreamError('PLANT_ID_AUTH', 'El servidor no tiene configurada la clave PLANT_ID_API_KEY.', 502);
   }
 
+  const url = `${config.plantIdBaseUrl}/identification?details=common_names,url,description,taxonomy`;
   const json: any = await postJson(
-    `${config.plantIdBaseUrl}/identify`,
+    url,
     config.plantIdApiKey,
     {
       images,
-      modifiers: ['similar_images'],
-      plant_language: 'es',
-      plant_details: ['common_names', 'wiki_description', 'taxonomy', 'url'],
-      identification_timeout: 20,
+      similar_images: true,
     },
     config.upstreamTimeoutMs
   );
 
-  const isPlantBox = json?.is_plant;
-  const suggestions = Array.isArray(json?.suggestions) ? json.suggestions : [];
+  const result = json?.result ?? json ?? {};
+  const isPlantBox = result?.is_plant;
+  const isPlant =
+    isPlantBox?.binary === true ||
+    isPlantBox?.probable === true ||
+    Number(isPlantBox?.probability ?? 0) >= 0.6;
+  const plantProbability = Number(isPlantBox?.probability ?? 0);
+
+  const rawSuggestions = Array.isArray(result?.classification?.suggestions)
+    ? result.classification.suggestions
+    : Array.isArray(result?.suggestions)
+      ? result.suggestions
+      : [];
+
+  const suggestions: PlantIdSuggestion[] = rawSuggestions
+    .filter((s: any) => typeof (s?.name ?? s?.plant_name) === 'string')
+    .slice(0, 6)
+    .map((s: any): PlantIdSuggestion => {
+      const details = s?.details ?? s?.plant_details ?? {};
+      const taxonomy = details?.taxonomy ?? {};
+      const wiki =
+        typeof details?.wiki_description?.value === 'string'
+          ? details.wiki_description.value
+          : typeof details?.description?.value === 'string'
+            ? details.description.value
+            : typeof details?.description === 'string'
+              ? details.description
+              : typeof details?.url === 'string'
+                ? details.url
+                : undefined;
+
+      return {
+        name: String(s?.name ?? s?.plant_name ?? ''),
+        probability: Number(s?.probability ?? 0),
+        commonNames: asCommonNames(details?.common_names),
+        wikiDescription: wiki,
+        family: taxonomy?.family ? String(taxonomy.family) : undefined,
+        genus: taxonomy?.genus ? String(taxonomy.genus) : undefined,
+        similarImages: asSimilarImages(s?.similar_images),
+      };
+    });
 
   return {
-    isPlant: isPlantBox?.probable === true || Number(isPlantBox?.probability ?? 0) >= 0.6,
-    plantProbability: Number(isPlantBox?.probability ?? 0),
-    suggestions: suggestions
-      .filter((s: any) => typeof s?.plant_name === 'string' && s.plant_name.trim().length > 0)
-      .slice(0, 6)
-      .map((s: any): PlantIdSuggestion => {
-        const details = s?.plant_details ?? {};
-        const taxonomy = details?.taxonomy ?? {};
-        const wiki = details?.wiki_description?.value;
-        return {
-          name: String(s.plant_name),
-          probability: Number(s?.probability ?? 0),
-          commonNames: asCommonNames(details?.common_names),
-          wikiDescription: typeof wiki === 'string' && wiki.length > 0 ? wiki : undefined,
-          family: taxonomy?.family ? String(taxonomy.family) : undefined,
-          genus: taxonomy?.genus ? String(taxonomy.genus) : undefined,
-          similarImages: asSimilarImages(s?.similar_images),
-        };
-      }),
+    isPlant,
+    plantProbability,
+    suggestions,
   };
 }
 
@@ -155,42 +180,71 @@ export async function assessHealthWithPlantId(config: AppConfig, images: string[
     throw upstreamError('PLANT_ID_AUTH', 'El servidor no tiene configurada la clave PLANT_ID_API_KEY.', 502);
   }
 
+  const url = `${config.plantIdBaseUrl}/health_assessment?details=treatment,cause,description,common_names`;
   const json: any = await postJson(
-    `${config.plantIdBaseUrl}/health_assessment`,
+    url,
     config.plantIdApiKey,
     {
       images,
-      modifiers: ['similar_images'],
-      disease_details: ['common_names', 'description', 'treatment'],
-      language: 'es',
+      similar_images: true,
     },
     config.upstreamTimeoutMs
   );
 
-  const isHealthyBox = json?.is_healthy;
-  const isPlantBox = json?.is_plant;
-  const suggestions = Array.isArray(json?.disease?.suggestions) ? json.disease.suggestions : [];
+  const result = json?.result ?? json ?? {};
+  const isHealthyBox = result?.is_healthy;
+  const isPlantBox = result?.is_plant;
+
+  const rawSuggestions = Array.isArray(result?.disease?.suggestions)
+    ? result.disease.suggestions
+    : Array.isArray(result?.health_assessment?.diseases)
+      ? result.health_assessment.diseases
+      : Array.isArray(result?.disease_details)
+        ? result.disease_details
+        : [];
+
+  const isPlant =
+    isPlantBox?.binary === true ||
+    isPlantBox?.probable === true ||
+    Number(isPlantBox?.probability ?? 0) >= 0.6;
+
+  const isHealthy =
+    isHealthyBox?.binary === true ||
+    isHealthyBox?.probable === true ||
+    Number(isHealthyBox?.probability ?? 0) >= 0.6;
+
+  const healthProbability = Number(isHealthyBox?.probability ?? 0);
+
+  const suggestions: PlantIdHealthSuggestion[] = rawSuggestions.slice(0, 5).map((s: any): PlantIdHealthSuggestion => {
+    const details = s?.details ?? {};
+    const description =
+      typeof details?.description?.value === 'string'
+        ? details.description.value
+        : typeof details?.description === 'string'
+          ? details.description
+          : typeof details?.cause === 'string'
+            ? details.cause
+            : undefined;
+
+    return {
+      name: String(s?.name ?? 'Problema botánico'),
+      probability: Number(s?.probability ?? 0),
+      description,
+      commonNames: asCommonNames(details?.common_names),
+      similarImages: asSimilarImages(s?.similar_images),
+    };
+  });
 
   return {
-    isPlant: isPlantBox?.probable === true || Number(isPlantBox?.probability ?? 0) >= 0.6,
-    isHealthy: isHealthyBox?.probable === true || Number(isHealthyBox?.probability ?? 0) >= 0.6,
-    healthProbability: Number(isHealthyBox?.probability ?? 0),
-    suggestions: suggestions.slice(0, 5).map((s: any): PlantIdHealthSuggestion => {
-      const details = s?.details ?? {};
-      const description = details?.description?.value;
-      return {
-        name: String(s?.name ?? 'Sin nombre'),
-        probability: Number(s?.probability ?? 0),
-        description: typeof description === 'string' && description.length > 0 ? description : undefined,
-        commonNames: asCommonNames(details?.common_names),
-        similarImages: asSimilarImages(s?.similar_images),
-      };
-    }),
+    isPlant,
+    isHealthy,
+    healthProbability,
+    suggestions,
   };
 }
 
 // ---------------------------------------------------------------------------
-// Proveedores simulados (solo desarrollo local con USE_MOCK_PROVIDERS=true)
+// Mock Providers para desarrollo local sin consumo de cuota
 // ---------------------------------------------------------------------------
 
 function mockIdentify(): PlantIdIdentifyResult {

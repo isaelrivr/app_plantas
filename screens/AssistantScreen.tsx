@@ -18,6 +18,9 @@ import * as Haptics from 'expo-haptics';
 import { useAppTheme } from '../theme';
 import { ChatBubble } from '../components/ChatBubble';
 import { useGarden } from '../context/GardenContext';
+import { usePlanLimits } from '../hooks/usePlanLimits';
+import { useFeedback } from '../context/FeedbackContext';
+import { loadJSON, saveJSON, STORAGE_KEYS } from '../services/storage';
 import {
   AssistantMessage,
   createMessage,
@@ -28,18 +31,30 @@ import {
 import { useTranslation } from '../i18n';
 import { announce } from '../services/accessibilityService';
 
+const FREE_ASSISTANT_LIMIT = 3;
+
 export const AssistantScreen: React.FC = () => {
   const { colors, layout, spacing, typography } = useAppTheme();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
-  const { plants } = useGarden();
+  const { plants, rooms } = useGarden();
+  const limits = usePlanLimits();
+  const { isPremium } = limits;
+  const { confirm } = useFeedback();
   const { t } = useTranslation();
 
   const plantNameFromRoute = route.params?.plantName;
   const targetPlantName = plantNameFromRoute || plants[0]?.name;
 
   const scrollRef = useRef<React.ElementRef<typeof ScrollView>>(null);
+  const [queriesCount, setQueriesCount] = useState<number>(0);
+
+  useEffect(() => {
+    void loadJSON<number>(STORAGE_KEYS.assistantQueries, 0).then((c) => {
+      setQueriesCount(typeof c === 'number' ? c : 0);
+    });
+  }, []);
   const [messages, setMessages] = useState<AssistantMessage[]>(() => {
     if (plantNameFromRoute) {
       return [
@@ -97,18 +112,58 @@ export const AssistantScreen: React.FC = () => {
     if (!trimmed || typing) return;
     try { Haptics.selectionAsync(); } catch {}
 
+    if (!isPremium && queriesCount >= FREE_ASSISTANT_LIMIT) {
+      const seePro = await confirm({
+        title: t('Límite de consultas alcanzado'),
+        message: t(
+          'Has utilizado tus {limit} consultas gratuitas al Asistente Botánico. Pásate a EcoScan Pro para resolver dudas botánicas ilimitadas 24/7.',
+          { limit: FREE_ASSISTANT_LIMIT }
+        ),
+        confirmText: t('Desbloquear Pro'),
+        cancelText: t('Entendido'),
+      });
+      if (seePro) {
+        navigation.navigate('Paywall');
+      }
+      return;
+    }
+
     const userMessage = createMessage('user', trimmed);
     setMessages((prev) => [...prev, userMessage]);
     setInput('');
     setTyping(true);
 
+    const gardenContextData = plants.map((p) => ({
+      name: p.name,
+      scientificName: p.scientificName,
+      isWateredToday: p.isWateredToday,
+      wateringFrequencyDays: p.wateringFrequencyDays,
+      healthScore: p.healthScore,
+      room: rooms.find((r) => r.id === p.roomId)?.name,
+    }));
+
+    const conversationHistory = messages.slice(-6).map((m) => ({
+      role: m.role,
+      text: m.text,
+    }));
+
     try {
       const reply = await sendAssistantMessage(trimmed, {
         plantName: targetPlantName,
+        gardenPlants: gardenContextData,
+        history: conversationHistory,
       });
       setMessages((prev) => [...prev, reply]);
       announce(reply.text);
       try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+
+      if (!isPremium) {
+        setQueriesCount((prev) => {
+          const next = prev + 1;
+          void saveJSON(STORAGE_KEYS.assistantQueries, next);
+          return next;
+        });
+      }
     } catch {
       setMessages((prev) => [
         ...prev,
@@ -147,6 +202,48 @@ export const AssistantScreen: React.FC = () => {
           <Text style={[typography.footnote, { color: colors.textSecondary }]}>{t('Respuestas botánicas al instante')}</Text>
         </View>
         <View style={styles.actionHeaderBtn} />
+      </View>
+
+      {/* Barra de estado Pro / Consultas restantes */}
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          paddingHorizontal: spacing.md,
+          paddingVertical: 6,
+          backgroundColor: isPremium ? colors.primaryLight : colors.surfaceContainerLow,
+          borderBottomWidth: StyleSheet.hairlineWidth,
+          borderBottomColor: colors.outlineVariant,
+        }}
+      >
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Ionicons
+            name={isPremium ? 'sparkles' : queriesCount >= FREE_ASSISTANT_LIMIT ? 'lock-closed' : 'chatbubble-ellipses-outline'}
+            size={14}
+            color={isPremium ? colors.primary : colors.textSecondary}
+            style={{ marginRight: 6 }}
+          />
+          <Text style={[typography.caption2, { color: isPremium ? colors.primary : colors.textSecondary, fontWeight: '600' }]}>
+            {isPremium
+              ? t('EcoScan Pro • Consultas ilimitadas')
+              : queriesCount >= FREE_ASSISTANT_LIMIT
+              ? t('0/3 consultas gratuitas restantes')
+              : t('{remaining}/3 consultas gratuitas restantes', { remaining: Math.max(0, FREE_ASSISTANT_LIMIT - queriesCount) })}
+          </Text>
+        </View>
+        {!isPremium && (
+          <Pressable
+            onPress={() => navigation.navigate('Paywall')}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityRole="button"
+            accessibilityLabel={t('Ver planes Pro')}
+          >
+            <Text style={[typography.caption2, { color: colors.primary, fontWeight: '700' }]}>
+              {t('Ver Pro')}
+            </Text>
+          </Pressable>
+        )}
       </View>
 
       <KeyboardAvoidingView

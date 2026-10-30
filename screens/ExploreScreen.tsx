@@ -17,22 +17,62 @@ import { useAppTheme } from '../theme';
 import { useFloatingBarMetrics } from '../hooks/useFloatingBarMetrics';
 import { Card } from '../components/Card';
 import { Badge } from '../components/Badge';
+import { Button } from '../components/Button';
 import { ScreenHeader } from '../components/ScreenHeader';
 import {
   searchEncyclopedia,
   DEFAULT_FILTERS,
 } from '../services/encyclopediaService';
+import { searchOrGeneratePlantWithGemini } from '../services/plantApi';
+import { isGeminiDirectAvailable } from '../services/geminiService';
 import { isPetSafe } from '../services/toxicityService';
 import { getPlantImageSource } from '../services/plantAssets';
 import { useTranslation } from '../i18n';
+import { useFeedback } from '../context/FeedbackContext';
 
 export const ExploreScreen: React.FC = () => {
   const { colors, layout, spacing, typography } = useAppTheme();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const { t } = useTranslation();
+  const { showToast } = useFeedback();
 
   const [query, setQuery] = useState('');
+  const [generatingWithAi, setGeneratingWithAi] = useState(false);
+
+  const handleGenerateWithAi = async () => {
+    const q = query.trim();
+    if (!q || generatingWithAi) return;
+    try {
+      Haptics.selectionAsync();
+    } catch {}
+    setGeneratingWithAi(true);
+    try {
+      const generated = await searchOrGeneratePlantWithGemini(q);
+      if (generated) {
+        try {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        } catch {}
+        navigation.navigate('PlantDetail', {
+          plantId: generated.id,
+          plantName: generated.name,
+          scientificName: generated.scientificName,
+        });
+      } else {
+        showToast({
+          message: t('No pudimos generar la información. Intenta con otro nombre.'),
+          type: 'error',
+        });
+      }
+    } catch {
+      showToast({
+        message: t('Error al conectar con Gemini. Revisa tu conexión.'),
+        type: 'error',
+      });
+    } finally {
+      setGeneratingWithAi(false);
+    }
+  };
 
   // Búsqueda en catálogo
   const searchResults = useMemo(() => {
@@ -189,6 +229,30 @@ export const ExploreScreen: React.FC = () => {
                   </Card>
                 </Pressable>
               ))}
+              {isGeminiDirectAvailable() && (
+                <Pressable
+                  onPress={handleGenerateWithAi}
+                  disabled={generatingWithAi}
+                  style={({ pressed }) => [
+                    {
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      paddingVertical: spacing.sm,
+                      opacity: pressed || generatingWithAi ? 0.6 : 1,
+                    },
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('Buscar con IA')}
+                >
+                  <Ionicons name="sparkles" size={16} color={colors.primary} style={{ marginRight: 6 }} />
+                  <Text style={[typography.footnote, { color: colors.primary, fontWeight: '700' }]}>
+                    {generatingWithAi
+                      ? t('Consultando a Gemini...')
+                      : t('¿Buscas otra especie? Consultar "{nombre}" con Gemini AI', { nombre: query.trim() })}
+                  </Text>
+                </Pressable>
+              )}
             </View>
           ) : (
             <Card
@@ -200,13 +264,28 @@ export const ExploreScreen: React.FC = () => {
                   borderWidth: 1,
                   borderColor: colors.border,
                   backgroundColor: colors.surface,
+                  padding: spacing.lg,
+                  alignItems: 'center',
                 },
               ]}
             >
-              <Ionicons name="leaf-outline" size={32} color={colors.textTertiary} />
-              <Text style={[typography.subheadline, { color: colors.textSecondary, marginTop: 8 }]}>
-                {t('No encontramos plantas con ese nombre.')}
+              <Ionicons name="sparkles" size={32} color={colors.primary} />
+              <Text style={[typography.headline, { color: colors.textPrimary, marginTop: 8, textAlign: 'center' }]}>
+                {t('¿No está en el catálogo?')}
               </Text>
+              <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', marginTop: 4, marginBottom: spacing.md }]}>
+                {t('Gemini AI puede buscar y generar la ficha completa de "{nombre}" al instante.', {
+                  nombre: query.trim(),
+                })}
+              </Text>
+              <Button
+                title={generatingWithAi ? t('Generando con IA...') : t('Generar ficha con Gemini AI')}
+                onPress={handleGenerateWithAi}
+                disabled={generatingWithAi}
+                variant="primary"
+                size="md"
+                icon={<Ionicons name="sparkles" size={18} color="#FFFFFF" />}
+              />
             </Card>
           )}
         </View>

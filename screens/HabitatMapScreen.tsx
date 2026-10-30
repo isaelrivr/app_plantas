@@ -29,7 +29,7 @@ export const HabitatMapScreen: React.FC = () => {
   const route = useRoute<MapRoute>();
   const limits = usePlanLimits();
   const [plantId, setPlantId] = useState(
-    route.params?.plantId || (route.params as any)?.speciesId || 'monstera'
+    route.params?.plantId || route.params?.speciesId || 'monstera'
   );
   const [habitatData, setHabitatData] = useState<PlantHabitatInfo | null>(null);
   const [selectedRegion, setSelectedRegion] = useState<HabitatRegionDetail | null>(null);
@@ -51,19 +51,25 @@ export const HabitatMapScreen: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    const incoming = route.params?.plantId || (route.params as any)?.speciesId;
+    const incoming = route.params?.plantId || route.params?.speciesId;
     if (incoming && incoming !== plantId) {
       setPlantId(incoming);
       setResetToken((token) => token + 1);
     }
-  }, [route.params?.plantId, (route.params as any)?.speciesId, plantId]);
+  }, [route.params?.plantId, route.params?.speciesId, plantId]);
 
   const plant = getPlantById(plantId);
+  const plantNameParam = route.params?.plantName;
+  const scientificNameParam = route.params?.scientificName;
+
+  const displayName = plantNameParam || plant?.name || habitatData?.scientificName || t('Planta');
+  const displayScientific = scientificNameParam || plant?.scientificName || habitatData?.scientificName || '';
+
   const loadHabitat = useCallback(async () => {
     setLoading(true);
     setError(false);
     try {
-      const data = await getPlantHabitat(plantId);
+      const data = await getPlantHabitat(plantId, plantNameParam, scientificNameParam);
       setHabitatData(data);
       setSelectedRegion(data.regions.find((region) => region.zoneType === 'native') || data.regions[0] || null);
     } catch {
@@ -71,7 +77,7 @@ export const HabitatMapScreen: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [plantId]);
+  }, [plantId, plantNameParam, scientificNameParam]);
 
   useEffect(() => { void loadHabitat(); }, [loadHabitat]);
 
@@ -123,8 +129,8 @@ export const HabitatMapScreen: React.FC = () => {
         <Text style={[typography.body, { color: colors.primary, fontWeight: '600' }]}>{t('Atrás')}</Text>
       </Pressable>
       <View style={styles.titleWrap}>
-        <Text style={[typography.headline, { color: colors.textPrimary }]} numberOfLines={1}>{t('Origen en el Mundo')}</Text>
-        <Text style={[typography.footnote, { color: colors.textSecondary }]} numberOfLines={1}>{plant?.scientificName || t('Lugar de origen')}</Text>
+        <Text style={[typography.headline, { color: colors.textPrimary }]} numberOfLines={1}>{displayName}</Text>
+        <Text style={[typography.footnote, { color: colors.textSecondary }]} numberOfLines={1}>{displayScientific || t('Lugar de origen')}</Text>
       </View>
       <View style={styles.headerPlaceholder} />
     </View>
@@ -181,9 +187,9 @@ export const HabitatMapScreen: React.FC = () => {
         {loading || !topologyData ? <View style={styles.state}><SkeletonBox width="92%" height={240} borderRadius={18} /><Text style={[typography.subheadline, { color: colors.textSecondary, marginTop: spacing.md }]}>{t('Cargando mapa...')}</Text></View>
           : error ? <View style={styles.state}><ErrorBanner message={t('No pudimos cargar el mapa de esta planta.')} onRetry={loadHabitat} /></View>
             : !habitatData || !mappedCountries.length ? <View style={styles.state}><EmptyState iconName="leaf-outline" title={t('Sin registros de origen')} description={t('Aún no tenemos datos sobre el origen de esta especie.')} /></View>
-              : <WorldMap topology={topologyData as never} highlightedIds={highlightedIds} focusIds={focusIds} onCountryPress={(country) => { const region = mappedCountries.find((item) => item.id === country.id)?.region; if (region) setSelectedRegion(region); }} colors={mapColors} accessibilitySummary={t('Mapa mundial de {especie}. Regiones nativas: {regiones}', { especie: plant?.name || t('esta planta'), regiones: nativeCountries.map((country) => country.name).join(', ') })} resetToken={resetToken} />}
+              : <WorldMap topology={topologyData as never} highlightedIds={highlightedIds} focusIds={focusIds} onCountryPress={(country) => { const region = mappedCountries.find((item) => item.id === country.id)?.region; if (region) setSelectedRegion(region); }} colors={mapColors} accessibilitySummary={t('Mapa mundial de {especie}. Regiones nativas: {regiones}', { especie: displayName, regiones: nativeCountries.map((country) => country.name).join(', ') })} resetToken={resetToken} />}
       </View>
-      {selectedRegion ? <RegionCard plantName={plant?.name || t('Esta planta')} region={selectedRegion} onClose={() => setSelectedRegion(null)} colors={colors} labels={{ native: t('Zona nativa'), naturalized: t('Naturalizada'), cultivated: t('Cultivada'), close: t('Cerrar detalle de región') }} /> : null}
+      {selectedRegion ? <RegionCard plantName={displayName} region={selectedRegion} onClose={() => setSelectedRegion(null)} colors={colors} labels={{ native: t('Zona nativa'), naturalized: t('Naturalizada'), cultivated: t('Cultivada'), close: t('Cerrar detalle de región') }} /> : null}
       <Text style={[styles.hint, { color: colors.textTertiary, marginBottom: Math.max(insets.bottom, 12) }]}>
         {t('Pellizca para acercar, arrastra para explorar y toca dos veces para enfocar.')}
       </Text>

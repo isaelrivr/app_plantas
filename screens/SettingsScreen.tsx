@@ -36,9 +36,7 @@ import {
   importBackupFromJSON,
   performFullAccountDeletion,
 } from '../services/backupService';
-import { AuthModal } from '../components/AuthModal';
 import { WidgetPreviewCard } from '../components/WidgetPreviewCard';
-import { getCurrentUser, onAuthStateChanged, UserProfile } from '../services/authService';
 
 const NOTIFICATION_HOURS = ['08:00', '09:00', '10:00', '18:00', '20:00'];
 
@@ -63,7 +61,7 @@ export const SettingsScreen: React.FC = () => {
     resetSettings,
   } = useSettings();
   const { isPremium, setPremium } = usePremium();
-  const { plants, clearGarden, hydrateGarden } = useGarden();
+  const { clearGarden, hydrateGarden } = useGarden();
   const { t } = useTranslation();
   const { showToast, confirm } = useFeedback();
 
@@ -71,13 +69,8 @@ export const SettingsScreen: React.FC = () => {
   const [currentCityName, setCurrentCityName] = useState<string | null>(null);
   const [isImportModalVisible, setIsImportModalVisible] = useState(false);
   const [importJsonText, setImportJsonText] = useState('');
-  const [currentUser, setCurrentUser] = useState<UserProfile | null>(getCurrentUser());
-  const [isAuthModalVisible, setIsAuthModalVisible] = useState(false);
-
   React.useEffect(() => {
     getManualCity().then((city) => setCurrentCityName(city));
-    const unsubscribe = onAuthStateChanged((usr) => setCurrentUser(usr));
-    return unsubscribe;
   }, []);
 
   const themeOptions: { key: ThemePreference; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
@@ -153,22 +146,13 @@ export const SettingsScreen: React.FC = () => {
     setPremium(false);
     resetSettings();
     resetOnboarding();
-    await performFullAccountDeletion(currentUser?.uid);
+    await performFullAccountDeletion();
     try { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning); } catch {}
     showToast({
       message: t('Tus datos y cuenta se han eliminado por completo'),
       type: 'info',
     });
     navigation.goBack();
-  };
-
-  const handlePrivacy = async () => {
-    await confirm({
-      title: t('Privacidad'),
-      message: t('En EcoScan tus fotos solo se usan para reconocer tus plantas y revisar su salud. No guardamos imágenes sin tu permiso ni compartimos tus datos con terceros. Puedes borrar toda tu información en cualquier momento desde esta pantalla.\n\nSitio web: ecoscan.app/privacidad'),
-      confirmText: t('Entendido'),
-      cancelText: null,
-    });
   };
 
   const handleContactSupport = () => {
@@ -575,55 +559,6 @@ export const SettingsScreen: React.FC = () => {
           </Pressable>
         </Card>
 
-        {/* CUENTA Y NUBE */}
-        {renderSectionTitle(t('Cuenta y nube'))}
-        <Card
-          variant="flat"
-          style={{
-            marginBottom: spacing.sm,
-            borderRadius: layout.borderRadius.lg,
-            borderWidth: 1,
-            borderColor: colors.border,
-            backgroundColor: colors.surface,
-          }}
-        >
-          <Pressable
-            onPress={() => {
-              try { Haptics.selectionAsync(); } catch {}
-              setIsAuthModalVisible(true);
-            }}
-            accessibilityRole="button"
-            accessibilityLabel={currentUser ? t('Gestionar cuenta y sincronización') : t('Iniciar sesión o registrarse')}
-            android_ripple={{ color: colors.primary + '18' }}
-            style={({ pressed }) => [
-              styles.rowTap,
-              {
-                borderRadius: 8,
-                overflow: 'hidden',
-                opacity: pressed && Platform.OS === 'ios' ? 0.7 : 1,
-              },
-            ]}
-          >
-            <View style={{ flex: 1 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Text style={[typography.body, { color: colors.textPrimary, fontWeight: '600' }]}>
-                  {currentUser ? (currentUser.displayName || currentUser.email || t('Cuenta activa')) : t('Cuenta opcional')}
-                </Text>
-                {currentUser ? (
-                  <Badge label={t('Sincronizado')} variant="success" style={{ marginLeft: 8 }} />
-                ) : (
-                  <Badge label={t('Modo local')} variant="neutral" style={{ marginLeft: 8 }} />
-                )}
-              </View>
-              <Text style={[typography.caption1, { color: colors.textTertiary, marginTop: 2 }]}>
-                {currentUser
-                  ? t('Jardín respaldado en la nube. Toca para sincronizar.')
-                  : t('Crea una cuenta para sincronizar tus plantas entre dispositivos.')}
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
-          </Pressable>
-        </Card>
 
         {/* 6. PRIVACIDAD Y DATOS */}
         {renderSectionTitle(t('Privacidad y datos'))}
@@ -905,10 +840,6 @@ export const SettingsScreen: React.FC = () => {
         </View>
       </Modal>
 
-      <AuthModal
-        visible={isAuthModalVisible}
-        onClose={() => setIsAuthModalVisible(false)}
-      />
     </View>
   );
 };

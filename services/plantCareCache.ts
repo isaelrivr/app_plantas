@@ -1,5 +1,5 @@
 /**
- * Plantae Care Cache
+ * EcoScan Care Cache
  *
  * Las fichas de cuidados pueden venir del catálogo local, de una identificación
  * real (enriquecimiento offline) o del backend (LLM). Este módulo centraliza:

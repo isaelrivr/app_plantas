@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "EcoScan",
-    "slug": "plantae-app",
+    "slug": "ecoscan",
     "version": "1.0.0",
     "scheme": "ecoscan",
     "orientation": "portrait",
@@ -21,8 +21,7 @@
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "EcoScan usa tu ubicación para ajustar las recomendaciones de riego según el clima y temperatura de tu ciudad (solo usuarios Pro).",
-          "locationWhenInUsePermission": "EcoScan usa tu ubicación para personalizar alertas de riego y clima según tu ciudad."
+          "locationWhenInUsePermission": "EcoScan usa tu ubicación aproximada para personalizar alertas de riego y clima según tu ciudad."
         }
       ],
       [
@@ -34,16 +33,21 @@
         }
       ],
       "expo-font",
-      "expo-status-bar"
+      "expo-status-bar",
+      "expo-secure-store"
     ],
     "ios": {
       "bundleIdentifier": "com.isaelrivr.ecoscan",
       "buildNumber": "1",
       "supportsTablet": true,
+      "config": {
+        "usesNonExemptEncryption": false
+      },
       "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
         "NSCameraUsageDescription": "EcoScan necesita acceso a tu cámara para identificar plantas y diagnosticar problemas de salud foliar.",
         "NSPhotoLibraryUsageDescription": "EcoScan necesita acceso a tus fotos para analizar imágenes de plantas.",
-        "NSLocationWhenInUseUsageDescription": "EcoScan usa tu ubicación para personalizar recomendaciones de riego según el clima local (solo usuarios Pro)."
+        "NSLocationWhenInUseUsageDescription": "EcoScan usa tu ubicación aproximada para personalizar recomendaciones de riego según el clima local (solo usuarios Pro)."
       }
     },
     "android": {
@@ -53,12 +57,12 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
+      "allowBackup": false,
       "predictiveBackGestureEnabled": true,
       "package": "com.isaelrivr.ecoscan",
       "versionCode": 1,
       "permissions": [
         "android.permission.CAMERA",
-        "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.VIBRATE"
       ]

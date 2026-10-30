@@ -5,7 +5,7 @@
 
 import type { AppConfig } from './config';
 import type { Identity } from './guard';
-import { consumeQuota } from './rateLimit';
+import { consumeQuota, refundQuota } from './rateLimit';
 import { assessHealthWithPlantId } from './providers/plantId';
 import { generateTreatmentJson } from './providers/gemini';
 import { slugify } from './identify';
@@ -244,32 +244,54 @@ function buildTreatment(raw: unknown, issueName: string): { category: HealthCate
 export async function runHealthAssessment(config: AppConfig, identity: Identity, req: HealthRequest): Promise<HealthResponse> {
   const images = Array.isArray(req.images) ? req.images : [];
   if (images.length === 0) throw badRequest('Envía al menos una imagen base64 en el campo "images".');
+  if (images.length > config.maxImagesPerRequest) {
+    throw badRequest(`Puedes enviar como máximo ${config.maxImagesPerRequest} imágenes por diagnóstico.`);
+  }
+
+  for (const image of images) {
+    if (typeof image !== 'string' || image.length < 500) {
+      throw badRequest('Cada imagen debe enviarse como cadena base64 válida.');
+    }
+    if (image.length > config.maxImageBytes) {
+      throw badRequest('Cada imagen comprimida debe pesar menos de ~1.1MB.');
+    }
+  }
+
+  const plantName =
+    typeof req?.plantName === 'string' && req.plantName.trim().length > 0
+      ? req.plantName.trim().slice(0, 100)
+      : undefined;
 
   await consumeQuota(identity, 'health', config.quotas.health);
 
-  const result = await assessHealthWithPlantId(config, images);
-  if (!result.isPlant) return notPlantResponse();
-  if (result.isHealthy || result.suggestions.length === 0) return healthyResponse();
+  try {
+    const result = await assessHealthWithPlantId(config, images);
+    if (!result.isPlant) return notPlantResponse();
+    if (result.isHealthy || result.suggestions.length === 0) return healthyResponse();
 
-  const top = result.suggestions[0];
-  const probability = clamp01(top.probability);
-  const raw = await generateTreatmentJson(config, top.name, probability, req.plantName, top.description);
-  const built = buildTreatment(raw, top.name);
+    const top = result.suggestions[0];
+    const probability = clamp01(top.probability);
+    const raw = await generateTreatmentJson(config, top.name, probability, plantName, top.description);
+    const built = buildTreatment(raw, top.name);
 
-  return {
-    isPlant: true,
-    isHealthy: false,
-    confidence: Math.round(probability * 100),
-    issueKey: slugify(top.name) || 'problema',
-    name: top.name.slice(0, 160),
-    scientificName: top.commonNames[0]?.slice(0, 160) || 'Agente causal no confirmado',
-    category: built.category,
-    severity: built.severity,
-    description: built.description,
-    symptoms: built.symptoms,
-    treatment: built.treatment,
-    referenceImages: referenceTokensFor(built.category),
-    disclaimer: HEALTH_DISCLAIMER,
-    source: 'ai-real',
-  };
+    return {
+      isPlant: true,
+      isHealthy: false,
+      confidence: Math.round(probability * 100),
+      issueKey: slugify(top.name) || 'problema',
+      name: top.name.slice(0, 160),
+      scientificName: top.commonNames[0]?.slice(0, 160) || 'Agente causal no confirmado',
+      category: built.category,
+      severity: built.severity,
+      description: built.description,
+      symptoms: built.symptoms,
+      treatment: built.treatment,
+      referenceImages: referenceTokensFor(built.category),
+      disclaimer: HEALTH_DISCLAIMER,
+      source: 'ai-real',
+    };
+  } catch (err) {
+    await refundQuota(identity, 'health');
+    throw err;
+  }
 }

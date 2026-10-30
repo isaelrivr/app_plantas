@@ -89,9 +89,7 @@ const fragment: Record<string, string> = {
   'Suscripción': 'Subscription',
   'Gestionar suscripción': 'Manage subscription',
   'Ver planes Premium': 'View Premium plans',
-  'Plantae Pro activo': 'Plantae Pro active',
   'EcoScan Pro activo': 'EcoScan Pro active',
-  'Mejorar a Plantae Pro': 'Upgrade to Plantae Pro',
   'Mejorar a EcoScan Pro': 'Upgrade to EcoScan Pro',
   'Gestiona tu plan y facturación': 'Manage your plan and billing',
   'Desbloquea todas las funciones': 'Unlock all features',
@@ -99,8 +97,7 @@ const fragment: Record<string, string> = {
   'Política de privacidad': 'Privacy policy',
   'Ver introducción de nuevo': 'View introduction again',
   'Eliminar mis datos del dispositivo': 'Delete my data from this device',
-  'Plantae · Versión 1.0.0 (Expo SDK 57)': 'Plantae · Version 1.0.0 (Expo SDK 57)',
-  'EcoScan · Versión 1.0.0 (Expo SDK 57)': 'EcoScan · Version 1.0.0 (Expo SDK 57)',
+  'EcoScan · Versión 1.0.0 (Expo SDK 58)': 'EcoScan · Version 1.0.0 (Expo SDK 57)',
   'Se borrarán de este dispositivo tu jardín, estadísticas, fotos, diario y ajustes. Esta acción no se puede deshacer.':
     'Your garden, statistics, photos, diary and settings will be deleted from this device. This action cannot be undone.',
   'Se borrarán tu jardín, estadísticas, ajustes y suscripción local de forma permanente. Esta acción no se puede deshacer.':

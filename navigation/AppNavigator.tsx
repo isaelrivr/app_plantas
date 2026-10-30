@@ -23,7 +23,6 @@ import { PrivacyPolicyScreen } from '../screens/PrivacyPolicyScreen';
 import { TermsOfServiceScreen } from '../screens/TermsOfServiceScreen';
 import { HelpScreen } from '../screens/HelpScreen';
 import { useAppTheme, fontWeights, FONT_FAMILY } from '../theme';
-import { useFloatingBarMetrics } from '../hooks/useFloatingBarMetrics';
 import { useTabBarVisibility } from '../context/TabBarVisibilityContext';
 import { shouldRenderFloatingTabBar } from '../utils/tabBarVisibility';
 import { usePremium } from '../context/PremiumContext';
@@ -39,7 +38,12 @@ export type RootTabParamList = {
 
 export type RootStackParamList = {
   MainTabs: { screen?: keyof RootTabParamList } | undefined;
-  HabitatMap: { plantId: string; plantName?: string; speciesId?: string };
+  HabitatMap: {
+    plantId: string;
+    plantName?: string;
+    speciesId?: string;
+    scientificName?: string;
+  };
   PlantDetail: {
     plantId: string;
     plantName?: string;
@@ -78,7 +82,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
  */
 export function M3NavigationBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
-  const { colors, layout, isDark } = useAppTheme();
+  const { colors, layout } = useAppTheme();
   const { isPremium } = usePremium();
   const { t } = useTranslation();
 

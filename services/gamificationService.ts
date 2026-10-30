@@ -1,5 +1,5 @@
 /**
- * Plantae Gamification Service
+ * EcoScan Gamification Service
  *
  * Rachas de riego, logros y resumen semanal. Calcula sobre un objeto de
  * estadísticas (el estado real vive en GardenContext y, en producción, en

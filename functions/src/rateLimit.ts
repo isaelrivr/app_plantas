@@ -1,14 +1,12 @@
 /**
- * Límite de uso diario por identidad. Free y Premium tienen cupos distintos.
+ * Límite de uso diario por dispositivo en arquitectura Local-First.
  *
- * Usa Firestore (`quota/{fecha}_{kind}_{id}`). Si Firestore no está
- * disponible (p. ej. el emulador no está arrancado), cae a contadores en
- * memoria del proceso para no bloquear el desarrollo local.
+ * Opera de forma atómica en memoria del servidor proxy, con capacidad de
+ * reversión (refundQuota) si el proveedor aguas arriba (Gemini / Plant.id) falla.
  */
 
-import { getFirestore } from 'firebase-admin/firestore';
 import type { Identity } from './guard';
-import { ApiError, quotaExceeded } from './errors';
+import { quotaExceeded } from './errors';
 import type { QuotaRule } from './config';
 
 export type QuotaKind = 'identify' | 'care' | 'health' | 'assistant';
@@ -25,31 +23,44 @@ export function secondsUntilMidnight(): number {
 }
 
 /**
- * Consume una unidad de cuota. Lanza `ApiError` 429 si se agotó el cupo.
- * Devuelve cuántas unidades quedan (informativo).
+ * Consume una unidad de cuota de forma atómica. Lanza `ApiError` 429 si se agotó el cupo.
  */
-export async function consumeQuota(identity: Identity, kind: QuotaKind, rule: QuotaRule): Promise<{ remaining: number }> {
+export async function consumeQuota(
+  identity: Identity,
+  kind: QuotaKind,
+  rule: QuotaRule
+): Promise<{ remaining: number }> {
   const limit = identity.isPremium ? rule.premium : rule.free;
   const date = dayKey();
-  const docId = `quota_${date}_${kind}_${identity.id.replace(/[^A-Za-z0-9_-]/g, '_')}`;
+  const memKey = `${date}|${kind}|${identity.id}`;
 
-  let used = 0;
-  try {
-    const ref = getFirestore().collection('quota').doc(docId);
-    const snap = await ref.get();
-    used = snap.exists ? Number(snap.data()?.count ?? 0) : 0;
-    if (used >= limit) throw quotaExceeded(secondsUntilMidnight());
-    await ref.set({ count: used + 1, updatedAt: Date.now(), kind, identityKind: identity.kind }, { merge: true });
-    return { remaining: limit - used - 1 };
-  } catch (err) {
-    if (err instanceof ApiError) throw err;
-    // Firestore no disponible: degradar a contador en memoria.
-    console.warn('[plantae-functions] Firestore no disponible para cuota; uso contador en memoria.', err);
+  const used = memCounters.get(memKey) ?? 0;
+  if (used >= limit) {
+    throw quotaExceeded(secondsUntilMidnight());
   }
 
-  const memKey = `${date}|${kind}|${identity.id}`;
-  used = memCounters.get(memKey) ?? 0;
-  if (used >= limit) throw quotaExceeded(secondsUntilMidnight());
   memCounters.set(memKey, used + 1);
+
+  // Limpieza periódica de memoria para fechas pasadas
+  if (memCounters.size > 10_000) {
+    for (const key of memCounters.keys()) {
+      if (!key.startsWith(date)) {
+        memCounters.delete(key);
+      }
+    }
+  }
+
   return { remaining: limit - used - 1 };
+}
+
+/**
+ * Reembolsa una unidad de cuota de forma atómica si la llamada aguas arriba falló.
+ */
+export async function refundQuota(identity: Identity, kind: QuotaKind): Promise<void> {
+  const date = dayKey();
+  const memKey = `${date}|${kind}|${identity.id}`;
+  const used = memCounters.get(memKey) ?? 0;
+  if (used > 0) {
+    memCounters.set(memKey, used - 1);
+  }
 }

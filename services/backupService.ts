@@ -136,38 +136,23 @@ export async function importBackupFromJSON(jsonString: string): Promise<ImportBa
 }
 
 /**
- * Procedimiento integral de eliminación de cuenta y purga de datos.
+ * Procedimiento integral de purga y restablecimiento local de datos.
  * Cumple con Apple App Store Review Guideline 5.1.1(v) y Google Play Data Safety.
  */
-export async function performFullAccountDeletion(userId?: string | null): Promise<boolean> {
+export async function performFullAccountDeletion(_userId?: string | null): Promise<boolean> {
   try {
-    // 1. Si hubiera sesión remota en Firebase Auth / Firestore, se elimina el árbol del usuario
-    if (userId) {
-      try {
-        const { deleteRemoteUserData } = await import('./syncService');
-        await deleteRemoteUserData(userId);
-      } catch (remoteError) {
-        console.warn('[backupService] Advertencia al eliminar datos remotos:', remoteError);
-      }
-    }
-
-    try {
-      const { deleteUserAccount } = await import('./authService');
-      await deleteUserAccount();
-    } catch {}
-
-    // 2. Purga total local: fotos físicas del sistema de archivos
+    // 1. Purga total local: fotos físicas del sistema de archivos
     await clearPersistedImages();
 
-    // 3. Purga del diario de crecimiento
+    // 2. Purga del diario de crecimiento
     clearGrowthDiary();
 
-    // 4. Purga completa de todas las claves locales de EcoScan en AsyncStorage
+    // 3. Purga completa de todas las claves locales de EcoScan en AsyncStorage y SecureStore
     await clearAllAppData();
 
     return true;
   } catch (error) {
-    console.warn('[backupService] Error durante el proceso de eliminación de cuenta:', error);
+    console.warn('[backupService] Error durante el proceso de purga de datos:', error);
     return false;
   }
 }

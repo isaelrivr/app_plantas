@@ -22,7 +22,6 @@ import { Badge } from '../components/Badge';
 import { Button } from '../components/Button';
 import { EmptyState } from '../components/EmptyState';
 import { SkeletonBox } from '../components/SkeletonLoader';
-import { ErrorBanner } from '../components/ErrorBanner';
 import { BottomSheet } from '../components/BottomSheet';
 import { ListRow } from '../components/ListRow';
 import { Surface } from '../components/Surface';
@@ -42,7 +41,7 @@ const speciesIdFor = (name: string, scientificName?: string): string =>
   resolveSpeciesId(name, scientificName) ?? 'monstera';
 
 export const GardenScreen: React.FC = () => {
-  const { colors, isDark, spacing, typography, layout } = useAppTheme();
+  const { colors, spacing, typography, layout } = useAppTheme();
   const insets = useSafeAreaInsets();
   const { showToast, confirm } = useFeedback();
   const {
@@ -57,7 +56,7 @@ export const GardenScreen: React.FC = () => {
     createRoom,
     removeRoom,
   } = useGarden();
-  const { isPremium, price } = usePremium();
+  const { isPremium } = usePremium();
   const navigation = useNavigation<any>();
   const { t } = useTranslation();
 
@@ -71,8 +70,6 @@ export const GardenScreen: React.FC = () => {
   // Clima
   const [weatherData, setWeatherData] = useState<WeatherRecommendationResult | null>(null);
   const [weatherLoading, setWeatherLoading] = useState<boolean>(true);
-  const [weatherError, setWeatherError] = useState<boolean>(false);
-  const [weatherRetryKey, setWeatherRetryKey] = useState<number>(0);
 
   // Carga inicial
   const [gardenLoading, setGardenLoading] = useState<boolean>(true);
@@ -84,23 +81,20 @@ export const GardenScreen: React.FC = () => {
 
   useEffect(() => {
     let isMounted = true;
-    if (!isPremium) {
-      setWeatherData(null);
-      setWeatherError(false);
-      setWeatherLoading(false);
-      return;
-    }
     (async () => {
+      if (!isPremium) {
+        setWeatherData(null);
+        setWeatherLoading(false);
+        return;
+      }
       setWeatherLoading(true);
-      setWeatherError(false);
       try {
         const res = await getLocalWeatherAndRecommendations();
         if (isMounted) {
           setWeatherData(res);
-          setWeatherError(res.isMockFallback);
         }
       } catch {
-        if (isMounted) setWeatherError(true);
+        // Fallback silencioso
       } finally {
         if (isMounted) setWeatherLoading(false);
       }
@@ -108,7 +102,7 @@ export const GardenScreen: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, [isPremium, weatherRetryKey]);
+  }, [isPremium]);
 
   // Secciones agrupadas por zona
   const sections = useMemo(() => {

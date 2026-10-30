@@ -6,7 +6,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { AccessibilityInfo, Platform } from 'react-native';
+import { AccessibilityInfo } from 'react-native';
 
 /**
  * Anuncia un mensaje para usuarios de TalkBack o VoiceOver.

@@ -1,20 +1,14 @@
 /**
- * Cliente de Google Gemini (Interactions API) para generar JSON estructurado:
- * ficha de cuidados y planes de tratamiento. La clave solo existe aquí.
+ * Cliente de Google Gemini (GenerateContent API oficial v1beta).
  *
- * Endpoint: POST https://generativelanguage.googleapis.com/v1beta/interactions
- * Respuesta: { steps: [{ type: 'model_output', content: [{ type: 'text', text: '<json>' }] }] }
+ * Utiliza modelos estables (`gemini-1.5-flash`) y el contrato estándar `generateContent`.
+ * La clave de API reside únicamente en las variables de entorno de este servidor.
  */
 
 import type { AppConfig } from '../config';
 import { ApiError, upstreamError } from '../errors';
 
-const GENERATIVE_BASE = 'https://generativelanguage.googleapis.com/v1beta';
-
-interface InteractionStep {
-  type?: string;
-  content?: { type?: string; text?: string }[];
-}
+const GENERATIVE_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 
 /** Extrae y parsea el JSON del texto devuelto por Gemini (defensivo). */
 export function parseJsonLoose(text: string): unknown | null {
@@ -40,8 +34,13 @@ export function parseJsonLoose(text: string): unknown | null {
   return null;
 }
 
-async function generateJson(config: AppConfig, system: string, prompt: string, schema: object): Promise<unknown | null> {
-  if (config.useMockProviders) return null; // los servicios usan plantillas locales si es null
+async function generateJson(
+  config: AppConfig,
+  system: string,
+  prompt: string,
+  schema: object
+): Promise<unknown | null> {
+  if (config.useMockProviders) return null;
 
   const apiKey = config.geminiApiKey;
   if (!apiKey) {
@@ -49,19 +48,30 @@ async function generateJson(config: AppConfig, system: string, prompt: string, s
   }
 
   const body = {
-    model: config.geminiModel,
-    input: prompt,
-    system_instruction: { parts: [{ text: system }] },
-    response_format: { type: 'text', mime_type: 'application/json', schema },
+    contents: [
+      {
+        role: 'user',
+        parts: [{ text: prompt }],
+      },
+    ],
+    systemInstruction: {
+      parts: [{ text: system }],
+    },
+    generationConfig: {
+      responseMimeType: 'application/json',
+      responseSchema: schema,
+      temperature: 0.2,
+    },
   };
 
   const attempt = async (): Promise<unknown | null> => {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), config.geminiTimeoutMs);
     try {
-      const response = await fetch(`${GENERATIVE_BASE}/interactions`, {
+      const url = `${GENERATIVE_BASE}/${config.geminiModel}:generateContent?key=${encodeURIComponent(apiKey)}`;
+      const response = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
         signal: controller.signal,
       });
@@ -87,10 +97,7 @@ async function generateJson(config: AppConfig, system: string, prompt: string, s
         throw upstreamError('GEMINI_ERROR', message, 502);
       }
 
-      const steps: InteractionStep[] = Array.isArray(json?.steps) ? json.steps : [];
-      const modelStep = steps.find((step) => step?.type === 'model_output');
-      const textPart = modelStep?.content?.find((part) => part?.type === 'text' && typeof part.text === 'string');
-      const rawText = textPart?.text;
+      const rawText = json?.candidates?.[0]?.content?.parts?.[0]?.text;
       if (typeof rawText !== 'string' || rawText.trim().length === 0) return null;
       return parseJsonLoose(rawText);
     } catch (err) {
@@ -103,7 +110,7 @@ async function generateJson(config: AppConfig, system: string, prompt: string, s
     }
   };
 
-  // Un reintento para errores transitorios (red / 5xx / timeout).
+  // Reintento único para errores transitorios
   let lastError: Error | null = null;
   for (let attemptNum = 0; attemptNum < 2; attemptNum++) {
     try {
@@ -111,49 +118,74 @@ async function generateJson(config: AppConfig, system: string, prompt: string, s
       if (result !== null) return result;
     } catch (err) {
       lastError = err instanceof Error ? err : new Error(String(err));
-      // No reintentamos errores de autenticación / cliente (4xx salvo 429).
       if (err instanceof ApiError && err.status >= 400 && err.status < 500 && err.status !== 429) {
         throw err;
       }
-      // Si es el último intento, salimos del bucle para manejar el error abajo.
       if (attemptNum === 1) break;
-      // Pequeña espera antes de reintentar.
       await new Promise((r) => setTimeout(r, 300));
     }
   }
 
-  // Agotados los reintentos: si es ApiError la propagamos; si no, devolvemos null (fallback local).
   if (lastError instanceof ApiError) throw lastError;
   console.warn('[plantae-functions] Gemini falló tras reintentos:', lastError);
   return null;
 }
 
-export async function generateAssistantText(config: AppConfig, prompt: string): Promise<string> {
+export async function generateAssistantText(
+  config: AppConfig,
+  prompt: string,
+  systemInstruction?: string
+): Promise<string> {
   const apiKey = config.geminiApiKey;
   if (!apiKey) throw upstreamError('GEMINI_AUTH', 'El servidor no tiene configurada la clave GEMINI_API_KEY.', 502);
+
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), config.geminiTimeoutMs);
+
+  const system =
+    systemInstruction ||
+    'Eres un asistente botánico experto, riguroso y práctico de EcoScan. Responde en español, en texto claro y breve.\n' +
+    'GUARDRAILS ESTRICTOS DE SEGURIDAD Y TAXONOMÍA:\n' +
+    '1. NUNCA inventes especies, familias ni taxonomías ficticias ante entradas arbitrarias, jerga, nombres de objetos o cadenas sin sentido. Si el usuario consulta sobre algo que no sea una planta real, aclara amablemente que solo atiendes consultas botánicas y que dicho término no corresponde a una especie vegetal real.\n' +
+    '2. Cualquier referencia a toxicidad para mascotas o niños debe ir acompañada de la advertencia de que la información es meramente orientativa y que debe contactarse inmediatamente a un veterinario en caso de ingestión o duda.\n' +
+    '3. No inventes diagnósticos definitivos ni instrucciones peligrosas con químicos o fitosanitarios.';
+
+  const body = {
+    contents: [
+      {
+        role: 'user',
+        parts: [{ text: prompt.slice(0, 4000) }],
+      },
+    ],
+    systemInstruction: {
+      parts: [{ text: system }],
+    },
+    generationConfig: {
+      temperature: 0.3,
+    },
+  };
+
   try {
-    const response = await fetch(`${GENERATIVE_BASE}/interactions`, {
+    const url = `${GENERATIVE_BASE}/${config.geminiModel}:generateContent?key=${encodeURIComponent(apiKey)}`;
+    const response = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
-      body: JSON.stringify({
-        model: config.geminiModel,
-        input: prompt.slice(0, 4000),
-        system_instruction: { parts: [{ text: 'Eres un asistente botánico seguro y práctico. Responde en español, en texto claro y breve. No inventes diagnósticos definitivos ni instrucciones peligrosas.' }] },
-      }),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
       signal: controller.signal,
     });
-    const json = await response.json().catch(() => null) as any;
-    if (!response.ok) throw upstreamError('GEMINI_ERROR', `El proveedor de IA respondió con error ${response.status}.`, 502);
-    const steps: InteractionStep[] = Array.isArray(json?.steps) ? json.steps : [];
-    const modelStep = steps.find((step) => step?.type === 'model_output');
-    const textPart = modelStep?.content?.find((part) => part?.type === 'text' && typeof part.text === 'string');
-    const reply = textPart?.text?.trim();
+
+    const json = (await response.json().catch(() => null)) as any;
+    if (!response.ok) {
+      throw upstreamError('GEMINI_ERROR', `El proveedor de IA respondió con error ${response.status}.`, 502);
+    }
+
+    const reply = json?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
     if (!reply) throw upstreamError('GEMINI_EMPTY', 'El proveedor de IA no devolvió una respuesta.', 502);
     return reply.slice(0, 5000);
   } catch (error) {
-    if ((error as Error)?.name === 'AbortError') throw upstreamError('GEMINI_TIMEOUT', 'El proveedor de IA tardó demasiado en responder.', 504);
+    if ((error as Error)?.name === 'AbortError') {
+      throw upstreamError('GEMINI_TIMEOUT', 'El proveedor de IA tardó demasiado en responder.', 504);
+    }
     throw error;
   } finally {
     clearTimeout(timer);
@@ -161,7 +193,7 @@ export async function generateAssistantText(config: AppConfig, prompt: string): 
 }
 
 // ---------------------------------------------------------------------------
-// Ficha de cuidados
+// Esquemas y Prompts
 // ---------------------------------------------------------------------------
 
 const CARE_SHEET_SCHEMA = {
@@ -217,9 +249,12 @@ const CARE_SHEET_SCHEMA = {
 };
 
 const CARE_SYSTEM_PROMPT =
-  'Eres un botánico y horticultor experto. Generas fichas de cuidados de plantas de interior y exterior ' +
+  'Eres un botánico y horticultor experto de EcoScan. Generas fichas de cuidados de plantas de interior y exterior ' +
   'en ESPAÑOL (es-ES), realistas y prácticas para un aficionado. Respondes SIEMPRE con un único objeto JSON ' +
-  'válido que cumple el esquema solicitado, sin texto adicional ni bloques de código.';
+  'válido que cumple el esquema solicitado, sin texto adicional ni bloques de código.\n\n' +
+  'GUARDRAILS ESTRICTOS DE TAXONOMÍA:\n' +
+  '1. NUNCA inventes especies, familias ni taxonomías ficticias para entradas arbitrarias, nombres de personas, objetos, animales o cadenas sin sentido. Si la entrada no es un vegetal real reconocido, responde con family: "No vegetal / Inválido", scientificName: "Especie no determinada" y describe en habitatSummary que la entrada no corresponde a una especie vegetal reconocida.\n' +
+  '2. En el campo toxicity, indica de forma obligatoria que la información sobre toxicidad es meramente orientativa y se debe consultar al veterinario ante cualquier duda o sospecha de ingestión.';
 
 export async function generateCareSheetJson(
   config: AppConfig,

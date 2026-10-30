@@ -11,7 +11,7 @@
 
 import { Directory, File, Paths } from 'expo-file-system';
 
-const MEDIA_ROOT = 'plantae-media';
+const MEDIA_ROOT = 'ecoscan-media';
 
 /** Devuelve (creando si hace falta) una subcarpeta dentro de documentDirectory. */
 function ensureDirectory(folder: string): Directory | null {
@@ -77,6 +77,8 @@ export async function clearPersistedImages(): Promise<void> {
   try {
     const root = new Directory(Paths.document, MEDIA_ROOT);
     if (root.exists) root.delete();
+    const oldRoot = new Directory(Paths.document, 'plantae-media');
+    if (oldRoot.exists) oldRoot.delete();
   } catch (error) {
     console.warn('[media] No se pudieron borrar las imágenes persistidas.', error);
   }

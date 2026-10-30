@@ -1,32 +1,51 @@
 /**
- * Plantae Notification Service
+ * EcoScan Notification Service
  *
- * Notificaciones locales exclusivas para Expo Go utilizando expo-notifications.
+ * Notificaciones locales exclusivas utilizando expo-notifications.
  * No requiere servidores externos ni llaves Push; opera 100% en el dispositivo local.
  *
- * Frecuencias reales: el recordatorio se programa para el próximo vencimiento
- * calculado a partir del intervalo en días de cada planta/tarea.
+ * Soporta recordatorios recurrentes de riego y fitosanitarios,
+ * categoría interactiva "Ya la regué", y cancelación atómica de notificaciones.
  */
 
-import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import { t } from '../i18n';
+import type * as NotificationsType from 'expo-notifications';
 
-// Configurar cómo se presentan las notificaciones cuando la app está abierta en primer plano
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
+export const WATERING_CATEGORY_ID = 'WATERING_REMINDER';
+export const ACTION_WATERED = 'ACTION_WATERED';
+
+let notificationsInstance: typeof NotificationsType | null = null;
+
+export async function getNotifications(): Promise<typeof NotificationsType | null> {
+  if (notificationsInstance) return notificationsInstance;
+  try {
+    const mod = await import('expo-notifications');
+    notificationsInstance = mod;
+    mod.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldPlaySound: true,
+        shouldSetBadge: true,
+        shouldShowBanner: true,
+        shouldShowList: true,
+      }),
+    });
+    return notificationsInstance;
+  } catch {
+    return null;
+  }
+}
+
+// Configuración automática en primer plano para entornos móviles nativos
+if (Platform.OS === 'ios' || Platform.OS === 'android') {
+  void getNotifications().catch(() => {});
+}
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 // Próxima fecha a una hora hábil (09:00 local) sin caer en el pasado
-const nextOccurrence = (daysFromNow: number, hour: number = 9): Date => {
+const nextOccurrence = (daysFromNow: number, hour = 9): Date => {
   const date = new Date(Date.now() + Math.max(0, daysFromNow) * DAY_MS);
   date.setHours(hour, 0, 0, 0);
   if (date.getTime() <= Date.now()) {
@@ -40,6 +59,9 @@ const nextOccurrence = (daysFromNow: number, hour: number = 9): Date => {
  */
 export async function requestNotificationPermissions(): Promise<boolean> {
   try {
+    const Notifications = await getNotifications();
+    if (!Notifications) return false;
+
     const { status: existingStatus } = await Notifications.getPermissionsAsync();
     let finalStatus = existingStatus;
 
@@ -53,7 +75,7 @@ export async function requestNotificationPermissions(): Promise<boolean> {
     }
 
     if (Platform.OS === 'android') {
-      await Notifications.setNotificationChannelAsync('plantae_care_channel', {
+      await Notifications.setNotificationChannelAsync('ecoscan_care_channel', {
         name: t('Recordatorios de Cuidado y Jardín'),
         importance: Notifications.AndroidImportance.HIGH,
         vibrationPattern: [0, 250, 250, 250],
@@ -69,15 +91,15 @@ export async function requestNotificationPermissions(): Promise<boolean> {
   }
 }
 
-export const WATERING_CATEGORY_ID = 'WATERING_REMINDER';
-export const ACTION_WATERED = 'ACTION_WATERED';
-
 /**
  * Registra categorías de acciones rápidas para notificaciones.
  * Permite al usuario marcar "Ya la regué" directamente desde la notificación sin abrir la app.
  */
 export async function setupInteractiveNotificationCategories(): Promise<void> {
   try {
+    const Notifications = await getNotifications();
+    if (!Notifications) return;
+
     await Notifications.setNotificationCategoryAsync(WATERING_CATEGORY_ID, [
       {
         identifier: ACTION_WATERED,
@@ -97,12 +119,47 @@ export async function setupInteractiveNotificationCategories(): Promise<void> {
  */
 export async function cancelScheduledNotification(identifier: string): Promise<void> {
   try {
+    const Notifications = await getNotifications();
+    if (!Notifications) return;
     await Notifications.cancelScheduledNotificationAsync(identifier);
   } catch {}
 }
 
 /**
- * Programa un recordatorio de riego periódico según el intervalo de la planta
+ * Cancela todas las notificaciones programadas pertenecientes a una planta específica
+ */
+export async function cancelNotificationsForPlant(plantId: string): Promise<void> {
+  try {
+    const Notifications = await getNotifications();
+    if (!Notifications) return;
+
+    const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+    for (const req of scheduled) {
+      if (req.content?.data?.plantId === plantId) {
+        await Notifications.cancelScheduledNotificationAsync(req.identifier);
+      }
+    }
+  } catch (e) {
+    console.warn('[notifications] Error al cancelar notificaciones de la planta:', e);
+  }
+}
+
+/**
+ * Cancela todas las notificaciones programadas en el sistema (ej. restablecimiento de datos)
+ */
+export async function cancelAllNotifications(): Promise<void> {
+  try {
+    const Notifications = await getNotifications();
+    if (!Notifications) return;
+    await Notifications.cancelAllScheduledNotificationsAsync();
+  } catch (e) {
+    console.warn('[notifications] Error al cancelar todas las notificaciones:', e);
+  }
+}
+
+/**
+ * Programa un recordatorio de riego periódico recurrente según el intervalo de la planta.
+ * Utiliza triggers de calendario/intervalo en lugar de eventos únicos.
  */
 export async function scheduleWateringReminder(
   plantName: string,
@@ -110,11 +167,43 @@ export async function scheduleWateringReminder(
   plantId?: string
 ): Promise<string | null> {
   try {
+    const Notifications = await getNotifications();
+    if (!Notifications) return null;
+
     const hasPermission = await requestNotificationPermissions();
     if (!hasPermission) return null;
 
     const interval = Math.max(1, Math.round(daysInterval) || 1);
-    const fireAt = nextOccurrence(interval, 9);
+
+    // Cancelar recordatorios previos de riego para esta misma planta para no duplicar
+    if (plantId) {
+      await cancelNotificationsForPlant(plantId);
+    }
+
+    let trigger: NotificationsType.NotificationTriggerInput;
+    if (interval === 1) {
+      trigger = {
+        type: Notifications.SchedulableTriggerInputTypes.DAILY,
+        hour: 9,
+        minute: 0,
+        channelId: 'ecoscan_care_channel',
+      };
+    } else if (interval === 7) {
+      trigger = {
+        type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
+        weekday: (new Date().getDay() % 7) + 1,
+        hour: 9,
+        minute: 0,
+        channelId: 'ecoscan_care_channel',
+      };
+    } else {
+      trigger = {
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: Math.max(60, interval * 86400),
+        repeats: true,
+        channelId: 'ecoscan_care_channel',
+      };
+    }
 
     const identifier = await Notifications.scheduleNotificationAsync({
       content: {
@@ -126,11 +215,7 @@ export async function scheduleWateringReminder(
         categoryIdentifier: WATERING_CATEGORY_ID,
         data: { type: 'watering', plantName, intervalDays: interval, plantId },
       },
-      trigger: {
-        type: Notifications.SchedulableTriggerInputTypes.DATE,
-        date: fireAt,
-        channelId: 'plantae_care_channel',
-      },
+      trigger,
     });
 
     return identifier;
@@ -140,19 +225,22 @@ export async function scheduleWateringReminder(
 }
 
 /**
- * Programa un recordatorio de tratamiento fitosanitario según la frecuencia indicada
+ * Programa un recordatorio de tratamiento fitosanitario recurrente
  */
 export async function scheduleTreatmentReminder(
   plantName: string,
   treatmentTitle: string,
-  intervalDays: number
+  intervalDays: number,
+  plantId?: string
 ): Promise<string | null> {
   try {
+    const Notifications = await getNotifications();
+    if (!Notifications) return null;
+
     const hasPermission = await requestNotificationPermissions();
     if (!hasPermission) return null;
 
     const interval = Math.max(1, Math.round(intervalDays) || 3);
-    const fireAt = nextOccurrence(1, 10);
 
     const identifier = await Notifications.scheduleNotificationAsync({
       content: {
@@ -162,12 +250,13 @@ export async function scheduleTreatmentReminder(
           { treatmentTitle, interval }
         ),
         sound: true,
-        data: { type: 'treatment', plantName, treatmentTitle, intervalDays: interval },
+        data: { type: 'treatment', plantName, treatmentTitle, intervalDays: interval, plantId },
       },
       trigger: {
-        type: Notifications.SchedulableTriggerInputTypes.DATE,
-        date: fireAt,
-        channelId: 'plantae_care_channel',
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: Math.max(60, interval * 86400),
+        repeats: true,
+        channelId: 'ecoscan_care_channel',
       },
     });
 
@@ -178,16 +267,20 @@ export async function scheduleTreatmentReminder(
 }
 
 /**
- * Programa un recordatorio genérico del plan de cuidados (riego, fertilizante,
- * poda o trasplante) para el próximo vencimiento de la tarea.
+ * Programa un recordatorio genérico del plan de cuidados (riego, fertilizante, poda o trasplante)
  */
 export async function scheduleCareTaskReminder(
   plantName: string,
   taskType: 'riego' | 'fertilizante' | 'poda' | 'trasplante',
   taskTitle: string,
-  daysFromNow: number
+  daysFromNow: number,
+  repeatIntervalDays?: number,
+  plantId?: string
 ): Promise<string | null> {
   try {
+    const Notifications = await getNotifications();
+    if (!Notifications) return null;
+
     const hasPermission = await requestNotificationPermissions();
     if (!hasPermission) return null;
 
@@ -205,7 +298,22 @@ export async function scheduleCareTaskReminder(
       trasplante: t('Trasplante'),
     };
 
-    const fireAt = nextOccurrence(daysFromNow, 8);
+    let trigger: NotificationsType.NotificationTriggerInput;
+    if (repeatIntervalDays && repeatIntervalDays > 0) {
+      trigger = {
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: Math.max(60, repeatIntervalDays * 86400),
+        repeats: true,
+        channelId: 'ecoscan_care_channel',
+      };
+    } else {
+      const fireAt = nextOccurrence(daysFromNow, 8);
+      trigger = {
+        type: Notifications.SchedulableTriggerInputTypes.DATE,
+        date: fireAt,
+        channelId: 'ecoscan_care_channel',
+      };
+    }
 
     const identifier = await Notifications.scheduleNotificationAsync({
       content: {
@@ -219,17 +327,64 @@ export async function scheduleCareTaskReminder(
           dias: Math.max(0, Math.round(daysFromNow)),
         }),
         sound: true,
-        data: { type: 'care-task', taskType, plantName, taskTitle },
+        data: { type: 'care-task', taskType, plantName, taskTitle, plantId },
       },
-      trigger: {
-        type: Notifications.SchedulableTriggerInputTypes.DATE,
-        date: fireAt,
-        channelId: 'plantae_care_channel',
-      },
+      trigger,
     });
 
     return identifier;
   } catch {
     return null;
   }
+}
+
+/**
+ * Registra el listener para la acción interactiva "Ya la regué" (ACTION_WATERED).
+ * Devuelve una función de desuscripción.
+ */
+export function registerNotificationResponseListener(
+  onWatered: (plantId: string) => void
+): () => void {
+  let sub: { remove: () => void } | null = null;
+  let active = true;
+
+  void getNotifications().then((Notifications) => {
+    if (!Notifications || !active) return;
+
+    sub = Notifications.addNotificationResponseReceivedListener((response) => {
+      const actionId = response.actionIdentifier;
+      const data = response.notification?.request?.content?.data;
+      if (
+        (actionId === ACTION_WATERED || actionId === Notifications.DEFAULT_ACTION_IDENTIFIER) &&
+        data?.type === 'watering' &&
+        typeof data?.plantId === 'string' &&
+        data.plantId.length > 0
+      ) {
+        onWatered(data.plantId);
+      }
+    });
+
+    // Procesar si la app fue abierta directamente desde una acción de notificación previa
+    void Notifications.getLastNotificationResponseAsync().then((last) => {
+      if (!last || !active) return;
+      const actionId = last.actionIdentifier;
+      const data = last.notification?.request?.content?.data;
+      if (
+        actionId === ACTION_WATERED &&
+        data?.type === 'watering' &&
+        typeof data?.plantId === 'string' &&
+        data.plantId.length > 0
+      ) {
+        onWatered(data.plantId);
+      }
+    });
+  });
+
+  return () => {
+    active = false;
+    if (sub) {
+      sub.remove();
+      sub = null;
+    }
+  };
 }

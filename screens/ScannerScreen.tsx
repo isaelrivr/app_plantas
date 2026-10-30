@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  Image,
   ScrollView,
   Pressable,
   ActivityIndicator,
@@ -31,7 +30,6 @@ import { useFloatingBarMetrics } from '../hooks/useFloatingBarMetrics';
 import { useTabBarVisibility } from '../context/TabBarVisibilityContext';
 import { isScannerCameraActive } from '../utils/tabBarVisibility';
 import { Button } from '../components/Button';
-import { Card } from '../components/Card';
 import { Badge } from '../components/Badge';
 import { EmptyState } from '../components/EmptyState';
 import { PhotoGuideModal } from '../components/scanner/PhotoGuideModal';
@@ -51,7 +49,7 @@ import { useTranslation } from '../i18n';
 import { useFeedback } from '../context/FeedbackContext';
 
 export const ScannerScreen: React.FC = () => {
-  const { colors, spacing, typography, layout } = useAppTheme();
+  const { colors, spacing, typography } = useAppTheme();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { tabBarClearance } = useFloatingBarMetrics();
@@ -209,6 +207,10 @@ export const ScannerScreen: React.FC = () => {
 
       if (photo?.uri) {
         if (scanMode === 'diagnose') {
+          if (limits.isFeatureLocked('pestDiagnosis')) {
+            navigation.navigate('Paywall');
+            return;
+          }
           navigation.navigate('HealthDiagnosis', { photoUri: photo.uri });
           return;
         }
@@ -238,6 +240,10 @@ export const ScannerScreen: React.FC = () => {
       if (!res.canceled && res.assets?.[0]?.uri) {
         const uri = res.assets[0].uri;
         if (scanMode === 'diagnose') {
+          if (limits.isFeatureLocked('pestDiagnosis')) {
+            navigation.navigate('Paywall');
+            return;
+          }
           navigation.navigate('HealthDiagnosis', { photoUri: uri });
           return;
         }
@@ -508,6 +514,8 @@ export const ScannerScreen: React.FC = () => {
             navigation.navigate('HabitatMap', {
               plantId: selectedCandidate.id,
               plantName: selectedCandidate.name,
+              speciesId: selectedCandidate.id,
+              scientificName: selectedCandidate.scientificName,
             })
           }
           onScanAnother={handleResetScanner}
@@ -666,8 +674,8 @@ export const ScannerScreen: React.FC = () => {
               accessibilityState={{ selected: scanMode === 'diagnose' }}
             >
               <Ionicons
-                name="medkit"
-                size={15}
+                name={limits.isFeatureLocked('pestDiagnosis') ? 'lock-closed' : 'medkit'}
+                size={14}
                 color={scanMode === 'diagnose' ? '#FFFFFF' : 'rgba(255,255,255,0.75)'}
                 style={{ marginRight: 6 }}
               />

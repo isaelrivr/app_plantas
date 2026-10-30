@@ -1,5 +1,5 @@
 /**
- * Plantae Image Compression
+ * EcoScan Image Compression
  *
  * Antes de enviar fotos al backend las reducimos a ~1024 px y JPEG calidad 0.7.
  * Así cada imagen pesa ~100-400 KB (el servidor rechaza > ~1.1 MB base64) y el

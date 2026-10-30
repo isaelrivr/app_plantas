@@ -76,9 +76,9 @@ export const ProfileScreen: React.FC = () => {
       icon: 'chatbubbles' as const,
     },
     {
-      title: t('Sincronización en la nube y respaldo'),
-      desc: t('Tus plantas y fotos seguras y sincronizadas en todos tus dispositivos.'),
-      icon: 'cloud-done' as const,
+      title: t('Diario de Crecimiento y Fotos'),
+      desc: t('Historial fotográfico de evolución y comparador visual Antes y Después.'),
+      icon: 'images' as const,
     },
     {
       title: t('Sin anuncios ni interrupciones'),

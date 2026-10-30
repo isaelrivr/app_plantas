@@ -3,7 +3,7 @@ import { AppState } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { loadJSON, saveJSON, STORAGE_KEYS, validateGardenData } from '../services/storage';
 import { t } from '../i18n';
-import { deleteGrowthEntriesForPlant } from '../services/growthDiaryService';
+import { deleteGrowthEntriesForPlant, getAllGrowthPhotoUris } from '../services/growthDiaryService';
 import {
   checkNewAchievements,
   loadUnlockedAchievements,
@@ -14,6 +14,11 @@ import {
 import { deleteImage, reconcileOrphanImages } from '../services/mediaService';
 import { AchievementCelebrationModal } from '../components/AchievementCelebrationModal';
 import { updateWidgetData } from '../services/widgetService';
+import {
+  registerNotificationResponseListener,
+  cancelNotificationsForPlant,
+  cancelAllNotifications,
+} from '../services/notificationService';
 
 export type CareTaskType = 'riego' | 'fertilizante' | 'poda' | 'trasplante';
 
@@ -96,81 +101,7 @@ const INITIAL_STATS: StatsState = {
   lastIdentificationDate: null,
 };
 
-const INITIAL_PLANTS: GardenPlant[] = [
-  {
-    id: 'plant-1',
-    name: 'Monstera Deliciosa',
-    scientificName: 'Monstera deliciosa Liebm.',
-    imageUri: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/2/2e/Monstera_deliciosa2.jpg/330px-Monstera_deliciosa2.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail',
-    lastWatered: t('Hace 3 días'),
-    isWateredToday: false,
-    wateringFrequencyDays: 8,
-    light: t('Luz indirecta brillante'),
-    avatarEmoji: '🌿',
-    healthScore: 94,
-    lastDiagnosis: t('Estado óptimo y vigoroso'),
-    roomId: 'room-sala',
-    careTasks: [
-      { id: 't1', type: 'riego', title: t('Riego profundo de sustrato'), dueDate: t('En 5 días'), completed: false },
-      { id: 't2', type: 'fertilizante', title: t('Abono líquido equilibrado'), dueDate: t('En 12 días'), completed: false },
-      { id: 't3', type: 'poda', title: t('Limpieza de hojas basales'), dueDate: t('Próximo mes'), completed: false },
-    ],
-  },
-  {
-    id: 'plant-2',
-    name: 'Ficus Lyrata',
-    scientificName: 'Ficus lyrata Warb.',
-    imageUri: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/8/84/Starr_031108-0130_Ficus_lyrata.jpg/330px-Starr_031108-0130_Ficus_lyrata.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail',
-    lastWatered: t('Hace 6 días'),
-    isWateredToday: false,
-    wateringFrequencyDays: 10,
-    light: t('Luz filtrada intensa'),
-    avatarEmoji: '🪴',
-    healthScore: 78,
-    lastDiagnosis: t('Leve clorosis por luz baja'),
-    roomId: 'room-dormitorio',
-    careTasks: [
-      { id: 't4', type: 'riego', title: t('Riego de recuperación'), dueDate: t('En 4 días'), completed: false },
-      { id: 't5', type: 'poda', title: t('Poda de brote apical'), dueDate: t('En 2 semanas'), completed: false },
-    ],
-  },
-  {
-    id: 'plant-3',
-    name: 'Sansevieria Trifasciata',
-    scientificName: 'Dracaena trifasciata',
-    imageUri: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/f/fb/Snake_Plant_%28Sansevieria_trifasciata_%27Laurentii%27%29.jpg/330px-Snake_Plant_%28Sansevieria_trifasciata_%27Laurentii%27%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail',
-    lastWatered: t('Hace 12 días'),
-    isWateredToday: false,
-    wateringFrequencyDays: 18,
-    light: t('Cualquier iluminación'),
-    avatarEmoji: '🌱',
-    healthScore: 99,
-    lastDiagnosis: t('Excelente resistencia'),
-    roomId: 'room-oficina',
-    careTasks: [
-      { id: 't6', type: 'riego', title: t('Riego mensual ligero'), dueDate: t('En 6 días'), completed: false },
-      { id: 't7', type: 'trasplante', title: t('Cambio a maceta de barro'), dueDate: t('En primavera'), completed: false },
-    ],
-  },
-  {
-    id: 'plant-4',
-    name: 'Pothos Dorado',
-    scientificName: 'Epipremnum aureum',
-    imageUri: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/6/62/Money_Plant_%28Epipremnum_aureum%29_4.jpg/330px-Money_Plant_%28Epipremnum_aureum%29_4.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail',
-    lastWatered: t('Ayer'),
-    isWateredToday: false,
-    wateringFrequencyDays: 6,
-    light: t('Luz indirecta'),
-    avatarEmoji: '🍃',
-    healthScore: 88,
-    lastDiagnosis: t('Crecimiento activo'),
-    roomId: 'room-cocina',
-    careTasks: [
-      { id: 't8', type: 'riego', title: t('Riego regular de superficie'), dueDate: t('En 5 días'), completed: false },
-      { id: 't9', type: 'fertilizante', title: t('Humus de lombriz'), dueDate: t('En 15 días'), completed: false },
-    ],
-  },
-];
+const DEMO_PLANT_IDS = new Set(['plant-1', 'plant-2', 'plant-3', 'plant-4']);
 
 const dateKey = (offsetDays = 0): string => {
   const d = new Date();
@@ -259,7 +190,10 @@ export function GardenProvider({ children }: { children: ReactNode }) {
       if (!active) return;
       setUnlockedAchievements(storedAchievements);
       if (stored) {
-        setPlants(Array.isArray(stored.plants) ? stored.plants : []);
+        const cleanPlants = (Array.isArray(stored.plants) ? stored.plants : []).filter(
+          (p) => !DEMO_PLANT_IDS.has(p.id)
+        );
+        setPlants(cleanPlants);
         setRooms(stored.rooms && stored.rooms.length > 0 ? stored.rooms : DEFAULT_ROOMS);
         const persistedStats = { ...INITIAL_STATS, ...(stored.stats ?? {}) };
         const today = dateKey();
@@ -268,16 +202,17 @@ export function GardenProvider({ children }: { children: ReactNode }) {
           persistedStats.lastIdentificationDate = today;
         }
         setStatsState(persistedStats);
-      } else if (__DEV__) {
-        // Solo en desarrollo sembramos el jardín con datos de ejemplo.
-        setPlants(INITIAL_PLANTS);
+      } else {
+        setPlants([]);
       }
       setIsHydrated(true);
 
-      // Reconciliación de fotos huérfanas en segundo plano
+      // Reconciliación de fotos huérfanas en segundo plano (incluye plantas y diario de crecimiento)
       try {
         const plantPhotos = (stored?.plants ?? []).map((p) => p.imageUri).filter(Boolean) as string[];
-        void reconcileOrphanImages(plantPhotos);
+        const diaryPhotos = getAllGrowthPhotoUris();
+        const allActiveUris = [...plantPhotos, ...diaryPhotos];
+        void reconcileOrphanImages(allActiveUris);
       } catch {}
     })();
     return () => {
@@ -365,6 +300,17 @@ export function GardenProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  // Listener para la acción interactiva de notificación "Ya la regué"
+  useEffect(() => {
+    if (!isHydrated) return;
+    const unsubscribe = registerNotificationResponseListener((plantId) => {
+      waterPlantToday(plantId);
+    });
+    return () => {
+      unsubscribe();
+    };
+  }, [isHydrated]);
+
   const undoWaterPlant = (id: string, previousLastWatered: string, previousIsWatered = false) => {
     setPlants((prev) =>
       prev.map((plant) => {
@@ -411,6 +357,7 @@ export function GardenProvider({ children }: { children: ReactNode }) {
     if (target?.imageUri) {
       void deleteImage(target.imageUri);
     }
+    void cancelNotificationsForPlant(id);
   };
 
   const restorePlant = (plant: GardenPlant) => {
@@ -571,10 +518,9 @@ export function GardenProvider({ children }: { children: ReactNode }) {
   };
 
   const resetDefaultPlants = () => {
-    // Solo en desarrollo: restaurar el catálogo de ejemplo. En producción no
-    // debe reaparecer información ficticia en el jardín del usuario.
-    if (!__DEV__) return;
-    setPlants(INITIAL_PLANTS);
+    // Limpiar jardín: sin plantas de prueba
+    setPlants([]);
+    void cancelAllNotifications();
   };
 
   const resetStats = () => {
@@ -585,6 +531,7 @@ export function GardenProvider({ children }: { children: ReactNode }) {
     setPlants([]);
     setRooms(DEFAULT_ROOMS);
     setStatsState(INITIAL_STATS);
+    void cancelAllNotifications();
   };
 
   const stats = useMemo<GardenStats>(

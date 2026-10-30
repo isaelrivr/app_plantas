@@ -1,5 +1,5 @@
 /**
- * Plantae Device Identity
+ * EcoScan Device Identity
  *
  * Hasta la Fase 4 (Firebase Auth) identificamos al usuario por un UUID anónimo
  * persistido en AsyncStorage. El backend lo hashea con SHA-256 y lo usa como

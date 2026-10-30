@@ -1,5 +1,5 @@
 /**
- * Plantae Habitat Service
+ * EcoScan Habitat Service
  *
  * PROVEEDOR DE DATOS BIOGEOGRÁFICOS Y HÁBITAT MUNDIAL
  *
@@ -28,6 +28,9 @@
 
 import { t } from '../i18n';
 import { getPlantById } from './plantApi';
+import { careSheetKey, getCachedCareSheet } from './plantCareCache';
+import { isGeminiDirectAvailable, generateHabitatWithGemini } from './geminiService';
+import { HABITAT_DATABASE } from './habitatRegionsData';
 
 export type HabitatZoneType = 'native' | 'naturalized' | 'cultivated';
 
@@ -70,7 +73,22 @@ export const WORLD_ATLAS_COUNTRY_IDS: Readonly<Record<string, string>> = {
   'oman': '512', 'pacific islands': '242', 'pakistan': '586', 'portugal': '620',
   'saudi arabia': '682', 'south africa': '710', 'tanzania': '834', 'thailand': '764',
   'united kingdom': '826', 'united states': '840', 'yemen': '887', 'zimbabwe': '716',
+  // Aliases en español y normalizados para integración con IA
+  'méxico': '484', 'brasil': '076', 'perú': '604', 'panamá': '591',
+  'estados unidos': '840', 'españa': '724', 'japón': '392', 'sudáfrica': '710',
+  'sudafrica': '710', 'chile': '152', 'uruguay': '858', 'paraguay': '600',
+  'honduras': '340', 'el salvador': '222', 'nicaragua': '558', 'vietnam': '704',
+  'tailandia': '764', 'filipinas': '608', 'malasia': '458', 'canada': '124', 'canadá': '124',
 };
+
+/** Resuelve de forma tolerante el ID de world-atlas a partir del nombre del país */
+export function resolveCountryAtlasId(name: string): string | undefined {
+  if (!name) return undefined;
+  const raw = name.toLowerCase().trim();
+  if (WORLD_ATLAS_COUNTRY_IDS[raw]) return WORLD_ATLAS_COUNTRY_IDS[raw];
+  const unaccented = raw.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  return WORLD_ATLAS_COUNTRY_IDS[unaccented];
+}
 
 export interface HabitatCountry {
   id: string;
@@ -91,7 +109,36 @@ export interface HabitatBounds {
   maxLatitude: number;
 }
 
-import { HABITAT_DATABASE } from './habitatRegionsData';
+
+function buildHabitatFromRegions(
+  plantId: string,
+  scientificName: string,
+  nativeRegions: string[],
+  habitatSummary?: string,
+  climateTip?: string
+): PlantHabitatInfo {
+  return {
+    plantId,
+    scientificName,
+    originSummary: habitatSummary || `Especie originaria de ${nativeRegions.join(', ')}.`,
+    globalCoverage: `Nativa en ${nativeRegions.join(', ')}; cultivada y apreciada a nivel mundial.`,
+    conservationStatus: 'Preocupación Menor (LC)',
+    regions: nativeRegions.map((regionName) => {
+      const countryId = resolveCountryAtlasId(regionName);
+      return {
+        countryName: regionName,
+        countryId,
+        zoneType: 'native' as HabitatZoneType,
+        climate: climateTip || 'Clima favorable para la especie',
+        floweringSeason: 'Primavera a Verano',
+        biogeographicZone: regionName,
+        elevationMeters: '0 - 1,500 m s.n.m.',
+        notes: habitatSummary || `Hábitat natural y distribución silvestre en ${regionName}.`,
+      };
+    }),
+  };
+}
+
 /**
  * Traduce los textos visibles de una ficha de hábitat al idioma activo.
  * Se ejecuta al construir el resultado para respetar el idioma en uso.
@@ -104,7 +151,7 @@ function localizeHabitat(source: PlantHabitatInfo): PlantHabitatInfo {
     conservationStatus: t(source.conservationStatus),
     regions: source.regions.map((region) => ({
       ...region,
-      countryId: region.countryId || WORLD_ATLAS_COUNTRY_IDS[region.countryName.toLowerCase()],
+      countryId: region.countryId || resolveCountryAtlasId(region.countryName),
       climate: t(region.climate),
       floweringSeason: t(region.floweringSeason),
       biogeographicZone: t(region.biogeographicZone),
@@ -115,68 +162,104 @@ function localizeHabitat(source: PlantHabitatInfo): PlantHabitatInfo {
 }
 
 /**
- * Obtiene los datos biogeográficos y regiones de hábitat de una especie
+ * Obtiene los datos biogeográficos y regiones de hábitat de una especie,
+ * integrando la base local, la ficha generada por Gemini y la IA en tiempo real.
  */
-export async function getPlantHabitat(plantId: string): Promise<PlantHabitatInfo> {
-  // Simulación realista con respuesta inmediata desde la base biogeográfica local
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      let data = HABITAT_DATABASE[plantId];
-      if (!data) {
-        const catalogPlant = getPlantById(plantId);
-        if (catalogPlant && catalogPlant.nativeRegions && catalogPlant.nativeRegions.length > 0) {
-          data = {
-            plantId,
-            scientificName: catalogPlant.scientificName,
-            originSummary: catalogPlant.habitatSummary || `${catalogPlant.name} es originaria de ${catalogPlant.nativeRegions.join(', ')}.`,
-            globalCoverage: `Nativa en ${catalogPlant.nativeRegions.join(', ')}; cultivada y apreciada a nivel mundial.`,
-            conservationStatus: 'Preocupación Menor (LC)',
-            regions: catalogPlant.nativeRegions.map((regionName) => ({
-              countryName: regionName,
-              zoneType: 'native' as HabitatZoneType,
-              climate: catalogPlant.climateTip || 'Clima favorable para la especie',
-              floweringSeason: 'Primavera a Verano',
-              biogeographicZone: regionName,
-              elevationMeters: '0 - 1,500 m s.n.m.',
-              notes: catalogPlant.habitatSummary || `Hábitat natural y distribución silvestre en ${regionName}.`,
-            })),
-          };
-        }
-      }
-      if (!data) {
-        data = {
+export async function getPlantHabitat(
+  plantId: string,
+  plantName?: string,
+  scientificName?: string
+): Promise<PlantHabitatInfo> {
+  // 1. Base local predefinida
+  const localData = HABITAT_DATABASE[plantId];
+  if (localData) {
+    return localizeHabitat(localData);
+  }
+
+  // 2. Catálogo botánico local
+  const catalogPlant = getPlantById(plantId);
+  if (catalogPlant && catalogPlant.nativeRegions && catalogPlant.nativeRegions.length > 0) {
+    const fromCatalog = buildHabitatFromRegions(
+      plantId,
+      catalogPlant.scientificName,
+      catalogPlant.nativeRegions,
+      catalogPlant.habitatSummary,
+      catalogPlant.climateTip
+    );
+    return localizeHabitat(fromCatalog);
+  }
+
+  // 3. Ficha de cuidados en caché (producida por escaneo con Gemini Vision)
+  const lookupName = (plantName || plantId || '').trim();
+  const cachedSheet = await getCachedCareSheet(careSheetKey(lookupName, scientificName || ''));
+  if (cachedSheet && Array.isArray(cachedSheet.nativeRegions) && cachedSheet.nativeRegions.length > 0) {
+    const fromCache = buildHabitatFromRegions(
+      plantId,
+      cachedSheet.scientificName || scientificName || lookupName,
+      cachedSheet.nativeRegions,
+      cachedSheet.habitatSummary,
+      cachedSheet.climateTip
+    );
+    return localizeHabitat(fromCache);
+  }
+
+  // 4. Si Gemini está disponible y no hay datos previos, generar mapa biogeográfico con Gemini
+  if (isGeminiDirectAvailable()) {
+    try {
+      const geminiData = await generateHabitatWithGemini(lookupName, scientificName);
+      if (geminiData && geminiData.regions.length > 0) {
+        const fromGemini: PlantHabitatInfo = {
           plantId,
-          scientificName: '',
-          originSummary: '',
-          globalCoverage: '',
-          conservationStatus: '',
-          regions: [],
+          scientificName: geminiData.scientificName,
+          originSummary: geminiData.originSummary,
+          globalCoverage: geminiData.globalCoverage,
+          conservationStatus: geminiData.conservationStatus,
+          regions: geminiData.regions.map((r) => ({
+            ...r,
+            countryId: resolveCountryAtlasId(r.countryName),
+          })),
         };
+        return localizeHabitat(fromGemini);
       }
-      resolve(localizeHabitat(data));
-    }, 350);
+    } catch (e) {
+      console.warn('[Gemini Habitat] Error generando mapa de hábitat:', e);
+    }
+  }
+
+  // Fallback por defecto
+  return localizeHabitat({
+    plantId,
+    scientificName: scientificName || '',
+    originSummary: t('Información de hábitat biogeográfico en actualización.'),
+    globalCoverage: '',
+    conservationStatus: t('No evaluada (NE)'),
+    regions: [],
   });
 }
 
 /** Returns all regions whose distribution is native, keyed by world-atlas id. */
 export function getNativeCountries(info: PlantHabitatInfo): HabitatCountry[] {
-  return info.regions
-    .filter((region) => region.zoneType === 'native')
-    .map((region) => {
-      const id = region.countryId || WORLD_ATLAS_COUNTRY_IDS[region.countryName.toLowerCase()];
-      return id ? { id, name: region.countryName, region } : null;
-    })
-    .filter((country): country is HabitatCountry => country !== null);
+  const result: HabitatCountry[] = [];
+  for (const region of info.regions) {
+    if (region.zoneType !== 'native') continue;
+    const id = region.countryId || resolveCountryAtlasId(region.countryName);
+    if (id) {
+      result.push({ id, name: region.countryName, region: { ...region, countryId: id } });
+    }
+  }
+  return result;
 }
 
 /** Returns every mapped country, including naturalized and cultivated regions. */
 export function getMappedCountries(info: PlantHabitatInfo): HabitatCountry[] {
-  return info.regions
-    .map((region) => {
-      const id = region.countryId || WORLD_ATLAS_COUNTRY_IDS[region.countryName.toLowerCase()];
-      return id ? { id, name: region.countryName, region } : null;
-    })
-    .filter((country): country is HabitatCountry => country !== null);
+  const result: HabitatCountry[] = [];
+  for (const region of info.regions) {
+    const id = region.countryId || resolveCountryAtlasId(region.countryName);
+    if (id) {
+      result.push({ id, name: region.countryName, region: { ...region, countryId: id } });
+    }
+  }
+  return result;
 }
 
 export function calculateHabitatCentroid(points: readonly HabitatCoordinate[]): [number, number] | null {

@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   FlatList,
   Pressable,
   Image,
@@ -24,9 +23,16 @@ import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { SkeletonBox } from '../components/SkeletonLoader';
 import { BeforeAfterSlider } from '../components/BeforeAfterSlider';
+import { LockedPreview } from '../components/LockedPreview';
+import { usePlanLimits } from '../hooks/usePlanLimits';
 import { getPlantById } from '../services/plantApi';
 import { persistImage } from '../services/mediaService';
 import { useGarden } from '../context/GardenContext';
+import {
+  isGeminiDirectAvailable,
+  analyzeGrowthWithGemini,
+  GrowthEvaluationResult,
+} from '../services/geminiService';
 import {
   getGrowthEntries,
   getGrowthComparison,
@@ -45,6 +51,7 @@ export const GrowthDiaryScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { plants } = useGarden();
+  const limits = usePlanLimits();
 
   const plantId: string = route.params?.plantId ?? 'monstera';
   const plantDef = getPlantById(plantId);
@@ -56,6 +63,48 @@ export const GrowthDiaryScreen: React.FC = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [note, setNote] = useState('');
   const [pendingPhoto, setPendingPhoto] = useState<string | null>(null);
+  const [aiEvaluation, setAiEvaluation] = useState<GrowthEvaluationResult | null>(null);
+  const [evaluatingAi, setEvaluatingAi] = useState(false);
+  const [aiModalVisible, setAiModalVisible] = useState(false);
+
+  const handleEvaluateGrowth = async () => {
+    if (limits.isFeatureLocked('growthDiary')) {
+      const seePro = await confirm({
+        title: t('Evaluación IA de Crecimiento'),
+        message: t('El análisis agronómico del crecimiento con inteligencia artificial es exclusivo de EcoScan Pro.'),
+        confirmText: t('Ver Pro'),
+        cancelText: t('Ahora no'),
+      });
+      if (seePro) {
+        navigation.navigate('Paywall');
+      }
+      return;
+    }
+
+    if (evaluatingAi || entries.length === 0) return;
+    try {
+      Haptics.selectionAsync();
+    } catch {}
+    setEvaluatingAi(true);
+    try {
+      const evaluation = await analyzeGrowthWithGemini(
+        plantName,
+        entries.map((e) => ({ date: e.date, note: e.note, photoUri: e.photoUri }))
+      );
+      setAiEvaluation(evaluation);
+      setAiModalVisible(true);
+      try {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      } catch {}
+    } catch {
+      showToast({
+        message: t('No se pudo analizar el crecimiento. Revisa tu conexión.'),
+        type: 'error',
+      });
+    } finally {
+      setEvaluatingAi(false);
+    }
+  };
 
   useEffect(() => {
     setLoading(true);
@@ -69,6 +118,21 @@ export const GrowthDiaryScreen: React.FC = () => {
   const comparison = useMemo(() => getGrowthComparison(plantId), [plantId, entries]);
 
   const handleAddPhoto = async () => {
+    if (limits.isFeatureLocked('growthDiary') && entries.length >= 1) {
+      const seePro = await confirm({
+        title: t('Diario de Crecimiento Pro'),
+        message: t(
+          'El plan gratuito incluye 1 foto de seguimiento por planta. Pásate a EcoScan Pro para guardar fotos ilimitadas y usar el comparador Antes/Después.'
+        ),
+        confirmText: t('Desbloquear Pro'),
+        cancelText: t('Ahora no'),
+      });
+      if (seePro) {
+        navigation.navigate('Paywall');
+      }
+      return;
+    }
+
     try {
       const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!permission.granted) return;
@@ -266,33 +330,63 @@ export const GrowthDiaryScreen: React.FC = () => {
                 <SkeletonBox width="100%" height={80} borderRadius={14} style={{ marginTop: spacing.sm }} />
               </>
             ) : comparison.before && comparison.after && comparison.before.id !== comparison.after.id ? (
-              <Card
-                variant="flat"
-                style={{
-                  padding: 0,
-                  overflow: 'hidden',
-                  marginBottom: spacing.md,
-                  borderRadius: layout.borderRadius.lg,
-                  borderWidth: 1,
-                  borderColor: colors.border,
-                  backgroundColor: colors.surface,
-                }}
+              <LockedPreview
+                locked={limits.isFeatureLocked('growthDiary')}
+                feature="growthDiary"
+                onUnlock={() => navigation.navigate('Paywall')}
+                style={{ marginBottom: spacing.md }}
               >
-                <BeforeAfterSlider
-                  beforeUri={comparison.before.photoUri}
-                  afterUri={comparison.after.photoUri}
-                  height={240}
-                />
-                <View style={{ padding: spacing.md }}>
-                  <Text style={[typography.footnote, { color: colors.textSecondary }]}>
-                    {t('{dias} días de diferencia', { dias: comparison.daysBetween ?? 0 })}
-                  </Text>
-                  <View style={styles.deltaRow}>
-                    {renderDelta(t('altura'), comparison.heightDeltaCm, ' cm')}
-                    {renderDelta(t('hojas'), comparison.leafDelta, '')}
+                <Card
+                  variant="flat"
+                  style={{
+                    padding: 0,
+                    overflow: 'hidden',
+                    borderRadius: layout.borderRadius.lg,
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                    backgroundColor: colors.surface,
+                  }}
+                >
+                  <BeforeAfterSlider
+                    beforeUri={comparison.before.photoUri}
+                    afterUri={comparison.after.photoUri}
+                    height={240}
+                  />
+                  <View style={{ padding: spacing.md }}>
+                    <Text style={[typography.footnote, { color: colors.textSecondary }]}>
+                      {t('{dias} días de diferencia', { dias: comparison.daysBetween ?? 0 })}
+                    </Text>
+                    <View style={styles.deltaRow}>
+                      {renderDelta(t('altura'), comparison.heightDeltaCm, ' cm')}
+                      {renderDelta(t('hojas'), comparison.leafDelta, '')}
+                    </View>
                   </View>
-                </View>
-              </Card>
+                </Card>
+              </LockedPreview>
+            ) : null}
+
+            {entries.length > 0 && isGeminiDirectAvailable() ? (
+              <Button
+                title={
+                  evaluatingAi
+                    ? t('Analizando con IA...')
+                    : limits.isFeatureLocked('growthDiary')
+                    ? t('Evaluar evolución con IA (Pro)')
+                    : t('Evaluar evolución con Gemini IA')
+                }
+                onPress={handleEvaluateGrowth}
+                disabled={evaluatingAi}
+                variant="secondary"
+                size="md"
+                icon={
+                  <Ionicons
+                    name={limits.isFeatureLocked('growthDiary') ? 'lock-closed' : 'sparkles'}
+                    size={18}
+                    color={colors.primary}
+                  />
+                }
+                style={{ marginBottom: spacing.md }}
+              />
             ) : null}
 
             {!loading && entries.length > 0 ? (
@@ -380,6 +474,82 @@ export const GrowthDiaryScreen: React.FC = () => {
               <View style={{ width: spacing.sm }} />
               <Button title={t('Guardar')} onPress={handleSaveEntry} variant="primary" style={{ flex: 1 }} />
             </View>
+          </Card>
+        </View>
+      </Modal>
+
+      {/* MODAL DE EVALUACIÓN DE CRECIMIENTO CON IA */}
+      <Modal
+        visible={aiModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setAiModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <Card
+            variant="elevated"
+            style={{
+              width: '100%',
+              borderRadius: layout.borderRadius.xl,
+              borderWidth: 1,
+              borderColor: colors.border,
+              backgroundColor: colors.surface,
+              padding: spacing.lg,
+            }}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.md }}>
+              <View
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: 22,
+                  backgroundColor: colors.primaryLight,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginRight: spacing.sm,
+                }}
+              >
+                <Ionicons name="sparkles" size={24} color={colors.primary} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[typography.headline, { color: colors.textPrimary }]}>
+                  {t('Evolución con IA')}
+                </Text>
+                <Text style={[typography.footnote, { color: colors.textSecondary }]}>
+                  {t('Evaluación botánica de {nombre}', { nombre: plantName })}
+                </Text>
+              </View>
+            </View>
+
+            {aiEvaluation ? (
+              <>
+                <Text style={[typography.body, { color: colors.textPrimary, lineHeight: 22, marginBottom: spacing.md }]}>
+                  {aiEvaluation.summary}
+                </Text>
+                <View
+                  style={{
+                    backgroundColor: colors.surfaceSecondary,
+                    borderRadius: layout.borderRadius.md,
+                    padding: spacing.md,
+                    marginBottom: spacing.lg,
+                  }}
+                >
+                  <Text style={[typography.caption1, { color: colors.primary, fontWeight: '700', marginBottom: 4, textTransform: 'uppercase' }]}>
+                    {t('Siguiente recomendación')}
+                  </Text>
+                  <Text style={[typography.footnote, { color: colors.textPrimary, lineHeight: 20 }]}>
+                    {aiEvaluation.nextStepAdvice}
+                  </Text>
+                </View>
+              </>
+            ) : null}
+
+            <Button
+              title={t('Entendido')}
+              onPress={() => setAiModalVisible(false)}
+              variant="primary"
+              size="md"
+            />
           </Card>
         </View>
       </Modal>

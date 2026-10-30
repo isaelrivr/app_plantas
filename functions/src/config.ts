@@ -1,6 +1,6 @@
 /**
- * Configuración del backend leída de variables de entorno (functions/.env o el
- * entorno de Firebase). Ninguna clave viaja al cliente: solo existen aquí.
+ * Configuración del backend proxy leída de variables de entorno (functions/.env o Secret Manager).
+ * Ninguna clave viaja al cliente: solo existen de forma segura en este servidor.
  */
 
 export interface QuotaRule {
@@ -37,8 +37,8 @@ export function getConfig(): AppConfig {
   return {
     plantIdApiKey: env.PLANT_ID_API_KEY?.trim() || null,
     geminiApiKey: env.GEMINI_API_KEY?.trim() || null,
-    geminiModel: env.GEMINI_MODEL?.trim() || 'gemini-3.8-flash',
-    plantIdBaseUrl: (env.PLANT_ID_BASE_URL?.trim() || 'https://api.plant.id/v2').replace(/\/+$/, ''),
+    geminiModel: env.GEMINI_MODEL?.trim() || 'gemini-1.5-flash',
+    plantIdBaseUrl: (env.PLANT_ID_BASE_URL?.trim() || 'https://api.plant.id/v3').replace(/\/+$/, ''),
     upstreamTimeoutMs: 20_000,
     geminiTimeoutMs: 15_000,
     maxImagesPerRequest: 4,
