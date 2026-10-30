@@ -187,7 +187,24 @@ export const HabitatMapScreen: React.FC = () => {
         {loading || !topologyData ? <View style={styles.state}><SkeletonBox width="92%" height={240} borderRadius={18} /><Text style={[typography.subheadline, { color: colors.textSecondary, marginTop: spacing.md }]}>{t('Cargando mapa...')}</Text></View>
           : error ? <View style={styles.state}><ErrorBanner message={t('No pudimos cargar el mapa de esta planta.')} onRetry={loadHabitat} /></View>
             : !habitatData || !mappedCountries.length ? <View style={styles.state}><EmptyState iconName="leaf-outline" title={t('Sin registros de origen')} description={t('Aún no tenemos datos sobre el origen de esta especie.')} /></View>
-              : <WorldMap topology={topologyData as never} highlightedIds={highlightedIds} focusIds={focusIds} onCountryPress={(country) => { const region = mappedCountries.find((item) => item.id === country.id)?.region; if (region) setSelectedRegion(region); }} colors={mapColors} accessibilitySummary={t('Mapa mundial de {especie}. Regiones nativas: {regiones}', { especie: displayName, regiones: nativeCountries.map((country) => country.name).join(', ') })} resetToken={resetToken} />}
+              : (
+                <WorldMap
+                  topology={topologyData as never}
+                  highlightedIds={highlightedIds}
+                  focusIds={focusIds}
+                  autoFocus={false}
+                  onCountryPress={(country) => {
+                    const region = mappedCountries.find((item) => item.id === country.id)?.region;
+                    if (region) setSelectedRegion(region);
+                  }}
+                  colors={mapColors}
+                  accessibilitySummary={t('Mapa mundial de {especie}. Regiones nativas: {regiones}', {
+                    especie: displayName,
+                    regiones: nativeCountries.map((country) => country.name).join(', '),
+                  })}
+                  resetToken={resetToken}
+                />
+              )}
       </View>
       {selectedRegion ? <RegionCard plantName={displayName} region={selectedRegion} onClose={() => setSelectedRegion(null)} colors={colors} labels={{ native: t('Zona nativa'), naturalized: t('Naturalizada'), cultivated: t('Cultivada'), close: t('Cerrar detalle de región') }} /> : null}
       <Text style={[styles.hint, { color: colors.textTertiary, marginBottom: Math.max(insets.bottom, 12) }]}>

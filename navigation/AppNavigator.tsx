@@ -168,7 +168,7 @@ export function M3NavigationBar({ state, descriptors, navigation }: BottomTabBar
     tabBarVisibleOption: (focusedOptions as any)?.tabBarVisible,
   });
 
-  if (!shouldShow || (hideOnKeyboard && isKeyboardVisible)) {
+  if (currentRoute.name === 'Scan' || !shouldShow || (hideOnKeyboard && isKeyboardVisible)) {
     return null;
   }
 
@@ -314,7 +314,13 @@ function BottomTabs() {
     >
       <Tab.Screen name="Today" component={TodayScreen} />
       <Tab.Screen name="Garden" component={GardenScreen} />
-      <Tab.Screen name="Scan" component={ScannerScreen} />
+      <Tab.Screen
+        name="Scan"
+        component={ScannerScreen}
+        options={{
+          tabBarStyle: { display: 'none' },
+        }}
+      />
       <Tab.Screen name="Explore" component={ExploreScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>

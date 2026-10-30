@@ -35,6 +35,7 @@ interface WorldMapProps {
   accessibilitySummary: string;
   resetToken?: number;
   focusIds?: readonly string[];
+  autoFocus?: boolean;
 }
 
 const clamp = (value: number, min: number, max: number): number => Math.min(max, Math.max(min, value));
@@ -62,7 +63,16 @@ const PulseMarker: React.FC<{ x: number; y: number; color: string }> = ({ x, y, 
   return <AnimatedCircle cx={x} cy={y} fill={color} animatedProps={animatedProps} />;
 };
 
-export const WorldMap: React.FC<WorldMapProps> = ({ topology, highlightedIds, onCountryPress, colors, accessibilitySummary, resetToken = 0, focusIds = [] }) => {
+export const WorldMap: React.FC<WorldMapProps> = ({
+  topology,
+  highlightedIds,
+  onCountryPress,
+  colors,
+  accessibilitySummary,
+  resetToken = 0,
+  focusIds = [],
+  autoFocus = false,
+}) => {
   const [size, setSize] = useState({ width: 0, height: 0 });
   const [scaleState, setScaleState] = useState(MIN_SCALE);
   const scale = useSharedValue(MIN_SCALE);
@@ -107,6 +117,7 @@ export const WorldMap: React.FC<WorldMapProps> = ({ topology, highlightedIds, on
   React.useEffect(() => { if (resetToken > 0) reset(); }, [reset, resetToken]);
 
   React.useEffect(() => {
+    if (!autoFocus) return;
     if (!focusIds.length || !countries.length || !size.width || !size.height) return;
     const focused = countries.filter((country) => focusIds.includes(country.id));
     if (!focused.length) return;
@@ -121,7 +132,7 @@ export const WorldMap: React.FC<WorldMapProps> = ({ topology, highlightedIds, on
     translateX.value = withSpring(size.width / 2 - (minX + maxX) / 2 * targetScale, { damping: 18, stiffness: 130 });
     translateY.value = withSpring(size.height / 2 - (minY + maxY) / 2 * targetScale, { damping: 18, stiffness: 130 });
     setScaleState(targetScale);
-  }, [countries, focusIds, scale, size, translateX, translateY]);
+  }, [autoFocus, countries, focusIds, scale, size, translateX, translateY]);
 
   const panResponder = useMemo(() => PanResponder.create({
     onStartShouldSetPanResponder: () => false,

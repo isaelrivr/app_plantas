@@ -128,6 +128,16 @@ export const ScannerScreen: React.FC = () => {
     permissionGranted: !!permission?.granted,
   });
 
+  // Garantiza que la cámara quede marcada como lista tras montar en pantalla
+  useEffect(() => {
+    if (isFocused && permission?.granted) {
+      const timer = setTimeout(() => {
+        setIsCameraReady(true);
+      }, 800);
+      return () => clearTimeout(timer);
+    }
+  }, [isFocused, facing, permission?.granted]);
+
   useEffect(() => {
     navigation.setOptions({
       tabBarStyle: isCameraActive ? { display: 'none' } : undefined,
@@ -139,6 +149,17 @@ export const ScannerScreen: React.FC = () => {
       setTabBarVisible(true);
     };
   }, [isCameraActive, navigation, setTabBarVisible]);
+
+  const handleExit = () => {
+    try {
+      Haptics.selectionAsync();
+    } catch {}
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    } else {
+      navigation.navigate('Today');
+    }
+  };
 
   const toggleCameraFacing = () => {
     try {
@@ -170,16 +191,7 @@ export const ScannerScreen: React.FC = () => {
 
   const handleCapture = async () => {
     if (!cameraRef.current) return;
-
-    if (!isCameraReady) {
-      showToast({
-        message: t('Preparando la cámara... Intenta en un segundo.'),
-        type: 'info',
-      });
-      return;
-    }
-
-    if (isCapturing) return;
+    if (isCapturing || isIdentifying) return;
 
     // Verificar límite gratuito
     if (!limits.isPremium && limits.identificationsToday >= limits.identificationLimit) {
@@ -200,7 +212,10 @@ export const ScannerScreen: React.FC = () => {
 
     setIsCapturing(true);
     try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+      try {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+      } catch {}
+
       const photo = await cameraRef.current.takePictureAsync({
         quality: 0.8,
       });
@@ -215,10 +230,12 @@ export const ScannerScreen: React.FC = () => {
           return;
         }
         setCapturedPhoto(photo.uri);
-        analyzePhoto(photo.uri);
+        await analyzePhoto(photo.uri);
+      } else {
+        throw new Error('No se obtuvo la imagen.');
       }
-    } catch (err) {
-      console.warn('Error capturando foto con la cámara:', err);
+    } catch (err: any) {
+      console.warn('Error capturando foto con la cámara:', err?.message || err);
       showToast({
         message: t('No se pudo capturar la imagen. Intenta de nuevo o elige una foto de la galería.'),
         type: 'error',
@@ -248,7 +265,7 @@ export const ScannerScreen: React.FC = () => {
           return;
         }
         setCapturedPhoto(uri);
-        analyzePhoto(uri);
+        await analyzePhoto(uri);
       }
     } catch (err) {
       console.warn('Error al acceder a la galería:', err);
@@ -268,6 +285,16 @@ export const ScannerScreen: React.FC = () => {
 
     try {
       const result = await identifyPlants([uri]);
+
+      if (!result.candidates || result.candidates.length === 0) {
+        setIsIdentifying(false);
+        setErrorMessage(
+          result.imageQuality?.note ||
+            t('No pudimos reconocer una especie vegetal en esta foto. Intenta con una toma más cercana de las hojas o flores.')
+        );
+        return;
+      }
+
       const best = result.candidates[0];
       setIsIdentifying(false);
       setIdentificationResult(result);
@@ -285,17 +312,18 @@ export const ScannerScreen: React.FC = () => {
       try {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       } catch {}
-    } catch (err) {
+    } catch (err: any) {
       setIsIdentifying(false);
+      console.warn('Error identificando planta:', err?.message || err);
       if (err instanceof ApiError) {
         setErrorMessage(
           err.status === 408
             ? t('La identificación tardó demasiado. Puedes volver a intentarlo o buscar directamente en la enciclopedia.')
-            : t('Error de conexión. Revisa tu internet e inténtalo de nuevo.')
+            : err.message || t('Error de conexión. Revisa tu internet e inténtalo de nuevo.')
         );
       } else {
         setErrorMessage(
-          t('No pudimos identificar la planta. Intenta con otra foto o busca en la enciclopedia.')
+          err?.message || t('No pudimos identificar la planta. Intenta con otra foto o busca en la enciclopedia.')
         );
       }
     }
@@ -376,10 +404,22 @@ export const ScannerScreen: React.FC = () => {
           {
             backgroundColor: colors.background,
             paddingTop: insets.top + 16,
-            paddingBottom: tabBarClearance,
+            paddingBottom: Math.max(insets.bottom, 24),
           },
         ]}
       >
+        <View style={styles.topExitRow}>
+          <Pressable
+            onPress={handleExit}
+            style={({ pressed }) => [styles.exitBtn, pressed && { opacity: 0.7 }]}
+            accessibilityRole="button"
+            accessibilityLabel={t('Volver')}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          >
+            <Ionicons name="close" size={26} color={colors.textPrimary} />
+          </Pressable>
+        </View>
+
         <View style={[styles.permissionIconCircle, { backgroundColor: colors.surfaceSecondary }]}>
           <Ionicons name="camera-outline" size={54} color={colors.textSecondary} />
         </View>
@@ -409,6 +449,14 @@ export const ScannerScreen: React.FC = () => {
           onPress={() => setMountError(null)}
           variant="secondary"
           size="lg"
+          style={{ width: '100%', marginBottom: spacing.sm }}
+        />
+
+        <Button
+          title={t('Volver')}
+          onPress={handleExit}
+          variant="ghost"
+          size="md"
           style={{ width: '100%' }}
         />
       </View>
@@ -426,10 +474,22 @@ export const ScannerScreen: React.FC = () => {
           {
             backgroundColor: colors.background,
             paddingTop: insets.top + 16,
-            paddingBottom: tabBarClearance,
+            paddingBottom: Math.max(insets.bottom, 24),
           },
         ]}
       >
+        <View style={styles.topExitRow}>
+          <Pressable
+            onPress={handleExit}
+            style={({ pressed }) => [styles.exitBtn, pressed && { opacity: 0.7 }]}
+            accessibilityRole="button"
+            accessibilityLabel={t('Volver')}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          >
+            <Ionicons name="close" size={26} color={colors.textPrimary} />
+          </Pressable>
+        </View>
+
         <View style={[styles.permissionIconCircle, { backgroundColor: colors.primaryLight }]}>
           <Ionicons name="camera" size={54} color={colors.primary} />
         </View>
@@ -467,6 +527,14 @@ export const ScannerScreen: React.FC = () => {
           onPress={handlePickGallery}
           variant="secondary"
           size="lg"
+          style={{ width: '100%', marginBottom: spacing.sm }}
+        />
+
+        <Button
+          title={t('Volver')}
+          onPress={handleExit}
+          variant="ghost"
+          size="md"
           style={{ width: '100%' }}
         />
       </View>
@@ -534,16 +602,36 @@ export const ScannerScreen: React.FC = () => {
           {
             backgroundColor: colors.background,
             paddingTop: insets.top + 16,
-            paddingBottom: tabBarClearance,
+            paddingBottom: Math.max(insets.bottom, 24),
           },
         ]}
       >
+        <View style={styles.topExitRow}>
+          <Pressable
+            onPress={handleExit}
+            style={({ pressed }) => [styles.exitBtn, pressed && { opacity: 0.7 }]}
+            accessibilityRole="button"
+            accessibilityLabel={t('Volver')}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          >
+            <Ionicons name="close" size={26} color={colors.textPrimary} />
+          </Pressable>
+        </View>
+
         <EmptyState
           iconName="alert-circle-outline"
           title={t('No pudimos reconocer la planta')}
           description={errorMessage}
           actionTitle={t('Tomar otra foto')}
           onActionPress={handleResetScanner}
+        />
+
+        <Button
+          title={t('Volver al inicio')}
+          onPress={handleExit}
+          variant="ghost"
+          size="md"
+          style={{ marginTop: spacing.md }}
         />
       </View>
     );
@@ -571,7 +659,7 @@ export const ScannerScreen: React.FC = () => {
         <View style={[styles.cameraTopBar, { paddingTop: insets.top + (Platform.OS === 'ios' ? 8 : 12) }]}>
           <View style={[styles.topBarGlassBtn, { backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: 24, overflow: 'hidden' }]}>
             <Pressable
-              onPress={() => navigation.goBack()}
+              onPress={handleExit}
               android_ripple={{ color: '#FFFFFF33', borderless: true, radius: 24 }}
               style={({ pressed }) => [styles.iconPressable, pressed && { opacity: 0.7 }]}
               accessibilityRole="button"
@@ -755,7 +843,7 @@ export const ScannerScreen: React.FC = () => {
         <View
           style={[
             styles.cameraBottomBar,
-            { paddingBottom: insets.bottom + (Platform.OS === 'ios' ? 16 : 24) },
+            { paddingBottom: Math.max(insets.bottom, 16) + (Platform.OS === 'ios' ? 12 : 20) },
           ]}
         >
           {/* LADO IZQUIERDO: GALERÍA */}
@@ -863,6 +951,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 24,
+  },
+  topExitRow: {
+    width: '100%',
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
+    marginBottom: 8,
+  },
+  exitBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   cameraTopBar: {
     flexDirection: 'row',

@@ -39,10 +39,10 @@ const GEMINI_MODEL = (process.env.EXPO_PUBLIC_GEMINI_MODEL ?? 'gemini-1.5-flash'
 const GOOGLE_AI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 
 /**
- * La IA está disponible si hay una clave de Gemini directa o un proxy configurado.
+ * La IA directa está disponible si hay una clave de Gemini directa configurada.
  */
 export function isGeminiDirectAvailable(): boolean {
-  return GEMINI_API_KEY.length > 0 || isApiConfigured();
+  return GEMINI_API_KEY.length > 0;
 }
 
 /** Convierte una cadena de texto a un slug seguro y limpio. */
@@ -84,7 +84,11 @@ async function postProxyJson<T>(path: string, body: unknown): Promise<T> {
  * Realiza una consulta directa a Google AI Studio (GenerateContent API).
  */
 export async function callGeminiDirect(
-  parts: Array<{ text?: string; inline_data?: { mime_type: string; data: string } }>,
+  parts: Array<{
+    text?: string;
+    inlineData?: { mimeType: string; data: string };
+    inline_data?: { mime_type: string; data: string };
+  }>,
   systemInstruction?: string,
   responseSchema?: object
 ): Promise<string> {
@@ -98,11 +102,33 @@ export async function callGeminiDirect(
 
   const url = `${GOOGLE_AI_BASE}/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(GEMINI_API_KEY)}`;
 
+  // Normaliza las partes al contrato estándar camelCase de Google Generative Language REST API (inlineData)
+  const normalizedParts = parts.map((part) => {
+    const raw = part as any;
+    if (raw.inline_data) {
+      return {
+        inlineData: {
+          mimeType: raw.inline_data.mime_type || 'image/jpeg',
+          data: raw.inline_data.data,
+        },
+      };
+    }
+    if (raw.inlineData) {
+      return {
+        inlineData: {
+          mimeType: raw.inlineData.mimeType || raw.inlineData.mime_type || 'image/jpeg',
+          data: raw.inlineData.data,
+        },
+      };
+    }
+    return part;
+  });
+
   const body: Record<string, unknown> = {
     contents: [
       {
         role: 'user',
-        parts,
+        parts: normalizedParts,
       },
     ],
     generationConfig: {
@@ -329,8 +355,8 @@ Si es una planta, devuelve SIEMPRE un JSON válido con esta estructura exacta:
     const parts = [
       { text: promptText },
       ...cleanImages.slice(0, 3).map((data) => ({
-        inline_data: {
-          mime_type: 'image/jpeg',
+        inlineData: {
+          mimeType: 'image/jpeg',
           data,
         },
       })),
@@ -480,8 +506,8 @@ Si está enferma o saludable, responde un JSON válido con esta estructura exact
     const parts = [
       { text: promptText },
       ...cleanImages.slice(0, 3).map((data) => ({
-        inline_data: {
-          mime_type: 'image/jpeg',
+        inlineData: {
+          mimeType: 'image/jpeg',
           data,
         },
       })),
